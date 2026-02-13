@@ -1,16 +1,105 @@
-# React + Vite
+# Service Tracker PWA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Mobile-first PWA for daily rental-car workflow.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Side-by-side **Entregas** and **Recolhas** columns, including on mobile.
+- Manual API refresh only (no polling / no automatic refresh timer).
+- Team-shared realtime checklist state via Firestore listeners.
+- Google Sign-In and allowlist gate (`staff_allowlist` collection).
+- Installable PWA (manifest + service worker).
 
-## React Compiler
+## Stack
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+- React + Vite
+- Firebase Auth (Google)
+- Firestore realtime listeners
+- Existing Sheet Generator API (`/getjson`)
 
-## Expanding the ESLint configuration
+## Environment
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Create a `.env` file from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+- `VITE_API_BASE_URL`: base URL for the Sheet API.
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID` (optional)
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+Build:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Firestore collections expected
+
+### `staff_allowlist/{uid}`
+
+```json
+{
+  "active": true,
+  "displayName": "Staff Name",
+  "email": "staff@example.com",
+  "role": "staff"
+}
+```
+
+### `service_status/{date}_{itemId}`
+
+```json
+{
+  "date": "2026-02-13",
+  "itemId": "...",
+  "serviceType": "pickup",
+  "done": true,
+  "updatedAt": "serverTimestamp",
+  "updatedByUid": "...",
+  "updatedByName": "...",
+  "updatedByEmail": "..."
+}
+```
+
+## API contract used by this app
+
+`GET /getjson?date=YYYY-MM-DD[&forceRefresh=true]`
+
+Headers:
+
+- `X-PIN: 1234`
+
+Response shape used:
+
+```json
+{
+  "data": {
+    "pickups": [{ "itemId": "...", "serviceType": "pickup" }],
+    "returns": [{ "itemId": "...", "serviceType": "return" }]
+  }
+}
+```
+
+## Manual refresh behavior
+
+- App fetches API data on:
+  - first load (after auth + PIN),
+  - date change,
+  - explicit tap on **Atualizar lista**.
+- App never does timer-based auto-refresh.
+- Realtime is only for checklist status updates (Firestore snapshots).
