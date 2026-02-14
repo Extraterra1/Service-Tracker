@@ -4,11 +4,17 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
   const done = status?.done === true
   const updatedAt = formatAuditTimestamp(status?.updatedAt)
   const updatedBy = status?.updatedByName || status?.updatedByEmail || ''
+  const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA'
 
   return (
     <article className={`service-item ${done ? 'is-done' : ''}`}>
       <div className="item-top-row">
-        <div className="item-time">{item.time || '--:--'}</div>
+        <div className="item-main-meta">
+          <span className="item-burst" aria-hidden="true">
+            ✹
+          </span>
+          <span className="item-service-type">{serviceLabel}</span>
+        </div>
 
         <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
           <input
@@ -22,7 +28,9 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
       </div>
 
       <div className="item-main-text">
-        <p className="item-name">{item.name || 'Sem nome'}</p>
+        <p className="item-name">
+          <span className="item-time">{item.time || '--:--'}</span> {item.name || 'Sem nome'}
+        </p>
         <p className="item-id">#{item.id || 'n/a'}</p>
       </div>
 
