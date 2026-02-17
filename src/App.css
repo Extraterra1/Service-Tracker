@@ -420,6 +420,17 @@ h1 {
   white-space: pre-wrap;
 }
 
+.item-note-highlight,
+.item-note-extra {
+  display: inline-block;
+  max-width: 100%;
+  background: var(--note-highlight-bg);
+  color: var(--note-highlight-text);
+  padding: 0.08rem 0.26rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
 .item-footer {
   border-top: 1px dashed color-mix(in oklab, var(--accent), transparent 58%);
   padding-top: 0.17rem;

@@ -49,6 +49,8 @@
   --item-meta: #4f607e;
   --item-service: #de4658;
   --item-note: #3f4e67;
+  --note-highlight-bg: #ffe95f;
+  --note-highlight-text: #221b00;
   --item-footer: #60708c;
   --item-check: #495978;
   --line-through: rgba(215, 50, 67, 0.85);
@@ -103,6 +105,8 @@
   --item-meta: #c6d0e4;
   --item-service: #ffc6cf;
   --item-note: #d2daea;
+  --note-highlight-bg: #fff06a;
+  --note-highlight-text: #201900;
   --item-footer: #aab5cb;
   --item-check: #c6d0e4;
   --line-through: rgba(255, 192, 203, 0.95);

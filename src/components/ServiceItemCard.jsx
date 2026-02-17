@@ -1,11 +1,11 @@
-import { formatAuditTimestamp } from '../lib/date'
+import { formatAuditTimestamp } from '../lib/date';
 
 function ServiceItemCard({ item, status, onToggleDone, disabled }) {
-  const done = status?.done === true
-  const updatedAt = formatAuditTimestamp(status?.updatedAt)
-  const updatedBy = status?.updatedByName || status?.updatedByEmail || ''
-  const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA'
-  const flightLabel = item.flightNumber ? `VOO ${item.flightNumber}` : ''
+  const done = status?.done === true;
+  const updatedAt = formatAuditTimestamp(status?.updatedAt);
+  const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
+  const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
+  const flightLabel = item.flightNumber ? `VOO ${item.flightNumber}` : '';
 
   return (
     <article className={`service-item ${done ? 'is-done' : ''}`}>
@@ -16,12 +16,7 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
         </div>
 
         <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
-          <input
-            type="checkbox"
-            checked={done}
-            disabled={disabled}
-            onChange={(event) => onToggleDone(item, event.target.checked)}
-          />
+          <input type="checkbox" checked={done} disabled={disabled} onChange={(event) => onToggleDone(item, event.target.checked)} />
           <span>Feito</span>
         </label>
       </div>
@@ -38,17 +33,13 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
       </p>
       <p className="item-location">{item.location || 'Localização não indicada'}</p>
 
-      {Array.isArray(item.extras) && item.extras.length > 0 ? (
-        <p className="item-note">Extras: {item.extras.join(', ')}</p>
-      ) : null}
+      {Array.isArray(item.extras) && item.extras.length > 0 ? <p className="item-note item-note-extra">Extras: {item.extras.join(', ')}</p> : null}
 
-      {item.notes ? <p className="item-note">Notas: {item.notes}</p> : null}
+      {item.notes ? <p className="item-note item-note-highlight">Notas: {item.notes}</p> : null}
 
-      <footer className="item-footer">
-        {updatedBy && updatedAt ? `Atualizado por ${updatedBy} às ${updatedAt}` : 'Sem atualização de equipa'}
-      </footer>
+      <footer className="item-footer">{updatedBy && updatedAt ? `Atualizado por ${updatedBy} às ${updatedAt}` : 'Sem atualização de equipa'}</footer>
     </article>
-  )
+  );
 }
 
-export default ServiceItemCard
+export default ServiceItemCard;
