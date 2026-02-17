@@ -8,6 +8,7 @@ Mobile-first PWA for daily rental-car workflow.
 - Manual API refresh only (no polling / no automatic refresh timer).
 - Team-shared realtime checklist state via Firestore listeners.
 - Google Sign-In and allowlist gate (`staff_allowlist` collection).
+- API PIN synced per Google account across devices (`user_settings` collection).
 - Installable PWA (manifest + service worker).
 
 ## Stack
@@ -75,6 +76,20 @@ npm run preview
   "updatedByEmail": "..."
 }
 ```
+
+### `user_settings/{uid}`
+
+```json
+{
+  "apiPin": "1234",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+Required Firestore rule behavior for this collection:
+
+- users can read/write only their own `user_settings/{uid}` document
+- `uid` must match `request.auth.uid`
 
 ## API contract used by this app
 
