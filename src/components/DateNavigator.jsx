@@ -1,4 +1,4 @@
-import { addDays, formatDateLabel, getTodayDate } from '../lib/date';
+import { addDays, getTodayDate } from '../lib/date';
 
 function DateNavigator({ date, onDateChange, onManualRefresh, forceRefresh, onForceRefreshChange, loading }) {
   return (

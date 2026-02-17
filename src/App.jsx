@@ -11,6 +11,7 @@ import { saveUserPin, subscribeToUserPin } from './lib/pinStore';
 import { setItemDoneState, subscribeToDateStatus } from './lib/statusStore';
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
+const THEME_STORAGE_KEY = 'service_tracker_theme';
 
 function getStoredPin() {
   const durablePin = localStorage.getItem(PIN_STORAGE_KEY);
@@ -33,6 +34,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [forceRefresh, setForceRefresh] = useState(false);
   const [pin, setPin] = useState(getStoredPin);
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light');
   const [pinSyncState, setPinSyncState] = useState('idle');
   const [user, setUser] = useState(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -63,6 +65,11 @@ function App() {
       localStorage.removeItem(PIN_STORAGE_KEY);
     }
   }, [pin]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     cloudPinRef.current = '';
@@ -286,6 +293,15 @@ function App() {
           <div className="menu-content">
             <p className="menu-title">Operação diária</p>
             <p className="subtle-text">Conta, PIN e estado de sincronização.</p>
+            <label className="theme-toggle" htmlFor="theme-switch">
+              <input
+                id="theme-switch"
+                type="checkbox"
+                checked={theme === 'dark'}
+                onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')}
+              />
+              <span>Modo escuro</span>
+            </label>
 
             <AuthPanel
               user={user}
