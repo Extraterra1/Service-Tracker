@@ -5,14 +5,13 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
   const updatedAt = formatAuditTimestamp(status?.updatedAt)
   const updatedBy = status?.updatedByName || status?.updatedByEmail || ''
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA'
+  const flightLabel = item.flightNumber ? `VOO ${item.flightNumber}` : ''
 
   return (
     <article className={`service-item ${done ? 'is-done' : ''}`}>
-      <div className="item-top-row">
-        <div className="item-main-meta">
-          <span className="item-burst" aria-hidden="true">
-            ✹
-          </span>
+      <div className="item-head">
+        <div className="item-head-main">
+          <span className="item-time">{item.time || '--:--'}</span>
           <span className="item-service-type">{serviceLabel}</span>
         </div>
 
@@ -27,21 +26,17 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
         </label>
       </div>
 
-      <div className="item-main-text">
-        <p className="item-name">
-          <span className="item-time">{item.time || '--:--'}</span> {item.name || 'Sem nome'}
-        </p>
-        <p className="item-id">#{item.id || 'n/a'}</p>
-      </div>
+      <p className="item-name">{item.name || 'Sem nome'}</p>
+      <p className="item-subline">
+        <span>#{item.id || 'n/a'}</span>
+        <span>{item.phone || 'Sem telefone'}</span>
+        {flightLabel ? <span>{flightLabel}</span> : null}
+      </p>
 
-      <div className="item-grid">
-        <p>{item.phone || 'Sem telefone'}</p>
-        <p>{item.car || 'Sem viatura'}</p>
-        <p>{item.plate || 'Sem matrícula'}</p>
-        <p>{item.flightNumber ? `VOO ${item.flightNumber}` : 'Sem voo'}</p>
-      </div>
-
-      {item.location ? <p className="item-location">{item.location}</p> : null}
+      <p className="item-carline">
+        {item.car || 'Sem viatura'} {item.plate ? `- ${item.plate}` : ''}
+      </p>
+      <p className="item-location">{item.location || 'Localização não indicada'}</p>
 
       {Array.isArray(item.extras) && item.extras.length > 0 ? (
         <p className="item-note">Extras: {item.extras.join(', ')}</p>

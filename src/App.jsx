@@ -275,23 +275,32 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">Service Tracker</p>
-          <h1>Operação diária</h1>
-          <p className="subtle-text">Entregas e recolhas sincronizadas em tempo real (checklist da equipa).</p>
+      <header className="app-header app-header-compact">
+        <div className="title-block">
+          <p className="eyebrow">JustDrive</p>
+          <h1>Lista de Serviço</h1>
         </div>
 
-        <AuthPanel
-          user={user}
-          accessState={accessState}
-          checkingAccess={checkingAccess}
-          pin={pin}
-          pinSyncState={pinSyncState}
-          onPinChange={setPin}
-          onSignIn={handleSignIn}
-          onSignOut={handleSignOut}
-        />
+        <details className="menu-panel">
+          <summary className="ghost-btn menu-summary">Menu</summary>
+          <div className="menu-content">
+            <p className="menu-title">Operação diária</p>
+            <p className="subtle-text">Conta, PIN e estado de sincronização.</p>
+
+            <AuthPanel
+              user={user}
+              accessState={accessState}
+              checkingAccess={checkingAccess}
+              pin={pin}
+              pinSyncState={pinSyncState}
+              onPinChange={setPin}
+              onSignIn={handleSignIn}
+              onSignOut={handleSignOut}
+            />
+
+            <p className="status-line status-line-menu">{statusLine}</p>
+          </div>
+        </details>
       </header>
 
       <DateNavigator
@@ -302,8 +311,6 @@ function App() {
         onForceRefreshChange={setForceRefresh}
         loading={loadingServices}
       />
-
-      <p className="status-line">{statusLine}</p>
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
 

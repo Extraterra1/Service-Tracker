@@ -1,57 +1,36 @@
-import { addDays, formatDateLabel, getTodayDate } from '../lib/date'
+import { addDays, formatDateLabel, getTodayDate } from '../lib/date';
 
-function DateNavigator({
-  date,
-  onDateChange,
-  onManualRefresh,
-  forceRefresh,
-  onForceRefreshChange,
-  loading,
-}) {
+function DateNavigator({ date, onDateChange, onManualRefresh, forceRefresh, onForceRefreshChange, loading }) {
   return (
-    <section className="toolbar" aria-label="Date controls">
-      <div className="toolbar-row">
-        <button type="button" className="ghost-btn" onClick={() => onDateChange(addDays(date, -1))}>
-          Dia anterior
+    <section className="toolbar toolbar-compact" aria-label="Date controls">
+      <div className="toolbar-line">
+        <button type="button" className="ghost-btn compact-btn" onClick={() => onDateChange(addDays(date, -1))}>
+          ◀
         </button>
-        <button type="button" className="ghost-btn" onClick={() => onDateChange(getTodayDate())}>
+
+        <button type="button" className="ghost-btn compact-btn" onClick={() => onDateChange(getTodayDate())}>
           Hoje
         </button>
-        <button type="button" className="ghost-btn" onClick={() => onDateChange(addDays(date, 1))}>
-          Próximo dia
-        </button>
-      </div>
 
-      <div className="toolbar-row toolbar-row-tight">
-        <label className="field-inline" htmlFor="service-date">
-          Data
-          <input
-            id="service-date"
-            type="date"
-            value={date}
-            onChange={(event) => onDateChange(event.target.value)}
-          />
+        <label className="field-inline field-inline-date" htmlFor="service-date">
+          <input id="service-date" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
         </label>
 
-        <button type="button" className="primary-btn" onClick={onManualRefresh} disabled={loading}>
-          {loading ? 'Atualizando...' : 'Atualizar lista'}
+        <button type="button" className="ghost-btn compact-btn" onClick={() => onDateChange(addDays(date, 1))}>
+          ▶
         </button>
-      </div>
 
-      <div className="toolbar-row toolbar-row-between">
-        <p className="date-label">{formatDateLabel(date)}</p>
-        <label className="checkbox-inline" htmlFor="force-refresh">
-          <input
-            id="force-refresh"
-            type="checkbox"
-            checked={forceRefresh}
-            onChange={(event) => onForceRefreshChange(event.target.checked)}
-          />
-          Forçar atualização da origem
+        <label className="checkbox-inline compact-checkbox" htmlFor="force-refresh">
+          <input id="force-refresh" type="checkbox" checked={forceRefresh} onChange={(event) => onForceRefreshChange(event.target.checked)} />
+          Forçar
         </label>
+
+        <button type="button" className="primary-btn compact-btn" onClick={onManualRefresh} disabled={loading}>
+          {loading ? 'A atualizar...' : 'Atualizar'}
+        </button>
       </div>
     </section>
-  )
+  );
 }
 
-export default DateNavigator
+export default DateNavigator;

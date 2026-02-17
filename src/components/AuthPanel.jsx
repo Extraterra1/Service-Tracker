@@ -26,21 +26,23 @@ function AuthPanel({
         <p className="user-email">{user.email}</p>
       </div>
 
-      <label className="field-inline field-inline-pin" htmlFor="api-pin">
-        PIN API
-        <input
-          id="api-pin"
-          type="password"
-          maxLength={4}
-          placeholder="••••"
-          value={pin}
-          onChange={(event) => onPinChange(event.target.value.replace(/[^0-9]/g, ''))}
-        />
-      </label>
+      <div className="auth-controls">
+        <label className="field-inline field-inline-pin" htmlFor="api-pin">
+          PIN API
+          <input
+            id="api-pin"
+            type="password"
+            maxLength={4}
+            placeholder="••••"
+            value={pin}
+            onChange={(event) => onPinChange(event.target.value.replace(/[^0-9]/g, ''))}
+          />
+        </label>
 
-      <button type="button" className="ghost-btn" onClick={onSignOut}>
-        Sair
-      </button>
+        <button type="button" className="ghost-btn" onClick={onSignOut}>
+          Sair
+        </button>
+      </div>
 
       {checkingAccess ? <p className="helper-text">A validar acesso...</p> : null}
       {pinSyncState === 'syncing' ? <p className="helper-text">A sincronizar PIN da conta...</p> : null}
