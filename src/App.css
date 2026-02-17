@@ -57,6 +57,8 @@ h1 {
 
 .menu-panel summary {
   list-style: none;
+  display: flex;
+  align-items: center;
 }
 
 .menu-panel summary::-webkit-details-marker {
