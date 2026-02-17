@@ -1,12 +1,11 @@
 import { formatAuditTimestamp } from '../lib/date';
+import { Plane } from 'lucide-react';
 
 function ServiceItemCard({ item, status, onToggleDone, disabled }) {
   const done = status?.done === true;
   const updatedAt = formatAuditTimestamp(status?.updatedAt);
   const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
-  const flightLabel = item.flightNumber ? `VOO ${item.flightNumber}` : '';
-
   return (
     <article className={`service-item ${done ? 'is-done' : ''}`}>
       <div className="item-head">
@@ -25,7 +24,12 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
       <p className="item-subline">
         <span>#{item.id || 'n/a'}</span>
         <span>{item.phone || 'Sem telefone'}</span>
-        {flightLabel ? <span>{flightLabel}</span> : null}
+        {item.flightNumber ? (
+          <span className="item-flight-tag">
+            <Plane className="item-flight-icon" aria-hidden="true" />
+            <span>{item.flightNumber}</span>
+          </span>
+        ) : null}
       </p>
 
       <p className="item-carline">

@@ -403,6 +403,20 @@ h1 {
   color: var(--item-secondary);
 }
 
+.item-flight-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  color: var(--item-service);
+  font-weight: 700;
+}
+
+.item-flight-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke-width: 2.4;
+}
+
 .item-carline {
   font-size: 0.74rem;
   font-weight: 600;
