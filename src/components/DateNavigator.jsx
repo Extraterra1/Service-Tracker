@@ -20,8 +20,6 @@ function DateNavigator({ date, onDateChange, onManualRefresh, loading }) {
           ▶
         </button>
 
-        <span className="compact-hint">Atualizar força origem</span>
-
         <button type="button" className="primary-btn compact-btn" onClick={onManualRefresh} disabled={loading}>
           {loading ? 'A atualizar...' : 'Atualizar'}
         </button>

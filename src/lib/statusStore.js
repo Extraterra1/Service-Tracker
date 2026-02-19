@@ -9,6 +9,24 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 
+function getUpdaterFirstName(user) {
+  const displayName = String(user?.displayName ?? '').trim()
+  if (displayName) {
+    return displayName.split(/\s+/)[0]
+  }
+
+  const email = String(user?.email ?? '').trim()
+  if (email) {
+    const localPart = email.split('@')[0] ?? ''
+    const emailName = localPart.split(/[._-]+/)[0]
+    if (emailName) {
+      return emailName
+    }
+  }
+
+  return 'Unknown'
+}
+
 export function subscribeToDateStatus(date, callback, errorCallback) {
   if (!db || !date) {
     callback({})
@@ -61,7 +79,7 @@ export async function setItemDoneState({ date, item, done, user }) {
       done,
       updatedAt: serverTimestamp(),
       updatedByUid: user?.uid ?? '',
-      updatedByName: user?.displayName ?? user?.email ?? 'Unknown user',
+      updatedByName: getUpdaterFirstName(user),
       updatedByEmail: user?.email ?? '',
     },
     { merge: true },
