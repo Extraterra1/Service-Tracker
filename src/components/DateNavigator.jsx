@@ -1,6 +1,6 @@
 import { addDays, getTodayDate } from '../lib/date';
 
-function DateNavigator({ date, onDateChange, onManualRefresh, forceRefresh, onForceRefreshChange, loading }) {
+function DateNavigator({ date, onDateChange, onManualRefresh, loading }) {
   return (
     <section className="toolbar toolbar-compact" aria-label="Date controls">
       <div className="toolbar-line">
@@ -20,10 +20,7 @@ function DateNavigator({ date, onDateChange, onManualRefresh, forceRefresh, onFo
           ▶
         </button>
 
-        <label className="checkbox-inline compact-checkbox" htmlFor="force-refresh">
-          <input id="force-refresh" type="checkbox" checked={forceRefresh} onChange={(event) => onForceRefreshChange(event.target.checked)} />
-          Forçar
-        </label>
+        <span className="compact-hint">Atualizar força origem</span>
 
         <button type="button" className="primary-btn compact-btn" onClick={onManualRefresh} disabled={loading}>
           {loading ? 'A atualizar...' : 'Atualizar'}

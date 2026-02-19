@@ -12,6 +12,7 @@
 .toolbar,
 .service-pane,
 .error-banner,
+.warning-banner,
 .menu-content,
 .status-line {
   border: 1px solid var(--stroke);
@@ -242,13 +243,13 @@ h1 {
   width: 8.6rem;
 }
 
-.compact-checkbox {
+.compact-hint {
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .date-label {
@@ -264,6 +265,15 @@ h1 {
   color: var(--error-text);
   background: var(--error-bg);
   border-color: var(--error-border);
+  font-size: 0.75rem;
+}
+
+.warning-banner {
+  margin: 0;
+  padding: 0.5rem 0.58rem;
+  color: #7c5c00;
+  background: rgba(255, 225, 112, 0.35);
+  border-color: rgba(212, 160, 10, 0.65);
   font-size: 0.75rem;
 }
 

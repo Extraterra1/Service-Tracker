@@ -4,10 +4,11 @@ import AuthPanel from './components/AuthPanel';
 import DateNavigator from './components/DateNavigator';
 import ServicePane from './components/ServicePane';
 import { checkAllowlist, configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges } from './lib/auth';
-import { fetchServiceDay } from './lib/api';
+import { refreshServiceDayViaApi } from './lib/api';
 import { getTodayDate } from './lib/date';
 import { hasFirebaseConfig } from './lib/firebase';
 import { saveUserPin, subscribeToUserPin } from './lib/pinStore';
+import { isScrapedDocStale, subscribeToScrapedDay } from './lib/scrapedDataStore';
 import { setItemDoneState, subscribeToDateStatus } from './lib/statusStore';
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
@@ -19,7 +20,6 @@ function getStoredPin() {
     return durablePin;
   }
 
-  // One-time migration for users that still have a session-only PIN.
   const sessionPin = sessionStorage.getItem(PIN_STORAGE_KEY);
   if (sessionPin) {
     localStorage.setItem(PIN_STORAGE_KEY, sessionPin);
@@ -30,9 +30,34 @@ function getStoredPin() {
   return '';
 }
 
+function toDateValue(timestampLike) {
+  if (!timestampLike) {
+    return null;
+  }
+
+  if (typeof timestampLike.toDate === 'function') {
+    return timestampLike.toDate();
+  }
+
+  if (typeof timestampLike.seconds === 'number') {
+    return new Date(timestampLike.seconds * 1000);
+  }
+
+  const parsed = new Date(timestampLike);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function getCacheVersionKey(cachedAt) {
+  const cacheDate = toDateValue(cachedAt);
+  return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
+}
+
 function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
-  const [forceRefresh, setForceRefresh] = useState(false);
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light');
   const [pinSyncState, setPinSyncState] = useState('idle');
@@ -42,13 +67,18 @@ function App() {
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [loadingServices, setLoadingServices] = useState(false);
+  const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
-  const [lastLoadAt, setLastLoadAt] = useState('');
+  const [lastLoadAt, setLastLoadAt] = useState(null);
+  const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
   const cloudPinRef = useRef('');
   const latestPinRef = useRef(pin);
   const hasLoadedCloudPinRef = useRef(false);
   const applyingCloudPinRef = useRef(false);
+  const refreshInFlightRef = useRef(false);
+  const autoRefreshAttemptRef = useRef(new Set());
 
   useEffect(() => {
     void configureAuthPersistence();
@@ -173,44 +203,129 @@ function App() {
     return unsubscribe;
   }, []);
 
-  const canLoadData = accessState === 'allowed' && Boolean(pin);
+  const canReadServiceData = accessState === 'allowed';
+  const canCallApi = canReadServiceData && Boolean(pin);
 
-  const loadServiceData = useCallback(
-    async ({ force = false } = {}) => {
-      if (!canLoadData) {
-        if (!pin) {
-          setErrorMessage('Introduz o PIN da API para carregar serviços.');
-        }
-        return;
+  const refreshServiceDataFromApi = useCallback(
+    async ({ date, forceRefresh, source, hasRenderableData }) => {
+      if (!canReadServiceData) {
+        return false;
       }
 
-      setErrorMessage('');
+      if (!canCallApi) {
+        const pinError = 'Introduz o PIN da API para atualizar os serviços.';
+        if (source === 'manual') {
+          setErrorMessage(pinError);
+        } else if (hasRenderableData) {
+          setStaleWarning('Dados desatualizados (mais de 2 horas). Introduz o PIN para atualizar.');
+        } else {
+          setErrorMessage(pinError);
+        }
+        return false;
+      }
+
+      if (refreshInFlightRef.current) {
+        return false;
+      }
+
+      refreshInFlightRef.current = true;
       setLoadingServices(true);
+      setRefreshSource(source);
+
+      if (source === 'manual') {
+        setErrorMessage('');
+      }
+
       try {
-        const data = await fetchServiceDay({
-          date: selectedDate,
+        await refreshServiceDayViaApi({
+          date,
           pin,
-          forceRefresh: force
+          forceRefresh,
         });
-        setServiceData(data);
-        setLastLoadAt(new Date().toISOString());
+
+        if (source === 'manual') {
+          setStaleWarning('');
+        }
+
+        return true;
       } catch (error) {
-        setErrorMessage(error.message);
+        if (source === 'manual') {
+          setErrorMessage(error.message);
+        } else if (hasRenderableData) {
+          setStaleWarning('Dados desatualizados. Falha na atualização automática. Usa Atualizar para tentar novamente.');
+        } else {
+          setErrorMessage(error.message);
+        }
+        return false;
       } finally {
+        refreshInFlightRef.current = false;
         setLoadingServices(false);
+        setRefreshSource('idle');
       }
     },
-    [canLoadData, pin, selectedDate]
+    [canCallApi, canReadServiceData, pin]
   );
 
   useEffect(() => {
-    if (canLoadData) {
-      void loadServiceData();
+    autoRefreshAttemptRef.current = new Set();
+    setStaleWarning('');
+
+    if (!canReadServiceData) {
+      setServiceData({ pickups: [], returns: [] });
+      setLastLoadAt(null);
+      return () => {};
     }
-  }, [canLoadData, loadServiceData, selectedDate]);
+
+    return subscribeToScrapedDay(
+      selectedDate,
+      (payload) => {
+        setServiceData({ pickups: payload.pickups, returns: payload.returns });
+        setLastLoadAt(payload.cachedAt ?? null);
+
+        const isStale = isScrapedDocStale(payload.cachedAt);
+        if (!isStale) {
+          setStaleWarning('');
+          return;
+        }
+
+        const staleKey = `${selectedDate}:${getCacheVersionKey(payload.cachedAt)}`;
+        if (autoRefreshAttemptRef.current.has(staleKey)) {
+          return;
+        }
+
+        autoRefreshAttemptRef.current.add(staleKey);
+        void refreshServiceDataFromApi({
+          date: selectedDate,
+          forceRefresh: false,
+          source: 'auto',
+          hasRenderableData: true,
+        });
+      },
+      () => {
+        setServiceData({ pickups: [], returns: [] });
+        setLastLoadAt(null);
+
+        const missingKey = `${selectedDate}:missing`;
+        if (autoRefreshAttemptRef.current.has(missingKey)) {
+          return;
+        }
+
+        autoRefreshAttemptRef.current.add(missingKey);
+        void refreshServiceDataFromApi({
+          date: selectedDate,
+          forceRefresh: false,
+          source: 'auto',
+          hasRenderableData: false,
+        });
+      },
+      (error) => {
+        setErrorMessage(error.message);
+      }
+    );
+  }, [canReadServiceData, refreshServiceDataFromApi, selectedDate]);
 
   useEffect(() => {
-    if (accessState !== 'allowed') {
+    if (!canReadServiceData) {
       setStatusMap({});
       return () => {};
     }
@@ -224,7 +339,7 @@ function App() {
         setErrorMessage(error.message);
       }
     );
-  }, [accessState, selectedDate]);
+  }, [canReadServiceData, selectedDate]);
 
   const handleSignIn = async () => {
     setErrorMessage('');
@@ -240,6 +355,8 @@ function App() {
     await signOutUser();
     setServiceData({ pickups: [], returns: [] });
     setStatusMap({});
+    setLastLoadAt(null);
+    setStaleWarning('');
   };
 
   const handleToggleDone = async (item, done) => {
@@ -255,7 +372,7 @@ function App() {
         date: selectedDate,
         item,
         done,
-        user
+        user,
       });
     } catch (error) {
       setErrorMessage(error.message);
@@ -264,21 +381,39 @@ function App() {
     }
   };
 
+  const handleManualRefresh = useCallback(() => {
+    void refreshServiceDataFromApi({
+      date: selectedDate,
+      forceRefresh: true,
+      source: 'manual',
+      hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0,
+    });
+  }, [refreshServiceDataFromApi, selectedDate, serviceData.pickups.length, serviceData.returns.length]);
+
   const statusLine = useMemo(() => {
-    if (!lastLoadAt) {
-      return 'Ainda sem carregamento para esta data.';
+    if (loadingServices && refreshSource === 'manual') {
+      return 'Atualização manual forçada em curso...';
+    }
+
+    if (loadingServices && refreshSource === 'auto') {
+      return 'Cache antigo detetado. A atualizar automaticamente...';
+    }
+
+    const cachedDate = toDateValue(lastLoadAt);
+    if (!cachedDate) {
+      return 'Sem cache Firestore para esta data.';
     }
 
     const formatted = new Intl.DateTimeFormat('pt-PT', {
       day: '2-digit',
       month: '2-digit',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
-    }).format(new Date(lastLoadAt));
+    }).format(cachedDate);
 
-    return `Última atualização manual: ${formatted}`;
-  }, [lastLoadAt]);
+    return `Cache Firestore: ${formatted}`;
+  }, [lastLoadAt, loadingServices, refreshSource]);
 
   return (
     <div className="app-shell">
@@ -322,13 +457,13 @@ function App() {
       <DateNavigator
         date={selectedDate}
         onDateChange={setSelectedDate}
-        onManualRefresh={() => loadServiceData({ force: forceRefresh })}
-        forceRefresh={forceRefresh}
-        onForceRefreshChange={setForceRefresh}
+        onManualRefresh={handleManualRefresh}
         loading={loadingServices}
       />
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
+
+      {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
       {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
 
