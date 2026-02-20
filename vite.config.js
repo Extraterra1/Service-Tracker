@@ -33,6 +33,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        navigateFallbackDenylist: [/^\/manifest\.webmanifest$/, /^\/.*\.(?:json|webmanifest)$/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.includes('/getjson'),
