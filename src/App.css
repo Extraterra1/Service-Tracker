@@ -429,6 +429,51 @@ h1 {
   gap: 0.18rem;
 }
 
+.service-item-skeleton {
+  gap: 0.38rem;
+}
+
+.skeleton-line {
+  height: 0.72rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--item-border), transparent 46%) 0%,
+    color-mix(in oklab, var(--item-bg), white 14%) 50%,
+    color-mix(in oklab, var(--item-border), transparent 46%) 100%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.2s linear infinite;
+}
+
+.skeleton-line-time {
+  width: 35%;
+  height: 1rem;
+}
+
+.skeleton-line-name {
+  width: 66%;
+  height: 0.94rem;
+}
+
+.skeleton-line-sub {
+  width: 92%;
+}
+
+.skeleton-line-footer {
+  width: 76%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -20% 0;
+  }
+}
+
 .service-item.is-done {
   opacity: 0.73;
 }

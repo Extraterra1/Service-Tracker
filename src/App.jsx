@@ -74,6 +74,7 @@ function App() {
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [loadingServices, setLoadingServices] = useState(false);
+  const [loadingDateData, setLoadingDateData] = useState(false);
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
@@ -298,14 +299,23 @@ function App() {
     if (!canReadServiceData) {
       setServiceData({ pickups: [], returns: [] });
       setLastLoadAt(null);
+      setLoadingDateData(false);
       return () => {};
     }
 
-    return subscribeToScrapedDay(
+    let isActive = true;
+    setLoadingDateData(true);
+
+    const unsubscribe = subscribeToScrapedDay(
       selectedDate,
       (payload) => {
+        if (!isActive) {
+          return;
+        }
+
         setServiceData({ pickups: payload.pickups, returns: payload.returns });
         setLastLoadAt(payload.cachedAt ?? null);
+        setLoadingDateData(false);
 
         const isStale = isScrapedDocStale(payload.cachedAt);
         if (!isStale) {
@@ -327,6 +337,10 @@ function App() {
         });
       },
       () => {
+        if (!isActive) {
+          return;
+        }
+
         setServiceData({ pickups: [], returns: [] });
         setLastLoadAt(null);
 
@@ -341,12 +355,30 @@ function App() {
           forceRefresh: false,
           source: 'auto',
           hasRenderableData: false,
+        }).then((success) => {
+          if (!isActive) {
+            return;
+          }
+
+          if (!success) {
+            setLoadingDateData(false);
+          }
         });
       },
       (error) => {
+        if (!isActive) {
+          return;
+        }
+
         setErrorMessage(error.message);
+        setLoadingDateData(false);
       }
     );
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, [canReadServiceData, refreshServiceDataFromApi, selectedDate]);
 
   useEffect(() => {
@@ -568,6 +600,7 @@ function App() {
           statusMap={statusMap}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
+          loading={loadingDateData}
         />
 
         <ServicePane
@@ -576,6 +609,7 @@ function App() {
           statusMap={statusMap}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
+          loading={loadingDateData}
         />
       </main>
     </div>

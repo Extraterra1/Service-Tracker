@@ -21,7 +21,7 @@ function toMillis(timestampLike) {
   return Number.isNaN(value) ? null : value
 }
 
-function ServicePane({ title, items, statusMap, onToggleDone, disabled }) {
+function ServicePane({ title, items, statusMap, onToggleDone, disabled, loading = false }) {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
   useEffect(() => {
@@ -61,14 +61,28 @@ function ServicePane({ title, items, statusMap, onToggleDone, disabled }) {
   const hasAnyItems = activeItems.length > 0 || completedItems.length > 0
 
   return (
-    <section className="service-pane" aria-label={title}>
+    <section className="service-pane" aria-label={title} aria-busy={loading ? 'true' : 'false'}>
       <header className="pane-header">
         <h2>{title}</h2>
-        <span>{items.length}</span>
+        <span>{loading ? '...' : items.length}</span>
       </header>
 
       <div className="pane-list">
-        {completedItems.length > 0 ? (
+        {loading ? (
+          <>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <article key={`skeleton-${title}-${index}`} className="service-item service-item-skeleton" aria-hidden="true">
+                <div className="skeleton-line skeleton-line-time" />
+                <div className="skeleton-line skeleton-line-name" />
+                <div className="skeleton-line skeleton-line-sub" />
+                <div className="skeleton-line skeleton-line-sub" />
+                <div className="skeleton-line skeleton-line-footer" />
+              </article>
+            ))}
+          </>
+        ) : null}
+
+        {!loading && completedItems.length > 0 ? (
           <details className="completed-accordion">
             <summary>Completados ({completedItems.length})</summary>
             <div className="completed-list">
@@ -85,19 +99,20 @@ function ServicePane({ title, items, statusMap, onToggleDone, disabled }) {
           </details>
         ) : null}
 
-        {!hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
+        {!loading && !hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
 
-        {hasAnyItems && activeItems.length === 0 ? <p className="empty-state">Sem serviços ativos. Consulta "Completados".</p> : null}
+        {!loading && hasAnyItems && activeItems.length === 0 ? <p className="empty-state">Sem serviços ativos. Consulta "Completados".</p> : null}
 
-        {activeItems.map((item) => (
-          <ServiceItemCard
-            key={item.itemId}
-            item={item}
-            status={statusMap[item.itemId]}
-            onToggleDone={onToggleDone}
-            disabled={disabled}
-          />
-        ))}
+        {!loading &&
+          activeItems.map((item) => (
+            <ServiceItemCard
+              key={item.itemId}
+              item={item}
+              status={statusMap[item.itemId]}
+              onToggleDone={onToggleDone}
+              disabled={disabled}
+            />
+          ))}
       </div>
     </section>
   )
