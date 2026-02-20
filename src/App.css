@@ -809,6 +809,35 @@ h1 {
   font-size: 0.76rem;
 }
 
+.pane-list-locked {
+  display: grid;
+}
+
+.pane-locked-state {
+  min-height: calc(100vh - 240px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.empty-state-locked {
+  max-width: 22ch;
+  text-align: center;
+  color: var(--item-primary);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.25;
+  padding: 1rem 1.1rem;
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--accent), transparent 88%),
+    color-mix(in oklab, var(--accent), transparent 94%)
+  );
+  border: 1px dashed color-mix(in oklab, var(--accent), transparent 54%);
+  border-radius: 12px;
+}
+
 @media (max-width: 780px) {
   .app-shell {
     padding: 0.34rem;
@@ -835,6 +864,16 @@ h1 {
     gap: 0.26rem;
     height: clamp(18rem, 48vh, 30rem);
     max-height: min(58vh, 560px);
+  }
+
+  .pane-locked-state {
+    min-height: calc(100vh - 275px);
+    padding: 0.8rem;
+  }
+
+  .empty-state-locked {
+    font-size: 0.92rem;
+    padding: 0.85rem 0.9rem;
   }
 
   .plate-popup {

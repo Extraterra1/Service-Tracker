@@ -264,6 +264,7 @@ function App() {
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
+  const loginRequiredMessage = accessState === 'signed_out' ? 'Inicia sessão para ver os serviços desta lista.' : '';
   const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
   const sharedPlateMarkers = useMemo(() => {
     const pickupByPlate = new Map();
@@ -711,6 +712,7 @@ function App() {
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
           loading={paneLoading}
           canShowEmptyState={canReadServiceData && hasDayResponse}
+          lockedMessage={loginRequiredMessage}
         />
 
         <ServicePane
@@ -723,6 +725,7 @@ function App() {
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
           loading={paneLoading}
           canShowEmptyState={canReadServiceData && hasDayResponse}
+          lockedMessage={loginRequiredMessage}
         />
       </main>
 

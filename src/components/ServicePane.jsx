@@ -31,6 +31,7 @@ function ServicePane({
   disabled,
   loading = false,
   canShowEmptyState = true,
+  lockedMessage = '',
 }) {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
@@ -69,6 +70,7 @@ function ServicePane({
   }, [items, nowMs, statusMap])
 
   const hasAnyItems = activeItems.length > 0 || completedItems.length > 0
+  const showLockedState = !loading && Boolean(lockedMessage)
 
   return (
     <section className="service-pane" aria-label={title} aria-busy={loading ? 'true' : 'false'}>
@@ -77,7 +79,7 @@ function ServicePane({
         <span>{loading ? '...' : items.length}</span>
       </header>
 
-      <div className="pane-list">
+      <div className={`pane-list ${showLockedState ? 'pane-list-locked' : ''}`}>
         {loading ? (
           <>
             {Array.from({ length: 6 }).map((_, index) => (
@@ -92,7 +94,13 @@ function ServicePane({
           </>
         ) : null}
 
-        {!loading && completedItems.length > 0 ? (
+        {showLockedState ? (
+          <div className="pane-locked-state">
+            <p className="empty-state empty-state-locked">{lockedMessage}</p>
+          </div>
+        ) : null}
+
+        {!loading && !showLockedState && completedItems.length > 0 ? (
           <details className="completed-accordion">
             <summary>Completados ({completedItems.length})</summary>
             <div className="completed-list">
@@ -111,11 +119,12 @@ function ServicePane({
           </details>
         ) : null}
 
-        {!loading && canShowEmptyState && !hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
+        {!loading && !showLockedState && canShowEmptyState && !hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
 
-        {!loading && hasAnyItems && activeItems.length === 0 ? <p className="empty-state">Sem serviços ativos. Consulta "Completados".</p> : null}
+        {!loading && !showLockedState && hasAnyItems && activeItems.length === 0 ? <p className="empty-state">Sem serviços ativos. Consulta "Completados".</p> : null}
 
         {!loading &&
+          !showLockedState &&
           activeItems.map((item) => (
             <ServiceItemCard
               key={item.itemId}
