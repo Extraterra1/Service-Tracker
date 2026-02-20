@@ -21,7 +21,17 @@ function toMillis(timestampLike) {
   return Number.isNaN(value) ? null : value
 }
 
-function ServicePane({ title, items, statusMap, sharedPlateMarkers, onSharedPlateTap, onToggleDone, disabled, loading = false }) {
+function ServicePane({
+  title,
+  items,
+  statusMap,
+  sharedPlateMarkers,
+  onSharedPlateTap,
+  onToggleDone,
+  disabled,
+  loading = false,
+  canShowEmptyState = true,
+}) {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
   useEffect(() => {
@@ -101,7 +111,7 @@ function ServicePane({ title, items, statusMap, sharedPlateMarkers, onSharedPlat
           </details>
         ) : null}
 
-        {!loading && !hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
+        {!loading && canShowEmptyState && !hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
 
         {!loading && hasAnyItems && activeItems.length === 0 ? <p className="empty-state">Sem serviços ativos. Consulta "Completados".</p> : null}
 

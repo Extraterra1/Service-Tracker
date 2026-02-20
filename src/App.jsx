@@ -102,7 +102,8 @@ function App() {
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [loadingServices, setLoadingServices] = useState(false);
-  const [loadingDateData, setLoadingDateData] = useState(false);
+  const [loadingDateData, setLoadingDateData] = useState(true);
+  const [hasDayResponse, setHasDayResponse] = useState(false);
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
@@ -262,6 +263,7 @@ function App() {
 
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
+  const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
   const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
   const sharedPlateMarkers = useMemo(() => {
     const pickupByPlate = new Map();
@@ -392,11 +394,13 @@ function App() {
       setServiceData({ pickups: [], returns: [] });
       setLastLoadAt(null);
       setLoadingDateData(false);
+      setHasDayResponse(false);
       return () => {};
     }
 
     let isActive = true;
     setLoadingDateData(true);
+    setHasDayResponse(false);
 
     const unsubscribe = subscribeToScrapedDay(
       selectedDate,
@@ -407,6 +411,7 @@ function App() {
 
         setServiceData({ pickups: payload.pickups, returns: payload.returns });
         setLastLoadAt(payload.cachedAt ?? null);
+        setHasDayResponse(true);
         setLoadingDateData(false);
 
         const isStale = isScrapedDocStale(payload.cachedAt);
@@ -528,7 +533,9 @@ function App() {
     setServiceData({ pickups: [], returns: [] });
     setStatusMap({});
     setLastLoadAt(null);
+    setHasDayResponse(false);
     setStaleWarning('');
+    setLoadingDateData(false);
   };
 
   const handleToggleDone = async (item, done) => {
@@ -702,7 +709,8 @@ function App() {
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
-          loading={loadingDateData}
+          loading={paneLoading}
+          canShowEmptyState={canReadServiceData && hasDayResponse}
         />
 
         <ServicePane
@@ -713,7 +721,8 @@ function App() {
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
-          loading={loadingDateData}
+          loading={paneLoading}
+          canShowEmptyState={canReadServiceData && hasDayResponse}
         />
       </main>
 
