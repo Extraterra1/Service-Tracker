@@ -13,6 +13,7 @@ import { setItemDoneState, subscribeToDateStatus } from './lib/statusStore';
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
+const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 
 function getStoredPin() {
   const durablePin = localStorage.getItem(PIN_STORAGE_KEY);
@@ -56,6 +57,12 @@ function getCacheVersionKey(cachedAt) {
   return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
 }
 
+function getMenuItemLabel(item) {
+  const serviceLabel = item.serviceType === 'return' ? 'Recolha' : 'Entrega';
+  const itemName = item.name || item.id || item.itemId;
+  return `${item.time || '--:--'} - ${serviceLabel} - ${itemName}`;
+}
+
 function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [pin, setPin] = useState(getStoredPin);
@@ -69,6 +76,7 @@ function App() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
+  const [manualCompletedItemId, setManualCompletedItemId] = useState('');
   const [lastLoadAt, setLastLoadAt] = useState(null);
   const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -205,6 +213,23 @@ function App() {
 
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
+  const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
+  const manualCompletedCandidates = useMemo(() => {
+    const nowMs = Date.now();
+    return allServiceItems.filter((item) => {
+      const status = statusMap[item.itemId];
+      if (status?.done !== true) {
+        return false;
+      }
+
+      const updatedAt = toDateValue(status.updatedAt);
+      if (!updatedAt) {
+        return true;
+      }
+
+      return nowMs - updatedAt.getTime() <= COMPLETED_HIDE_AFTER_MS;
+    });
+  }, [allServiceItems, statusMap]);
 
   const refreshServiceDataFromApi = useCallback(
     async ({ date, forceRefresh, source, hasRenderableData }) => {
@@ -341,6 +366,18 @@ function App() {
     );
   }, [canReadServiceData, selectedDate]);
 
+  useEffect(() => {
+    if (manualCompletedCandidates.length === 0) {
+      setManualCompletedItemId('');
+      return;
+    }
+
+    const stillAvailable = manualCompletedCandidates.some((item) => item.itemId === manualCompletedItemId);
+    if (!stillAvailable) {
+      setManualCompletedItemId(manualCompletedCandidates[0].itemId);
+    }
+  }, [manualCompletedCandidates, manualCompletedItemId]);
+
   const handleSignIn = async () => {
     setErrorMessage('');
     try {
@@ -380,6 +417,34 @@ function App() {
       setUpdatingItemId('');
     }
   };
+
+  const handleAddToCompleted = useCallback(async () => {
+    if (accessState !== 'allowed') {
+      return;
+    }
+
+    const item = manualCompletedCandidates.find((entry) => entry.itemId === manualCompletedItemId);
+    if (!item) {
+      return;
+    }
+
+    setUpdatingItemId(item.itemId);
+    setErrorMessage('');
+
+    try {
+      await setItemDoneState({
+        date: selectedDate,
+        item,
+        done: true,
+        user,
+        forceCompletedNow: true,
+      });
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setUpdatingItemId('');
+    }
+  }, [accessState, manualCompletedCandidates, manualCompletedItemId, selectedDate, user]);
 
   const handleManualRefresh = useCallback(() => {
     void refreshServiceDataFromApi({
@@ -448,6 +513,35 @@ function App() {
               onSignIn={handleSignIn}
               onSignOut={handleSignOut}
             />
+
+            <div className="menu-completed-panel">
+              <p className="menu-subtitle">Completados</p>
+              <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
+              <div className="manual-completed-controls">
+                <select
+                  className="manual-completed-select"
+                  value={manualCompletedItemId}
+                  onChange={(event) => setManualCompletedItemId(event.target.value)}
+                  disabled={manualCompletedCandidates.length === 0 || updatingItemId !== ''}
+                >
+                  {manualCompletedCandidates.length === 0 ? <option value="">Sem concluídos recentes</option> : null}
+                  {manualCompletedCandidates.map((item) => (
+                    <option key={item.itemId} value={item.itemId}>
+                      {getMenuItemLabel(item)}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  className="ghost-btn compact-btn"
+                  onClick={handleAddToCompleted}
+                  disabled={!manualCompletedItemId || updatingItemId !== ''}
+                >
+                  Adicionar
+                </button>
+              </div>
+            </div>
 
             <p className="status-line status-line-menu">{statusLine}</p>
           </div>

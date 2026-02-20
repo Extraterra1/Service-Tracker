@@ -115,6 +115,37 @@ h1 {
   gap: 0.45rem;
 }
 
+.menu-completed-panel {
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--stroke);
+}
+
+.menu-subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--menu-title-color);
+}
+
+.manual-completed-controls {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.manual-completed-select {
+  flex: 1;
+  min-width: 0;
+  height: 1.9rem;
+  border-radius: 7px;
+  border: 1px solid var(--stroke);
+  padding: 0 0.5rem;
+  color: var(--input-text);
+  background: var(--input-bg);
+  font-size: 0.73rem;
+}
+
 .auth-meta {
   display: flex;
   flex-direction: column;
@@ -553,6 +584,11 @@ h1 {
     gap: 0.26rem;
     height: clamp(18rem, 48vh, 30rem);
     max-height: min(58vh, 560px);
+  }
+
+  .manual-completed-controls {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .service-item {
