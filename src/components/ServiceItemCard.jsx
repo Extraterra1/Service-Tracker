@@ -1,11 +1,21 @@
 import { formatAuditTimestamp } from '../lib/date';
-import { Plane } from 'lucide-react';
+import { Plane, Repeat2 } from 'lucide-react';
 
-function ServiceItemCard({ item, status, onToggleDone, disabled }) {
+function normalizePlate(value) {
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onToggleDone, disabled }) {
   const done = status?.done === true;
   const updatedAt = formatAuditTimestamp(status?.updatedAt);
   const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
+  const plateKey = normalizePlate(item.plate);
+  const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
+
   return (
     <article className={`service-item ${done ? 'is-done' : ''}`}>
       <div className="item-head">
@@ -33,7 +43,22 @@ function ServiceItemCard({ item, status, onToggleDone, disabled }) {
       </p>
 
       <p className="item-carline">
-        {item.car || 'Sem viatura'} {item.plate ? `- ${item.plate}` : ''}
+        {item.car || 'Sem viatura'}
+        {item.plate ? (
+          <span className="item-plate-wrap">
+            <span>- {item.plate}</span>
+            {sharedPlateMarker ? (
+              <span
+                className="item-shared-plate-tag"
+                style={{ '--shared-plate-color': sharedPlateMarker.color }}
+                title="Viatura com entrega e recolha nesta data"
+                aria-label="Viatura com entrega e recolha nesta data"
+              >
+                <Repeat2 className="item-shared-plate-icon" aria-hidden="true" />
+              </span>
+            ) : null}
+          </span>
+        ) : null}
       </p>
       <p className="item-location">{item.location || 'Localização não indicada'}</p>
 

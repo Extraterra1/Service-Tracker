@@ -15,6 +15,18 @@ const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 
+function normalizePlate(value) {
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function getPlateColor(index) {
+  const hue = Math.round((index * 137.508) % 360);
+  return `hsl(${hue} 78% 42%)`;
+}
+
 function getStoredPin() {
   const durablePin = localStorage.getItem(PIN_STORAGE_KEY);
   if (durablePin) {
@@ -215,6 +227,29 @@ function App() {
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
   const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
+  const sharedPlateMarkers = useMemo(() => {
+    const pickupPlates = new Set(
+      serviceData.pickups
+        .map((item) => normalizePlate(item.plate))
+        .filter(Boolean),
+    );
+    const returnPlates = new Set(
+      serviceData.returns
+        .map((item) => normalizePlate(item.plate))
+        .filter(Boolean),
+    );
+
+    const shared = [...pickupPlates]
+      .filter((plate) => returnPlates.has(plate))
+      .sort((a, b) => a.localeCompare(b));
+
+    return shared.reduce((acc, plate, index) => {
+      acc[plate] = {
+        color: getPlateColor(index),
+      };
+      return acc;
+    }, {});
+  }, [serviceData.pickups, serviceData.returns]);
   const manualCompletedCandidates = useMemo(() => {
     const nowMs = Date.now();
     return allServiceItems.filter((item) => {
@@ -598,6 +633,7 @@ function App() {
           title="Entregas"
           items={serviceData.pickups}
           statusMap={statusMap}
+          sharedPlateMarkers={sharedPlateMarkers}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
           loading={loadingDateData}
@@ -607,6 +643,7 @@ function App() {
           title="Recolhas"
           items={serviceData.returns}
           statusMap={statusMap}
+          sharedPlateMarkers={sharedPlateMarkers}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
           loading={loadingDateData}
