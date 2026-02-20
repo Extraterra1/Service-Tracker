@@ -709,17 +709,49 @@ function App() {
         >
           <section className="plate-popup" role="dialog" aria-modal="true" aria-label="Horários da viatura">
             <header className="plate-popup-header">
-              <h3>Viatura {plateInfoPopup.displayPlate ?? plateInfoPopup.plate}</h3>
-              <button type="button" className="ghost-btn compact-btn" onClick={() => setPlateInfoPopup(null)}>
-                Fechar
+              <div>
+                <p className="plate-popup-kicker">Movimento da Viatura</p>
+                <h3>{plateInfoPopup.displayPlate ?? plateInfoPopup.plate}</h3>
+              </div>
+              <button type="button" className="plate-popup-close" onClick={() => setPlateInfoPopup(null)} aria-label="Fechar pop-up">
+                ✕
               </button>
             </header>
-            <p className="plate-popup-row">
-              <strong>Entra:</strong> {plateInfoPopup.returnTimes?.length > 0 ? plateInfoPopup.returnTimes.join(' • ') : 'Sem hora definida'}
-            </p>
-            <p className="plate-popup-row">
-              <strong>Sai:</strong> {plateInfoPopup.pickupTimes?.length > 0 ? plateInfoPopup.pickupTimes.join(' • ') : 'Sem hora definida'}
-            </p>
+
+            <p className="plate-popup-hint">Horários desta viatura no dia selecionado.</p>
+
+            <div className="plate-popup-grid">
+              <article className="plate-popup-card plate-popup-card-return">
+                <p className="plate-popup-card-label">RECOLHA</p>
+                <p className="plate-popup-card-sub">Entra</p>
+                <div className="plate-popup-times">
+                  {plateInfoPopup.returnTimes?.length > 0 ? (
+                    plateInfoPopup.returnTimes.map((time) => (
+                      <span key={`out-${plateInfoPopup.plate}-${time}`} className="plate-popup-time-chip">
+                        {time}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="plate-popup-empty">Sem hora definida</span>
+                  )}
+                </div>
+              </article>
+              <article className="plate-popup-card plate-popup-card-delivery">
+                <p className="plate-popup-card-label">ENTREGA</p>
+                <p className="plate-popup-card-sub">Sai</p>
+                <div className="plate-popup-times">
+                  {plateInfoPopup.pickupTimes?.length > 0 ? (
+                    plateInfoPopup.pickupTimes.map((time) => (
+                      <span key={`in-${plateInfoPopup.plate}-${time}`} className="plate-popup-time-chip">
+                        {time}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="plate-popup-empty">Sem hora definida</span>
+                  )}
+                </div>
+              </article>
+            </div>
           </section>
         </div>
       ) : null}
