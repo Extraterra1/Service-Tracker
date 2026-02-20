@@ -117,9 +117,28 @@ function App() {
   const applyingCloudPinRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const autoRefreshAttemptRef = useRef(new Set());
+  const menuPanelRef = useRef(null);
 
   useEffect(() => {
     void configureAuthPersistence();
+  }, []);
+
+  useEffect(() => {
+    const handleOutsidePointerDown = (event) => {
+      const menuElement = menuPanelRef.current;
+      if (!menuElement?.open) {
+        return;
+      }
+
+      if (event.target instanceof Node && !menuElement.contains(event.target)) {
+        menuElement.removeAttribute('open');
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointerDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -611,7 +630,7 @@ function App() {
           <h1>Lista de Serviço</h1>
         </div>
 
-        <details className="menu-panel">
+        <details ref={menuPanelRef} className="menu-panel">
           <summary className="ghost-btn menu-summary">Menu</summary>
           <div className="menu-content">
             <p className="menu-title">Operação diária</p>
