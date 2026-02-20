@@ -21,7 +21,7 @@ function toMillis(timestampLike) {
   return Number.isNaN(value) ? null : value
 }
 
-function ServicePane({ title, items, statusMap, sharedPlateMarkers, onToggleDone, disabled, loading = false }) {
+function ServicePane({ title, items, statusMap, sharedPlateMarkers, onSharedPlateTap, onToggleDone, disabled, loading = false }) {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
   useEffect(() => {
@@ -92,6 +92,7 @@ function ServicePane({ title, items, statusMap, sharedPlateMarkers, onToggleDone
                   item={item}
                   status={statusMap[item.itemId]}
                   sharedPlateMarkers={sharedPlateMarkers}
+                  onSharedPlateTap={onSharedPlateTap}
                   onToggleDone={onToggleDone}
                   disabled={disabled}
                 />
@@ -111,6 +112,7 @@ function ServicePane({ title, items, statusMap, sharedPlateMarkers, onToggleDone
               item={item}
               status={statusMap[item.itemId]}
               sharedPlateMarkers={sharedPlateMarkers}
+              onSharedPlateTap={onSharedPlateTap}
               onToggleDone={onToggleDone}
               disabled={disabled}
             />

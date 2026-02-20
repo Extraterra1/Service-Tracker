@@ -27,6 +27,22 @@ function getPlateColor(index) {
   return `hsl(${hue} 78% 42%)`;
 }
 
+function uniqueTimes(items) {
+  const seen = new Set();
+  const output = [];
+
+  items.forEach((value) => {
+    const normalized = String(value ?? '').trim();
+    if (!normalized || seen.has(normalized)) {
+      return;
+    }
+    seen.add(normalized);
+    output.push(normalized);
+  });
+
+  return output;
+}
+
 function getStoredPin() {
   const durablePin = localStorage.getItem(PIN_STORAGE_KEY);
   if (durablePin) {
@@ -78,7 +94,7 @@ function getMenuItemLabel(item) {
 function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [pin, setPin] = useState(getStoredPin);
-  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light');
+  const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
   const [pinSyncState, setPinSyncState] = useState('idle');
   const [user, setUser] = useState(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -90,6 +106,7 @@ function App() {
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
+  const [plateInfoPopup, setPlateInfoPopup] = useState(null);
   const [lastLoadAt, setLastLoadAt] = useState(null);
   const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -228,24 +245,45 @@ function App() {
   const canCallApi = canReadServiceData && Boolean(pin);
   const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
   const sharedPlateMarkers = useMemo(() => {
-    const pickupPlates = new Set(
-      serviceData.pickups
-        .map((item) => normalizePlate(item.plate))
-        .filter(Boolean),
-    );
-    const returnPlates = new Set(
-      serviceData.returns
-        .map((item) => normalizePlate(item.plate))
-        .filter(Boolean),
-    );
+    const pickupByPlate = new Map();
+    const returnByPlate = new Map();
+    const plateLabelByKey = new Map();
 
-    const shared = [...pickupPlates]
-      .filter((plate) => returnPlates.has(plate))
-      .sort((a, b) => a.localeCompare(b));
+    serviceData.pickups.forEach((item) => {
+      const plate = normalizePlate(item.plate);
+      if (!plate) {
+        return;
+      }
+      if (!plateLabelByKey.has(plate) && item.plate) {
+        plateLabelByKey.set(plate, String(item.plate).trim().toUpperCase());
+      }
+      const nextTimes = pickupByPlate.get(plate) ?? [];
+      nextTimes.push(item.time);
+      pickupByPlate.set(plate, nextTimes);
+    });
+
+    serviceData.returns.forEach((item) => {
+      const plate = normalizePlate(item.plate);
+      if (!plate) {
+        return;
+      }
+      if (!plateLabelByKey.has(plate) && item.plate) {
+        plateLabelByKey.set(plate, String(item.plate).trim().toUpperCase());
+      }
+      const nextTimes = returnByPlate.get(plate) ?? [];
+      nextTimes.push(item.time);
+      returnByPlate.set(plate, nextTimes);
+    });
+
+    const shared = [...pickupByPlate.keys()].filter((plate) => returnByPlate.has(plate)).sort((a, b) => a.localeCompare(b));
 
     return shared.reduce((acc, plate, index) => {
       acc[plate] = {
+        plate,
+        displayPlate: plateLabelByKey.get(plate) ?? plate,
         color: getPlateColor(index),
+        pickupTimes: uniqueTimes(pickupByPlate.get(plate) ?? []),
+        returnTimes: uniqueTimes(returnByPlate.get(plate) ?? [])
       };
       return acc;
     }, {});
@@ -301,7 +339,7 @@ function App() {
         await refreshServiceDayViaApi({
           date,
           pin,
-          forceRefresh,
+          forceRefresh
         });
 
         if (source === 'manual') {
@@ -368,7 +406,7 @@ function App() {
           date: selectedDate,
           forceRefresh: false,
           source: 'auto',
-          hasRenderableData: true,
+          hasRenderableData: true
         });
       },
       () => {
@@ -389,7 +427,7 @@ function App() {
           date: selectedDate,
           forceRefresh: false,
           source: 'auto',
-          hasRenderableData: false,
+          hasRenderableData: false
         }).then((success) => {
           if (!isActive) {
             return;
@@ -445,6 +483,17 @@ function App() {
     }
   }, [manualCompletedCandidates, manualCompletedItemId]);
 
+  useEffect(() => {
+    if (!plateInfoPopup) {
+      return;
+    }
+
+    const plateKey = normalizePlate(plateInfoPopup.plate);
+    if (!plateKey || !sharedPlateMarkers[plateKey]) {
+      setPlateInfoPopup(null);
+    }
+  }, [plateInfoPopup, sharedPlateMarkers]);
+
   const handleSignIn = async () => {
     setErrorMessage('');
     try {
@@ -476,7 +525,7 @@ function App() {
         date: selectedDate,
         item,
         done,
-        user,
+        user
       });
     } catch (error) {
       setErrorMessage(error.message);
@@ -504,7 +553,7 @@ function App() {
         item,
         done: true,
         user,
-        forceCompletedNow: true,
+        forceCompletedNow: true
       });
     } catch (error) {
       setErrorMessage(error.message);
@@ -518,9 +567,16 @@ function App() {
       date: selectedDate,
       forceRefresh: true,
       source: 'manual',
-      hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0,
+      hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0
     });
   }, [refreshServiceDataFromApi, selectedDate, serviceData.pickups.length, serviceData.returns.length]);
+
+  const handleShowPlateInfo = useCallback((marker) => {
+    if (!marker) {
+      return;
+    }
+    setPlateInfoPopup(marker);
+  }, []);
 
   const statusLine = useMemo(() => {
     if (loadingServices && refreshSource === 'manual') {
@@ -541,7 +597,7 @@ function App() {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     }).format(cachedDate);
 
     return `Cache Firestore: ${formatted}`;
@@ -561,12 +617,7 @@ function App() {
             <p className="menu-title">Operação diária</p>
             <p className="subtle-text">Conta, PIN e estado de sincronização.</p>
             <label className="theme-toggle" htmlFor="theme-switch">
-              <input
-                id="theme-switch"
-                type="checkbox"
-                checked={theme === 'dark'}
-                onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')}
-              />
+              <input id="theme-switch" type="checkbox" checked={theme === 'dark'} onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')} />
               <span>Modo escuro</span>
             </label>
 
@@ -615,12 +666,7 @@ function App() {
         </details>
       </header>
 
-      <DateNavigator
-        date={selectedDate}
-        onDateChange={setSelectedDate}
-        onManualRefresh={handleManualRefresh}
-        loading={loadingServices}
-      />
+      <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={handleManualRefresh} loading={loadingServices} />
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
 
@@ -634,6 +680,7 @@ function App() {
           items={serviceData.pickups}
           statusMap={statusMap}
           sharedPlateMarkers={sharedPlateMarkers}
+          onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
           loading={loadingDateData}
@@ -644,11 +691,38 @@ function App() {
           items={serviceData.returns}
           statusMap={statusMap}
           sharedPlateMarkers={sharedPlateMarkers}
+          onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={handleToggleDone}
           disabled={accessState !== 'allowed' || updatingItemId !== ''}
           loading={loadingDateData}
         />
       </main>
+
+      {plateInfoPopup ? (
+        <div
+          className="plate-popup-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setPlateInfoPopup(null);
+            }
+          }}
+        >
+          <section className="plate-popup" role="dialog" aria-modal="true" aria-label="Horários da viatura">
+            <header className="plate-popup-header">
+              <h3>Viatura {plateInfoPopup.displayPlate ?? plateInfoPopup.plate}</h3>
+              <button type="button" className="ghost-btn compact-btn" onClick={() => setPlateInfoPopup(null)}>
+                Fechar
+              </button>
+            </header>
+            <p className="plate-popup-row">
+              <strong>Entra:</strong> {plateInfoPopup.returnTimes?.length > 0 ? plateInfoPopup.returnTimes.join(' • ') : 'Sem hora definida'}
+            </p>
+            <p className="plate-popup-row">
+              <strong>Sai:</strong> {plateInfoPopup.pickupTimes?.length > 0 ? plateInfoPopup.pickupTimes.join(' • ') : 'Sem hora definida'}
+            </p>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

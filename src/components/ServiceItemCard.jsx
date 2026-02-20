@@ -8,7 +8,7 @@ function normalizePlate(value) {
     .replace(/[^A-Z0-9]/g, '');
 }
 
-function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onToggleDone, disabled }) {
+function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateTap, onToggleDone, disabled }) {
   const done = status?.done === true;
   const updatedAt = formatAuditTimestamp(status?.updatedAt);
   const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
@@ -51,14 +51,16 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onToggleDone, 
             <span className="item-plate-wrap">
               <span>- {item.plate}</span>
               {sharedPlateMarker ? (
-                <span
-                  className="item-shared-plate-tag"
+                <button
+                  type="button"
+                  className="item-shared-plate-tag item-shared-plate-button"
                   style={{ '--shared-plate-color': sharedPlateMarker.color }}
                   title="Viatura com entrega e recolha nesta data"
                   aria-label="Viatura com entrega e recolha nesta data"
+                  onClick={() => onSharedPlateTap?.(sharedPlateMarker)}
                 >
                   <Repeat2 className="item-shared-plate-icon" aria-hidden="true" />
-                </span>
+                </button>
               ) : null}
             </span>
           ) : null}
