@@ -257,6 +257,8 @@ h1 {
 
 .toolbar {
   padding: 0.35rem 0.45rem;
+  display: flex;
+  justify-content: center;
 }
 
 .toolbar-line {
@@ -401,6 +403,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.42rem;
+  min-width: 0;
 }
 
 .plate-popup-card-label {
@@ -840,7 +843,8 @@ h1 {
   }
 
   .plate-popup-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.32rem;
   }
 
   .item-vehicle-row {
