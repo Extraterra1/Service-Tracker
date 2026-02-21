@@ -5,8 +5,8 @@ import {
   signInWithPopup,
   signOut,
 } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { auth, db, googleProvider, hasFirebaseConfig } from './firebase'
+import { auth, googleProvider } from './firebaseAuth'
+import { hasFirebaseConfig } from './firebaseApp'
 
 export async function configureAuthPersistence() {
   if (!auth) {
@@ -40,22 +40,4 @@ export async function signOutUser() {
   }
 
   await signOut(auth)
-}
-
-export async function checkAllowlist(uid) {
-  if (!db || !uid) {
-    return { allowed: false, reason: 'missing' }
-  }
-
-  const allowlistDoc = await getDoc(doc(db, 'staff_allowlist', uid))
-  if (!allowlistDoc.exists()) {
-    return { allowed: false, reason: 'not_found' }
-  }
-
-  const payload = allowlistDoc.data()
-  if (payload.active !== true) {
-    return { allowed: false, reason: 'inactive' }
-  }
-
-  return { allowed: true, reason: 'ok', profile: payload }
 }

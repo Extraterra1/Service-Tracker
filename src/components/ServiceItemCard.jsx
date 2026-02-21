@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { formatAuditTimestamp } from '../lib/date';
 import { Plane, Repeat2 } from 'lucide-react';
 
@@ -6,6 +7,29 @@ function normalizePlate(value) {
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '');
+}
+
+function toTimestampMs(timestampLike) {
+  if (!timestampLike) {
+    return 0;
+  }
+
+  if (typeof timestampLike.toDate === 'function') {
+    return timestampLike.toDate().getTime();
+  }
+
+  if (typeof timestampLike.seconds === 'number') {
+    return timestampLike.seconds * 1000;
+  }
+
+  const parsed = new Date(timestampLike);
+  const value = parsed.getTime();
+  return Number.isNaN(value) ? 0 : value;
+}
+
+function getSharedMarkerColor(markers, plateValue) {
+  const plateKey = normalizePlate(plateValue);
+  return plateKey ? markers?.[plateKey]?.color ?? '' : '';
 }
 
 function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateTap, onToggleDone, disabled }) {
@@ -77,4 +101,55 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateT
   );
 }
 
-export default ServiceItemCard;
+function areSameItemProps(prevProps, nextProps) {
+  const prevItem = prevProps.item;
+  const nextItem = nextProps.item;
+  const prevStatus = prevProps.status;
+  const nextStatus = nextProps.status;
+
+  if (prevProps.disabled !== nextProps.disabled) {
+    return false;
+  }
+
+  if (prevProps.onToggleDone !== nextProps.onToggleDone || prevProps.onSharedPlateTap !== nextProps.onSharedPlateTap) {
+    return false;
+  }
+
+  if (
+    prevItem.itemId !== nextItem.itemId ||
+    prevItem.time !== nextItem.time ||
+    prevItem.serviceType !== nextItem.serviceType ||
+    prevItem.name !== nextItem.name ||
+    prevItem.id !== nextItem.id ||
+    prevItem.phone !== nextItem.phone ||
+    prevItem.flightNumber !== nextItem.flightNumber ||
+    prevItem.car !== nextItem.car ||
+    prevItem.plate !== nextItem.plate ||
+    prevItem.location !== nextItem.location ||
+    prevItem.notes !== nextItem.notes
+  ) {
+    return false;
+  }
+
+  const prevExtras = Array.isArray(prevItem.extras) ? prevItem.extras.join('|') : '';
+  const nextExtras = Array.isArray(nextItem.extras) ? nextItem.extras.join('|') : '';
+  if (prevExtras !== nextExtras) {
+    return false;
+  }
+
+  if (
+    (prevStatus?.done ?? false) !== (nextStatus?.done ?? false) ||
+    (prevStatus?.updatedByName ?? '') !== (nextStatus?.updatedByName ?? '') ||
+    (prevStatus?.updatedByEmail ?? '') !== (nextStatus?.updatedByEmail ?? '') ||
+    toTimestampMs(prevStatus?.updatedAt) !== toTimestampMs(nextStatus?.updatedAt)
+  ) {
+    return false;
+  }
+
+  return (
+    getSharedMarkerColor(prevProps.sharedPlateMarkers, prevItem.plate) ===
+    getSharedMarkerColor(nextProps.sharedPlateMarkers, nextItem.plate)
+  );
+}
+
+export default memo(ServiceItemCard, areSameItemProps);

@@ -1,5 +1,5 @@
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
-import { db } from './firebase'
+import { db } from './firebaseDb'
 
 function getUserSettingsDoc(uid) {
   return doc(db, 'user_settings', uid)

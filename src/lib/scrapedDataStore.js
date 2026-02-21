@@ -1,6 +1,6 @@
 import { doc, onSnapshot } from 'firebase/firestore'
 import { normalizeServiceDay } from './api'
-import { db } from './firebase'
+import { db } from './firebaseDb'
 
 function toDateValue(timestampLike) {
   if (!timestampLike) {

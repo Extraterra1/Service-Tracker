@@ -3,6 +3,33 @@ import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/lucide-react')) {
+            return 'ui-icons'
+          }
+
+          if (
+            id.includes('node_modules/firebase/auth') ||
+            id.includes('node_modules/@firebase/auth')
+          ) {
+            return 'firebase-auth'
+          }
+
+          if (
+            id.includes('node_modules/firebase/firestore') ||
+            id.includes('node_modules/@firebase/firestore')
+          ) {
+            return 'firebase-firestore'
+          }
+
+          return undefined
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

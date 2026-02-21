@@ -8,7 +8,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { db } from './firebaseDb'
 
 // Add a safety margin so the UI moves items immediately even if the local clock snapshot is up to ~1 minute stale.
 const FORCE_COMPLETED_OFFSET_MS = 65 * 60 * 1000
@@ -33,7 +33,7 @@ function getUpdaterFirstName(user) {
 
 export function subscribeToDateStatus(date, callback, errorCallback) {
   if (!db || !date) {
-    callback({})
+    callback([])
     return () => {}
   }
 
@@ -42,19 +42,20 @@ export function subscribeToDateStatus(date, callback, errorCallback) {
   return onSnapshot(
     q,
     (snapshot) => {
-      const map = {}
-      snapshot.forEach((entry) => {
-        const value = entry.data()
-        if (value.itemId) {
-          map[value.itemId] = {
+      const changes = snapshot.docChanges().map((entry) => {
+        const value = entry.doc.data()
+        return {
+          changeType: entry.type,
+          itemId: value.itemId ?? '',
+          status: {
             done: value.done === true,
             updatedAt: value.updatedAt ?? null,
             updatedByName: value.updatedByName ?? '',
             updatedByEmail: value.updatedByEmail ?? '',
-          }
+          },
         }
       })
-      callback(map)
+      callback(changes)
     },
     (error) => {
       if (typeof errorCallback === 'function') {

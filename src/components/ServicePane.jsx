@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
 import ServiceItemCard from './ServiceItemCard'
 
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000
@@ -25,6 +25,7 @@ function ServicePane({
   title,
   items,
   statusMap,
+  nowMs = 0,
   sharedPlateMarkers,
   onSharedPlateTap,
   onToggleDone,
@@ -33,15 +34,7 @@ function ServicePane({
   canShowEmptyState = true,
   lockedMessage = '',
 }) {
-  const [nowMs, setNowMs] = useState(() => Date.now())
-
-  useEffect(() => {
-    const timerId = setInterval(() => {
-      setNowMs(Date.now())
-    }, 60 * 1000)
-
-    return () => clearInterval(timerId)
-  }, [])
+  const resolvedNowMs = Number.isFinite(nowMs) ? nowMs : 0
 
   const { activeItems, completedItems } = useMemo(() => {
     const active = []
@@ -57,7 +50,7 @@ function ServicePane({
       }
 
       const updatedAtMs = toMillis(status?.updatedAt)
-      const isOlderThanOneHour = updatedAtMs !== null && nowMs - updatedAtMs > COMPLETED_HIDE_AFTER_MS
+      const isOlderThanOneHour = updatedAtMs !== null && resolvedNowMs - updatedAtMs > COMPLETED_HIDE_AFTER_MS
 
       if (isOlderThanOneHour) {
         completed.push(item)
@@ -67,7 +60,7 @@ function ServicePane({
     })
 
     return { activeItems: active, completedItems: completed }
-  }, [items, nowMs, statusMap])
+  }, [items, resolvedNowMs, statusMap])
 
   const hasAnyItems = activeItems.length > 0 || completedItems.length > 0
   const showLockedState = !loading && Boolean(lockedMessage)
@@ -141,4 +134,4 @@ function ServicePane({
   )
 }
 
-export default ServicePane
+export default memo(ServicePane)

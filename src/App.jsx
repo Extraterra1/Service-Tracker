@@ -1,46 +1,46 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import AuthPanel from './components/AuthPanel';
 import DateNavigator from './components/DateNavigator';
-import ServicePane from './components/ServicePane';
-import { checkAllowlist, configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges } from './lib/auth';
-import { refreshServiceDayViaApi } from './lib/api';
+import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges } from './lib/auth';
 import { getTodayDate } from './lib/date';
-import { hasFirebaseConfig } from './lib/firebase';
-import { saveUserPin, subscribeToUserPin } from './lib/pinStore';
-import { isScrapedDocStale, subscribeToScrapedDay } from './lib/scrapedDataStore';
-import { setItemDoneState, subscribeToDateStatus } from './lib/statusStore';
+import { hasFirebaseConfig } from './lib/firebaseApp';
+
+const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 
-function normalizePlate(value) {
-  return String(value ?? '')
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '');
+let accessModulePromise;
+let pinStoreModulePromise;
+let apiModulePromise;
+let scrapedDataModulePromise;
+let statusStoreModulePromise;
+
+function loadAccessModule() {
+  accessModulePromise ??= import('./lib/access');
+  return accessModulePromise;
 }
 
-function getPlateColor(index) {
-  const hue = Math.round((index * 137.508) % 360);
-  return `hsl(${hue} 78% 42%)`;
+function loadPinStoreModule() {
+  pinStoreModulePromise ??= import('./lib/pinStore');
+  return pinStoreModulePromise;
 }
 
-function uniqueTimes(items) {
-  const seen = new Set();
-  const output = [];
+function loadApiModule() {
+  apiModulePromise ??= import('./lib/api');
+  return apiModulePromise;
+}
 
-  items.forEach((value) => {
-    const normalized = String(value ?? '').trim();
-    if (!normalized || seen.has(normalized)) {
-      return;
-    }
-    seen.add(normalized);
-    output.push(normalized);
-  });
+function loadScrapedDataModule() {
+  scrapedDataModulePromise ??= import('./lib/scrapedDataStore');
+  return scrapedDataModulePromise;
+}
 
-  return output;
+function loadStatusStoreModule() {
+  statusStoreModulePromise ??= import('./lib/statusStore');
+  return statusStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -80,6 +80,11 @@ function toDateValue(timestampLike) {
   return parsed;
 }
 
+function toTimestampMs(timestampLike) {
+  const parsed = toDateValue(timestampLike);
+  return parsed ? parsed.getTime() : 0;
+}
+
 function getCacheVersionKey(cachedAt) {
   const cacheDate = toDateValue(cachedAt);
   return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
@@ -89,6 +94,122 @@ function getMenuItemLabel(item) {
   const serviceLabel = item.serviceType === 'return' ? 'Recolha' : 'Entrega';
   const itemName = item.name || item.id || item.itemId;
   return `${item.time || '--:--'} - ${serviceLabel} - ${itemName}`;
+}
+
+function normalizeStatusEntry(status) {
+  return {
+    done: status?.done === true,
+    updatedAt: status?.updatedAt ?? null,
+    updatedByName: status?.updatedByName ?? '',
+    updatedByEmail: status?.updatedByEmail ?? ''
+  };
+}
+
+function isSameStatusEntry(prevStatus, nextStatus) {
+  return (
+    (prevStatus?.done ?? false) === (nextStatus?.done ?? false) &&
+    (prevStatus?.updatedByName ?? '') === (nextStatus?.updatedByName ?? '') &&
+    (prevStatus?.updatedByEmail ?? '') === (nextStatus?.updatedByEmail ?? '') &&
+    toTimestampMs(prevStatus?.updatedAt) === toTimestampMs(nextStatus?.updatedAt)
+  );
+}
+
+function applyStatusChanges(previousMap, changes) {
+  if (!Array.isArray(changes) || changes.length === 0) {
+    return previousMap;
+  }
+
+  let nextMap = previousMap;
+  let hasChanges = false;
+
+  changes.forEach((change) => {
+    const baseMap = hasChanges ? nextMap : previousMap;
+    const itemId = String(change?.itemId ?? '').trim();
+    if (!itemId) {
+      return;
+    }
+
+    const isRemoved = change.changeType === 'removed';
+    if (isRemoved) {
+      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
+        return;
+      }
+
+      if (!hasChanges) {
+        nextMap = { ...previousMap };
+        hasChanges = true;
+      }
+
+      delete nextMap[itemId];
+      return;
+    }
+
+    const normalizedStatus = normalizeStatusEntry(change.status);
+    const currentStatus = baseMap[itemId];
+
+    if (isSameStatusEntry(currentStatus, normalizedStatus)) {
+      return;
+    }
+
+    if (!hasChanges) {
+      nextMap = { ...previousMap };
+      hasChanges = true;
+    }
+
+    nextMap[itemId] = normalizedStatus;
+  });
+
+  return hasChanges ? nextMap : previousMap;
+}
+
+function ServiceWorkspaceLoadingFallback() {
+  return (
+    <main className="service-grid" aria-busy="true">
+      {["Entregas", "Recolhas"].map((title) => (
+        <section key={`fallback-${title}`} className="service-pane" aria-label={title}>
+          <header className="pane-header">
+            <h2>{title}</h2>
+            <span>...</span>
+          </header>
+
+          <div className="pane-list">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <article key={`${title}-skeleton-${index}`} className="service-item service-item-skeleton" aria-hidden="true">
+                <div className="skeleton-line skeleton-line-time" />
+                <div className="skeleton-line skeleton-line-name" />
+                <div className="skeleton-line skeleton-line-sub" />
+                <div className="skeleton-line skeleton-line-sub" />
+                <div className="skeleton-line skeleton-line-footer" />
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
+    </main>
+  );
+}
+
+function ServiceWorkspaceLocked({ lockedMessage }) {
+  const message = lockedMessage || 'Inicia sessão para ver os serviços desta lista.';
+
+  return (
+    <main className="service-grid" aria-label="Service lists">
+      {["Entregas", "Recolhas"].map((title) => (
+        <section key={`locked-${title}`} className="service-pane" aria-label={title}>
+          <header className="pane-header">
+            <h2>{title}</h2>
+            <span>--</span>
+          </header>
+
+          <div className="pane-list pane-list-locked">
+            <div className="pane-locked-state">
+              <p className="empty-state empty-state-locked">{message}</p>
+            </div>
+          </div>
+        </section>
+      ))}
+    </main>
+  );
 }
 
 function App() {
@@ -107,7 +228,6 @@ function App() {
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
-  const [plateInfoPopup, setPlateInfoPopup] = useState(null);
   const [lastLoadAt, setLastLoadAt] = useState(null);
   const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -119,6 +239,7 @@ function App() {
   const refreshInFlightRef = useRef(false);
   const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
+  const allowlistCheckTokenRef = useRef(0);
 
   useEffect(() => {
     void configureAuthPersistence();
@@ -163,6 +284,9 @@ function App() {
     cloudPinRef.current = '';
     hasLoadedCloudPinRef.current = false;
 
+    let isActive = true;
+    let unsubscribe = () => {};
+
     if (accessState !== 'allowed' || !user?.uid) {
       setPinSyncState('idle');
       return () => {};
@@ -170,33 +294,62 @@ function App() {
 
     setPinSyncState('syncing');
 
-    return subscribeToUserPin(
-      user.uid,
-      (cloudPin) => {
-        const normalizedCloudPin = String(cloudPin ?? '')
-          .replace(/[^0-9]/g, '')
-          .slice(0, 4);
-
-        hasLoadedCloudPinRef.current = true;
-        cloudPinRef.current = normalizedCloudPin;
-
-        if (normalizedCloudPin && normalizedCloudPin !== latestPinRef.current) {
-          applyingCloudPinRef.current = true;
-          setPin(normalizedCloudPin);
-        } else if (!normalizedCloudPin && latestPinRef.current) {
-          void saveUserPin(user.uid, latestPinRef.current).catch((error) => {
-            setPinSyncState('error');
-            setErrorMessage(error.message);
-          });
+    void loadPinStoreModule()
+      .then(({ saveUserPin, subscribeToUserPin }) => {
+        if (!isActive) {
+          return;
         }
 
-        setPinSyncState('synced');
-      },
-      (error) => {
+        unsubscribe = subscribeToUserPin(
+          user.uid,
+          (cloudPin) => {
+            if (!isActive) {
+              return;
+            }
+
+            const normalizedCloudPin = String(cloudPin ?? '')
+              .replace(/[^0-9]/g, '')
+              .slice(0, 4);
+
+            hasLoadedCloudPinRef.current = true;
+            cloudPinRef.current = normalizedCloudPin;
+
+            if (normalizedCloudPin && normalizedCloudPin !== latestPinRef.current) {
+              applyingCloudPinRef.current = true;
+              setPin(normalizedCloudPin);
+            } else if (!normalizedCloudPin && latestPinRef.current) {
+              void saveUserPin(user.uid, latestPinRef.current).catch((error) => {
+                if (!isActive) {
+                  return;
+                }
+                setPinSyncState('error');
+                setErrorMessage(error.message);
+              });
+            }
+
+            setPinSyncState('synced');
+          },
+          (error) => {
+            if (!isActive) {
+              return;
+            }
+            setPinSyncState('error');
+            setErrorMessage(error.message);
+          }
+        );
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
         setPinSyncState('error');
         setErrorMessage(error.message);
-      }
-    );
+      });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, [accessState, user?.uid]);
 
   useEffect(() => {
@@ -217,16 +370,29 @@ function App() {
       return;
     }
 
+    let isActive = true;
+
     setPinSyncState('syncing');
-    void saveUserPin(user.uid, pin)
+    void loadPinStoreModule()
+      .then(({ saveUserPin }) => saveUserPin(user.uid, pin))
       .then(() => {
+        if (!isActive) {
+          return;
+        }
         cloudPinRef.current = pin;
         setPinSyncState('synced');
       })
       .catch((error) => {
+        if (!isActive) {
+          return;
+        }
         setPinSyncState('error');
         setErrorMessage(error.message);
       });
+
+    return () => {
+      isActive = false;
+    };
   }, [accessState, pin, user?.uid]);
 
   useEffect(() => {
@@ -236,7 +402,10 @@ function App() {
       return () => {};
     }
 
-    const unsubscribe = subscribeToAuthChanges(async (currentUser) => {
+    const unsubscribe = subscribeToAuthChanges((currentUser) => {
+      const checkToken = allowlistCheckTokenRef.current + 1;
+      allowlistCheckTokenRef.current = checkToken;
+
       setErrorMessage('');
       setUser(currentUser);
 
@@ -247,69 +416,59 @@ function App() {
       }
 
       setCheckingAccess(true);
-      try {
-        const accessResult = await checkAllowlist(currentUser.uid);
-        setAccessState(accessResult.allowed ? 'allowed' : 'denied');
-      } catch (error) {
-        setAccessState('denied');
-        setErrorMessage(error.message);
-      } finally {
-        setCheckingAccess(false);
-      }
+      void loadAccessModule()
+        .then(({ checkAllowlist }) => checkAllowlist(currentUser.uid))
+        .then((accessResult) => {
+          if (allowlistCheckTokenRef.current !== checkToken) {
+            return;
+          }
+          setAccessState(accessResult.allowed ? 'allowed' : 'denied');
+        })
+        .catch((error) => {
+          if (allowlistCheckTokenRef.current !== checkToken) {
+            return;
+          }
+          setAccessState('denied');
+          setErrorMessage(error.message);
+        })
+        .finally(() => {
+          if (allowlistCheckTokenRef.current === checkToken) {
+            setCheckingAccess(false);
+          }
+        });
     });
 
-    return unsubscribe;
+    return () => {
+      allowlistCheckTokenRef.current += 1;
+      unsubscribe();
+    };
   }, []);
 
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
-  const loginRequiredMessage = accessState === 'signed_out' ? 'Inicia sessão para ver os serviços desta lista.' : '';
+  const lockedListMessage = useMemo(() => {
+    if (checkingAccess) {
+      return '';
+    }
+
+    if (accessState === 'signed_out') {
+      return 'Inicia sessão para ver os serviços desta lista.';
+    }
+
+    if (accessState === 'denied') {
+      return 'Conta sem acesso. Pede ativação na allowlist.';
+    }
+
+    if (accessState === 'firebase_missing') {
+      return 'Configuração Firebase em falta.';
+    }
+
+    return '';
+  }, [accessState, checkingAccess]);
+
   const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
-  const sharedPlateMarkers = useMemo(() => {
-    const pickupByPlate = new Map();
-    const returnByPlate = new Map();
-    const plateLabelByKey = new Map();
 
-    serviceData.pickups.forEach((item) => {
-      const plate = normalizePlate(item.plate);
-      if (!plate) {
-        return;
-      }
-      if (!plateLabelByKey.has(plate) && item.plate) {
-        plateLabelByKey.set(plate, String(item.plate).trim().toUpperCase());
-      }
-      const nextTimes = pickupByPlate.get(plate) ?? [];
-      nextTimes.push(item.time);
-      pickupByPlate.set(plate, nextTimes);
-    });
-
-    serviceData.returns.forEach((item) => {
-      const plate = normalizePlate(item.plate);
-      if (!plate) {
-        return;
-      }
-      if (!plateLabelByKey.has(plate) && item.plate) {
-        plateLabelByKey.set(plate, String(item.plate).trim().toUpperCase());
-      }
-      const nextTimes = returnByPlate.get(plate) ?? [];
-      nextTimes.push(item.time);
-      returnByPlate.set(plate, nextTimes);
-    });
-
-    const shared = [...pickupByPlate.keys()].filter((plate) => returnByPlate.has(plate)).sort((a, b) => a.localeCompare(b));
-
-    return shared.reduce((acc, plate, index) => {
-      acc[plate] = {
-        plate,
-        displayPlate: plateLabelByKey.get(plate) ?? plate,
-        color: getPlateColor(index),
-        pickupTimes: uniqueTimes(pickupByPlate.get(plate) ?? []),
-        returnTimes: uniqueTimes(returnByPlate.get(plate) ?? [])
-      };
-      return acc;
-    }, {});
-  }, [serviceData.pickups, serviceData.returns]);
   const manualCompletedCandidates = useMemo(() => {
     const nowMs = Date.now();
     return allServiceItems.filter((item) => {
@@ -358,6 +517,7 @@ function App() {
       }
 
       try {
+        const { refreshServiceDayViaApi } = await loadApiModule();
         await refreshServiceDayViaApi({
           date,
           pin,
@@ -400,78 +560,95 @@ function App() {
     }
 
     let isActive = true;
+    let unsubscribe = () => {};
+
     setLoadingDateData(true);
     setHasDayResponse(false);
 
-    const unsubscribe = subscribeToScrapedDay(
-      selectedDate,
-      (payload) => {
+    void loadScrapedDataModule()
+      .then(({ isScrapedDocStale, subscribeToScrapedDay }) => {
         if (!isActive) {
           return;
         }
 
-        setServiceData({ pickups: payload.pickups, returns: payload.returns });
-        setLastLoadAt(payload.cachedAt ?? null);
-        setHasDayResponse(true);
-        setLoadingDateData(false);
+        unsubscribe = subscribeToScrapedDay(
+          selectedDate,
+          (payload) => {
+            if (!isActive) {
+              return;
+            }
 
-        const isStale = isScrapedDocStale(payload.cachedAt);
-        if (!isStale) {
-          setStaleWarning('');
-          return;
-        }
+            setServiceData({ pickups: payload.pickups, returns: payload.returns });
+            setLastLoadAt(payload.cachedAt ?? null);
+            setHasDayResponse(true);
+            setLoadingDateData(false);
 
-        const staleKey = `${selectedDate}:${getCacheVersionKey(payload.cachedAt)}`;
-        if (autoRefreshAttemptRef.current.has(staleKey)) {
-          return;
-        }
+            const isStale = isScrapedDocStale(payload.cachedAt);
+            if (!isStale) {
+              setStaleWarning('');
+              return;
+            }
 
-        autoRefreshAttemptRef.current.add(staleKey);
-        void refreshServiceDataFromApi({
-          date: selectedDate,
-          forceRefresh: false,
-          source: 'auto',
-          hasRenderableData: true
-        });
-      },
-      () => {
-        if (!isActive) {
-          return;
-        }
+            const staleKey = `${selectedDate}:${getCacheVersionKey(payload.cachedAt)}`;
+            if (autoRefreshAttemptRef.current.has(staleKey)) {
+              return;
+            }
 
-        setServiceData({ pickups: [], returns: [] });
-        setLastLoadAt(null);
+            autoRefreshAttemptRef.current.add(staleKey);
+            void refreshServiceDataFromApi({
+              date: selectedDate,
+              forceRefresh: false,
+              source: 'auto',
+              hasRenderableData: true
+            });
+          },
+          () => {
+            if (!isActive) {
+              return;
+            }
 
-        const missingKey = `${selectedDate}:missing`;
-        if (autoRefreshAttemptRef.current.has(missingKey)) {
-          return;
-        }
+            setServiceData({ pickups: [], returns: [] });
+            setLastLoadAt(null);
 
-        autoRefreshAttemptRef.current.add(missingKey);
-        void refreshServiceDataFromApi({
-          date: selectedDate,
-          forceRefresh: false,
-          source: 'auto',
-          hasRenderableData: false
-        }).then((success) => {
-          if (!isActive) {
-            return;
-          }
+            const missingKey = `${selectedDate}:missing`;
+            if (autoRefreshAttemptRef.current.has(missingKey)) {
+              return;
+            }
 
-          if (!success) {
+            autoRefreshAttemptRef.current.add(missingKey);
+            void refreshServiceDataFromApi({
+              date: selectedDate,
+              forceRefresh: false,
+              source: 'auto',
+              hasRenderableData: false
+            }).then((success) => {
+              if (!isActive) {
+                return;
+              }
+
+              if (!success) {
+                setLoadingDateData(false);
+              }
+            });
+          },
+          (error) => {
+            if (!isActive) {
+              return;
+            }
+
+            setErrorMessage(error.message);
             setLoadingDateData(false);
           }
-        });
-      },
-      (error) => {
+        );
+      })
+      .catch((error) => {
         if (!isActive) {
           return;
         }
 
         setErrorMessage(error.message);
         setLoadingDateData(false);
-      }
-    );
+      });
 
     return () => {
       isActive = false;
@@ -485,15 +662,47 @@ function App() {
       return () => {};
     }
 
-    return subscribeToDateStatus(
-      selectedDate,
-      (nextStatusMap) => {
-        setStatusMap(nextStatusMap);
-      },
-      (error) => {
+    let isActive = true;
+    let unsubscribe = () => {};
+
+    setStatusMap({});
+
+    void loadStatusStoreModule()
+      .then(({ subscribeToDateStatus }) => {
+        if (!isActive) {
+          return;
+        }
+
+        unsubscribe = subscribeToDateStatus(
+          selectedDate,
+          (changes) => {
+            if (!isActive) {
+              return;
+            }
+
+            setStatusMap((previousMap) => applyStatusChanges(previousMap, changes));
+          },
+          (error) => {
+            if (!isActive) {
+              return;
+            }
+
+            setErrorMessage(error.message);
+          }
+        );
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
         setErrorMessage(error.message);
-      }
-    );
+      });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, [canReadServiceData, selectedDate]);
 
   useEffect(() => {
@@ -507,17 +716,6 @@ function App() {
       setManualCompletedItemId(manualCompletedCandidates[0].itemId);
     }
   }, [manualCompletedCandidates, manualCompletedItemId]);
-
-  useEffect(() => {
-    if (!plateInfoPopup) {
-      return;
-    }
-
-    const plateKey = normalizePlate(plateInfoPopup.plate);
-    if (!plateKey || !sharedPlateMarkers[plateKey]) {
-      setPlateInfoPopup(null);
-    }
-  }, [plateInfoPopup, sharedPlateMarkers]);
 
   const handleSignIn = async () => {
     setErrorMessage('');
@@ -539,27 +737,31 @@ function App() {
     setLoadingDateData(false);
   };
 
-  const handleToggleDone = async (item, done) => {
-    if (accessState !== 'allowed') {
-      return;
-    }
+  const handleToggleDone = useCallback(
+    async (item, done) => {
+      if (accessState !== 'allowed') {
+        return;
+      }
 
-    setUpdatingItemId(item.itemId);
-    setErrorMessage('');
+      setUpdatingItemId(item.itemId);
+      setErrorMessage('');
 
-    try {
-      await setItemDoneState({
-        date: selectedDate,
-        item,
-        done,
-        user
-      });
-    } catch (error) {
-      setErrorMessage(error.message);
-    } finally {
-      setUpdatingItemId('');
-    }
-  };
+      try {
+        const { setItemDoneState } = await loadStatusStoreModule();
+        await setItemDoneState({
+          date: selectedDate,
+          item,
+          done,
+          user
+        });
+      } catch (error) {
+        setErrorMessage(error.message);
+      } finally {
+        setUpdatingItemId('');
+      }
+    },
+    [accessState, selectedDate, user]
+  );
 
   const handleAddToCompleted = useCallback(async () => {
     if (accessState !== 'allowed') {
@@ -575,6 +777,7 @@ function App() {
     setErrorMessage('');
 
     try {
+      const { setItemDoneState } = await loadStatusStoreModule();
       await setItemDoneState({
         date: selectedDate,
         item,
@@ -597,13 +800,6 @@ function App() {
       hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0
     });
   }, [refreshServiceDataFromApi, selectedDate, serviceData.pickups.length, serviceData.returns.length]);
-
-  const handleShowPlateInfo = useCallback((marker) => {
-    if (!marker) {
-      return;
-    }
-    setPlateInfoPopup(marker);
-  }, []);
 
   const statusLine = useMemo(() => {
     if (loadingServices && refreshSource === 'manual') {
@@ -701,91 +897,23 @@ function App() {
 
       {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
 
-      <main className="service-grid">
-        <ServicePane
-          title="Entregas"
-          items={serviceData.pickups}
-          statusMap={statusMap}
-          sharedPlateMarkers={sharedPlateMarkers}
-          onSharedPlateTap={handleShowPlateInfo}
-          onToggleDone={handleToggleDone}
-          disabled={accessState !== 'allowed' || updatingItemId !== ''}
-          loading={paneLoading}
-          canShowEmptyState={canReadServiceData && hasDayResponse}
-          lockedMessage={loginRequiredMessage}
-        />
-
-        <ServicePane
-          title="Recolhas"
-          items={serviceData.returns}
-          statusMap={statusMap}
-          sharedPlateMarkers={sharedPlateMarkers}
-          onSharedPlateTap={handleShowPlateInfo}
-          onToggleDone={handleToggleDone}
-          disabled={accessState !== 'allowed' || updatingItemId !== ''}
-          loading={paneLoading}
-          canShowEmptyState={canReadServiceData && hasDayResponse}
-          lockedMessage={loginRequiredMessage}
-        />
-      </main>
-
-      {plateInfoPopup ? (
-        <div
-          className="plate-popup-backdrop"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setPlateInfoPopup(null);
-            }
-          }}
-        >
-          <section className="plate-popup" role="dialog" aria-modal="true" aria-label="Horários da viatura">
-            <header className="plate-popup-header">
-              <div>
-                <p className="plate-popup-kicker">Movimento da Viatura</p>
-                <h3>{plateInfoPopup.displayPlate ?? plateInfoPopup.plate}</h3>
-              </div>
-              <button type="button" className="plate-popup-close" onClick={() => setPlateInfoPopup(null)} aria-label="Fechar pop-up">
-                ✕
-              </button>
-            </header>
-
-            <p className="plate-popup-hint">Horários desta viatura no dia selecionado.</p>
-
-            <div className="plate-popup-grid">
-              <article className="plate-popup-card plate-popup-card-return">
-                <p className="plate-popup-card-label">RECOLHA</p>
-                <p className="plate-popup-card-sub">Entra</p>
-                <div className="plate-popup-times">
-                  {plateInfoPopup.returnTimes?.length > 0 ? (
-                    plateInfoPopup.returnTimes.map((time) => (
-                      <span key={`out-${plateInfoPopup.plate}-${time}`} className="plate-popup-time-chip">
-                        {time}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="plate-popup-empty">Sem hora definida</span>
-                  )}
-                </div>
-              </article>
-              <article className="plate-popup-card plate-popup-card-delivery">
-                <p className="plate-popup-card-label">ENTREGA</p>
-                <p className="plate-popup-card-sub">Sai</p>
-                <div className="plate-popup-times">
-                  {plateInfoPopup.pickupTimes?.length > 0 ? (
-                    plateInfoPopup.pickupTimes.map((time) => (
-                      <span key={`in-${plateInfoPopup.plate}-${time}`} className="plate-popup-time-chip">
-                        {time}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="plate-popup-empty">Sem hora definida</span>
-                  )}
-                </div>
-              </article>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      {paneLoading ? (
+        <ServiceWorkspaceLoadingFallback />
+      ) : canReadServiceData ? (
+        <Suspense fallback={<ServiceWorkspaceLoadingFallback />}>
+          <ServiceWorkspace
+            serviceData={serviceData}
+            statusMap={statusMap}
+            onToggleDone={handleToggleDone}
+            disabled={accessState !== 'allowed' || updatingItemId !== ''}
+            loading={paneLoading}
+            canShowEmptyState={canReadServiceData && hasDayResponse}
+            lockedMessage=""
+          />
+        </Suspense>
+      ) : (
+        <ServiceWorkspaceLocked lockedMessage={lockedListMessage} />
+      )}
     </div>
   );
 }
