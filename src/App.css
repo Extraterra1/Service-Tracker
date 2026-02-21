@@ -512,7 +512,8 @@ h1 {
   min-height: 0;
   max-height: calc(100vh - 154px);
   overscroll-behavior: contain;
-  padding: 0.4rem;
+  padding: 0.4rem 0.4rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 0.34rem;
@@ -829,11 +830,7 @@ h1 {
   font-size: 1rem;
   line-height: 1.25;
   padding: 1rem 1.1rem;
-  background: linear-gradient(
-    165deg,
-    color-mix(in oklab, var(--accent), transparent 88%),
-    color-mix(in oklab, var(--accent), transparent 94%)
-  );
+  background: linear-gradient(165deg, color-mix(in oklab, var(--accent), transparent 88%), color-mix(in oklab, var(--accent), transparent 94%));
   border: 1px dashed color-mix(in oklab, var(--accent), transparent 54%);
   border-radius: 12px;
 }
@@ -850,7 +847,8 @@ h1 {
 
   .pane-list {
     max-height: calc(100vh - 165px);
-    padding: 0.32rem;
+    padding: 0.32rem 0.32rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
     gap: 0.3rem;
   }
 
