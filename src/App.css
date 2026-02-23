@@ -219,12 +219,17 @@ h1 {
 }
 
 .primary-btn {
-  background: var(--accent);
-  color: #fff;
+  background: var(--primary-btn-bg);
+  color: var(--primary-btn-text);
 }
 
 .primary-btn:hover {
-  background: var(--accent-strong);
+  background: var(--primary-btn-bg-hover);
+}
+
+.primary-btn:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--primary-btn-bg), white 28%);
+  outline-offset: 2px;
 }
 
 .primary-btn:disabled {

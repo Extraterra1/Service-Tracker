@@ -13,6 +13,7 @@ function DateNavigator({ date, onDateChange, onManualRefresh, loading }) {
         </button>
 
         <label className="field-inline field-inline-date" htmlFor="service-date">
+          <span className="sr-only">Selecionar data</span>
           <input id="service-date" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
         </label>
 
