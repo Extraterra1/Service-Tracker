@@ -5,7 +5,7 @@ import {
   query,
   Timestamp,
   serverTimestamp,
-  setDoc,
+  writeBatch,
   where,
 } from 'firebase/firestore'
 import { db } from './firebaseDb'
@@ -78,19 +78,42 @@ export async function setItemDoneState({ date, item, done, user, forceCompletedN
   const updatedAt = forceCompletedNow
     ? Timestamp.fromDate(new Date(Date.now() - FORCE_COMPLETED_OFFSET_MS))
     : serverTimestamp()
+  const updaterName = getUpdaterFirstName(user)
+  const updaterEmail = user?.email ?? ''
+  const updaterUid = user?.uid ?? ''
 
-  await setDoc(
-    doc(db, 'service_status', docId),
+  const statusRef = doc(db, 'service_status', docId)
+  const activityRef = doc(collection(db, 'service_activity', date, 'entries'))
+  const batch = writeBatch(db)
+
+  batch.set(
+    statusRef,
     {
       date,
       itemId: item.itemId,
       serviceType: item.serviceType,
       done,
       updatedAt,
-      updatedByUid: user?.uid ?? '',
-      updatedByName: getUpdaterFirstName(user),
-      updatedByEmail: user?.email ?? '',
+      updatedByUid: updaterUid,
+      updatedByName: updaterName,
+      updatedByEmail: updaterEmail,
     },
     { merge: true },
   )
+
+  batch.set(activityRef, {
+    date,
+    itemId: item.itemId,
+    serviceType: item.serviceType ?? '',
+    done,
+    createdAt: serverTimestamp(),
+    updatedByUid: updaterUid,
+    updatedByName: updaterName,
+    updatedByEmail: updaterEmail,
+    itemName: item.name ?? '',
+    itemTime: item.time ?? '',
+    reservationId: item.id ?? '',
+  })
+
+  await batch.commit()
 }

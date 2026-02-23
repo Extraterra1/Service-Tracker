@@ -17,6 +17,7 @@ let pinStoreModulePromise;
 let apiModulePromise;
 let scrapedDataModulePromise;
 let statusStoreModulePromise;
+let activityStoreModulePromise;
 
 function loadAccessModule() {
   accessModulePromise ??= import('./lib/access');
@@ -41,6 +42,11 @@ function loadScrapedDataModule() {
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
   return statusStoreModulePromise;
+}
+
+function loadActivityStoreModule() {
+  activityStoreModulePromise ??= import('./lib/activityStore');
+  return activityStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -228,6 +234,9 @@ function App() {
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
+  const [activityEntries, setActivityEntries] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+  const [activityPopupOpen, setActivityPopupOpen] = useState(false);
   const [lastLoadAt, setLastLoadAt] = useState(null);
   const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -485,6 +494,16 @@ function App() {
       return nowMs - updatedAt.getTime() <= COMPLETED_HIDE_AFTER_MS;
     });
   }, [allServiceItems, statusMap]);
+  const activityTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+    []
+  );
 
   const refreshServiceDataFromApi = useCallback(
     async ({ date, forceRefresh, source, hasRenderableData }) => {
@@ -706,6 +725,59 @@ function App() {
   }, [canReadServiceData, selectedDate]);
 
   useEffect(() => {
+    if (!canReadServiceData) {
+      setActivityEntries([]);
+      setLoadingActivity(false);
+      setActivityPopupOpen(false);
+      return () => {};
+    }
+
+    let isActive = true;
+    let unsubscribe = () => {};
+
+    setLoadingActivity(true);
+    setActivityEntries([]);
+
+    void loadActivityStoreModule()
+      .then(({ subscribeToDateActivity }) => {
+        if (!isActive) {
+          return;
+        }
+
+        unsubscribe = subscribeToDateActivity(
+          selectedDate,
+          (entries) => {
+            if (!isActive) {
+              return;
+            }
+            setActivityEntries(entries);
+            setLoadingActivity(false);
+          },
+          (error) => {
+            if (!isActive) {
+              return;
+            }
+            setErrorMessage(error.message);
+            setLoadingActivity(false);
+          }
+        );
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
+        setErrorMessage(error.message);
+        setLoadingActivity(false);
+      });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [canReadServiceData, selectedDate]);
+
+  useEffect(() => {
     if (manualCompletedCandidates.length === 0) {
       setManualCompletedItemId('');
       return;
@@ -731,6 +803,9 @@ function App() {
     await signOutUser();
     setServiceData({ pickups: [], returns: [] });
     setStatusMap({});
+    setActivityEntries([]);
+    setActivityPopupOpen(false);
+    setLoadingActivity(false);
     setLastLoadAt(null);
     setHasDayResponse(false);
     setStaleWarning('');
@@ -800,6 +875,15 @@ function App() {
       hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0
     });
   }, [refreshServiceDataFromApi, selectedDate, serviceData.pickups.length, serviceData.returns.length]);
+
+  const handleOpenActivityPopup = useCallback(() => {
+    menuPanelRef.current?.removeAttribute('open');
+    setActivityPopupOpen(true);
+  }, []);
+
+  const handleCloseActivityPopup = useCallback(() => {
+    setActivityPopupOpen(false);
+  }, []);
 
   const statusLine = useMemo(() => {
     if (loadingServices && refreshSource === 'manual') {
@@ -884,6 +968,15 @@ function App() {
               </div>
             </div>
 
+            <div className="menu-activity-panel">
+              <p className="menu-subtitle">Atividade do Dia</p>
+              <p className="subtle-text">Histórico de feito e desfeito para {selectedDate}.</p>
+              <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
+                Ver atividade ({activityEntries.length})
+              </button>
+              {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
+            </div>
+
             <p className="status-line status-line-menu">{statusLine}</p>
           </div>
         </details>
@@ -914,6 +1007,61 @@ function App() {
       ) : (
         <ServiceWorkspaceLocked lockedMessage={lockedListMessage} />
       )}
+
+      {activityPopupOpen ? (
+        <div
+          className="activity-popup-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              handleCloseActivityPopup();
+            }
+          }}
+        >
+          <section className="activity-popup" role="dialog" aria-modal="true" aria-label="Atividade do dia">
+            <header className="activity-popup-header">
+              <div>
+                <p className="activity-popup-kicker">Atividade do Dia</p>
+                <h3>{selectedDate}</h3>
+              </div>
+              <button type="button" className="activity-popup-close" onClick={handleCloseActivityPopup} aria-label="Fechar atividade">
+                ✕
+              </button>
+            </header>
+
+            {loadingActivity ? (
+              <p className="helper-text">A carregar atividade...</p>
+            ) : activityEntries.length === 0 ? (
+              <p className="helper-text">Sem atividade registada para este dia.</p>
+            ) : (
+              <ul className="activity-popup-list">
+                {activityEntries.map((entry) => {
+                  const actionTime = toDateValue(entry.createdAt);
+                  const actionTimeLabel = actionTime ? activityTimeFormatter.format(actionTime) : '--/-- --:--';
+                  const updatedBy = entry.updatedByName || entry.updatedByEmail || 'Equipa';
+                  const serviceLabel = entry.serviceType === 'return' ? 'Recolha' : 'Entrega';
+                  const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
+                  const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
+
+                  return (
+                    <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
+                      <p className="activity-popup-main">
+                        <strong>{updatedBy}</strong>{' '}
+                        <span className={`menu-activity-action ${entry.done ? 'is-done' : 'is-undone'}`}>
+                          {entry.done ? 'fez' : 'desfez'}
+                        </span>{' '}
+                        {serviceLabel}
+                      </p>
+                      <p className="activity-popup-meta">
+                        {itemLabel} · {reservationLabel} · {entry.itemTime || '--:--'} · {actionTimeLabel}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
