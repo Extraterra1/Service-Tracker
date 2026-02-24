@@ -857,14 +857,14 @@ h1 {
 
 .item-actions {
   display: inline-flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.3rem;
 }
 
 .item-time-menu-wrap {
   position: relative;
   display: inline-flex;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .item-time-menu-trigger {
