@@ -18,6 +18,7 @@ let apiModulePromise;
 let scrapedDataModulePromise;
 let statusStoreModulePromise;
 let activityStoreModulePromise;
+let timeOverrideStoreModulePromise;
 
 function loadAccessModule() {
   accessModulePromise ??= import('./lib/access');
@@ -47,6 +48,11 @@ function loadStatusStoreModule() {
 function loadActivityStoreModule() {
   activityStoreModulePromise ??= import('./lib/activityStore');
   return activityStoreModulePromise;
+}
+
+function loadTimeOverrideStoreModule() {
+  timeOverrideStoreModulePromise ??= import('./lib/timeOverrideStore');
+  return timeOverrideStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -99,7 +105,8 @@ function getCacheVersionKey(cachedAt) {
 function getMenuItemLabel(item) {
   const serviceLabel = item.serviceType === 'return' ? 'Recolha' : 'Entrega';
   const itemName = item.name || item.id || item.itemId;
-  return `${item.time || '--:--'} - ${serviceLabel} - ${itemName}`;
+  const displayTime = item.overrideTime || item.displayTime || item.time || '--:--';
+  return `${displayTime} - ${serviceLabel} - ${itemName}`;
 }
 
 function normalizeStatusEntry(status) {
@@ -168,6 +175,73 @@ function applyStatusChanges(previousMap, changes) {
   return hasChanges ? nextMap : previousMap;
 }
 
+function normalizeTimeOverrideEntry(override) {
+  return {
+    overrideTime: String(override?.overrideTime ?? '').trim(),
+    originalTime: String(override?.originalTime ?? '').trim(),
+    updatedAt: override?.updatedAt ?? null,
+    updatedByName: override?.updatedByName ?? '',
+    updatedByEmail: override?.updatedByEmail ?? ''
+  };
+}
+
+function isSameTimeOverrideEntry(previousEntry, nextEntry) {
+  return (
+    (previousEntry?.overrideTime ?? '') === (nextEntry?.overrideTime ?? '') &&
+    (previousEntry?.originalTime ?? '') === (nextEntry?.originalTime ?? '') &&
+    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
+    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
+    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
+  );
+}
+
+function applyTimeOverrideChanges(previousMap, changes) {
+  if (!Array.isArray(changes) || changes.length === 0) {
+    return previousMap;
+  }
+
+  let nextMap = previousMap;
+  let hasChanges = false;
+
+  changes.forEach((change) => {
+    const baseMap = hasChanges ? nextMap : previousMap;
+    const itemId = String(change?.itemId ?? '').trim();
+    if (!itemId) {
+      return;
+    }
+
+    if (change.changeType === 'removed') {
+      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
+        return;
+      }
+
+      if (!hasChanges) {
+        nextMap = { ...previousMap };
+        hasChanges = true;
+      }
+
+      delete nextMap[itemId];
+      return;
+    }
+
+    const normalizedEntry = normalizeTimeOverrideEntry(change.override);
+    const currentEntry = baseMap[itemId];
+
+    if (isSameTimeOverrideEntry(currentEntry, normalizedEntry)) {
+      return;
+    }
+
+    if (!hasChanges) {
+      nextMap = { ...previousMap };
+      hasChanges = true;
+    }
+
+    nextMap[itemId] = normalizedEntry;
+  });
+
+  return hasChanges ? nextMap : previousMap;
+}
+
 function ServiceWorkspaceLoadingFallback() {
   return (
     <main className="service-grid" aria-busy="true">
@@ -228,12 +302,15 @@ function App() {
   const [accessState, setAccessState] = useState('signed_out');
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
+  const [timeOverrideMap, setTimeOverrideMap] = useState({});
   const [loadingServices, setLoadingServices] = useState(false);
   const [loadingDateData, setLoadingDateData] = useState(true);
   const [hasDayResponse, setHasDayResponse] = useState(false);
   const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
+  const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
+  const [timeOverrideValue, setTimeOverrideValue] = useState('');
   const [activityEntries, setActivityEntries] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
@@ -476,7 +553,32 @@ function App() {
     return '';
   }, [accessState, checkingAccess]);
 
-  const allServiceItems = useMemo(() => [...serviceData.pickups, ...serviceData.returns], [serviceData.pickups, serviceData.returns]);
+  const serviceDataWithOverrides = useMemo(() => {
+    const withOverrides = (items) =>
+      items.map((item) => {
+        const overrideEntry = timeOverrideMap[item.itemId];
+        const overrideTime = String(overrideEntry?.overrideTime ?? '').trim();
+        if (!overrideTime) {
+          return item;
+        }
+
+        return {
+          ...item,
+          overrideTime,
+          displayTime: overrideTime
+        };
+      });
+
+    return {
+      pickups: withOverrides(serviceData.pickups),
+      returns: withOverrides(serviceData.returns)
+    };
+  }, [serviceData.pickups, serviceData.returns, timeOverrideMap]);
+
+  const allServiceItems = useMemo(
+    () => [...serviceDataWithOverrides.pickups, ...serviceDataWithOverrides.returns],
+    [serviceDataWithOverrides.pickups, serviceDataWithOverrides.returns]
+  );
 
   const manualCompletedCandidates = useMemo(() => {
     const nowMs = Date.now();
@@ -494,6 +596,17 @@ function App() {
       return nowMs - updatedAt.getTime() <= COMPLETED_HIDE_AFTER_MS;
     });
   }, [allServiceItems, statusMap]);
+
+  const selectedTimeOverrideItem = useMemo(
+    () => allServiceItems.find((item) => item.itemId === timeOverrideItemId) ?? null,
+    [allServiceItems, timeOverrideItemId]
+  );
+
+  useEffect(() => {
+    setTimeOverrideItemId('');
+    setTimeOverrideValue('');
+  }, [selectedDate]);
+
   const activityTimeFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat('pt-PT', {
@@ -726,6 +839,55 @@ function App() {
 
   useEffect(() => {
     if (!canReadServiceData) {
+      setTimeOverrideMap({});
+      return () => {};
+    }
+
+    let isActive = true;
+    let unsubscribe = () => {};
+
+    setTimeOverrideMap({});
+
+    void loadTimeOverrideStoreModule()
+      .then(({ subscribeToDateTimeOverrides }) => {
+        if (!isActive) {
+          return;
+        }
+
+        unsubscribe = subscribeToDateTimeOverrides(
+          selectedDate,
+          (changes) => {
+            if (!isActive) {
+              return;
+            }
+
+            setTimeOverrideMap((previousMap) => applyTimeOverrideChanges(previousMap, changes));
+          },
+          (error) => {
+            if (!isActive) {
+              return;
+            }
+
+            setErrorMessage(error.message);
+          }
+        );
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
+        setErrorMessage(error.message);
+      });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [canReadServiceData, selectedDate]);
+
+  useEffect(() => {
+    if (!canReadServiceData) {
       setActivityEntries([]);
       setLoadingActivity(false);
       setActivityPopupOpen(false);
@@ -789,6 +951,21 @@ function App() {
     }
   }, [manualCompletedCandidates, manualCompletedItemId]);
 
+  useEffect(() => {
+    if (allServiceItems.length === 0) {
+      setTimeOverrideItemId('');
+      setTimeOverrideValue('');
+      return;
+    }
+
+    const selectedItemStillExists = allServiceItems.some((item) => item.itemId === timeOverrideItemId);
+    if (!selectedItemStillExists) {
+      const firstItem = allServiceItems[0];
+      setTimeOverrideItemId(firstItem.itemId);
+      setTimeOverrideValue(firstItem.overrideTime || firstItem.displayTime || firstItem.time || '');
+    }
+  }, [allServiceItems, timeOverrideItemId]);
+
   const handleSignIn = async () => {
     setErrorMessage('');
     try {
@@ -803,9 +980,12 @@ function App() {
     await signOutUser();
     setServiceData({ pickups: [], returns: [] });
     setStatusMap({});
+    setTimeOverrideMap({});
     setActivityEntries([]);
     setActivityPopupOpen(false);
     setLoadingActivity(false);
+    setTimeOverrideItemId('');
+    setTimeOverrideValue('');
     setLastLoadAt(null);
     setHasDayResponse(false);
     setStaleWarning('');
@@ -866,6 +1046,43 @@ function App() {
       setUpdatingItemId('');
     }
   }, [accessState, manualCompletedCandidates, manualCompletedItemId, selectedDate, user]);
+
+  const handleTimeOverrideSelectionChange = useCallback(
+    (nextItemId) => {
+      setTimeOverrideItemId(nextItemId);
+      const selectedItem = allServiceItems.find((item) => item.itemId === nextItemId);
+      setTimeOverrideValue(selectedItem?.overrideTime || selectedItem?.displayTime || selectedItem?.time || '');
+    },
+    [allServiceItems]
+  );
+
+  const handleSaveTimeOverride = useCallback(async () => {
+    if (accessState !== 'allowed') {
+      return;
+    }
+
+    if (!selectedTimeOverrideItem) {
+      return;
+    }
+
+    setUpdatingItemId(selectedTimeOverrideItem.itemId);
+    setErrorMessage('');
+
+    try {
+      const { setItemTimeOverride } = await loadTimeOverrideStoreModule();
+      const normalizedTime = await setItemTimeOverride({
+        date: selectedDate,
+        item: selectedTimeOverrideItem,
+        newTime: timeOverrideValue,
+        user
+      });
+      setTimeOverrideValue(normalizedTime);
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setUpdatingItemId('');
+    }
+  }, [accessState, selectedDate, selectedTimeOverrideItem, timeOverrideValue, user]);
 
   const handleManualRefresh = useCallback(() => {
     void refreshServiceDataFromApi({
@@ -968,9 +1185,47 @@ function App() {
               </div>
             </div>
 
+            <div className="menu-time-panel">
+              <p className="menu-subtitle">Alterar Hora</p>
+              <p className="subtle-text">Define uma hora manual sem alterar o valor original em `scraped-data`.</p>
+              <div className="menu-time-controls">
+                <select
+                  className="manual-completed-select"
+                  value={timeOverrideItemId}
+                  onChange={(event) => handleTimeOverrideSelectionChange(event.target.value)}
+                  disabled={allServiceItems.length === 0 || updatingItemId !== ''}
+                >
+                  {allServiceItems.length === 0 ? <option value="">Sem serviços disponíveis</option> : null}
+                  {allServiceItems.map((item) => (
+                    <option key={item.itemId} value={item.itemId}>
+                      {getMenuItemLabel(item)}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="menu-time-row">
+                  <input
+                    type="time"
+                    className="menu-time-input"
+                    value={timeOverrideValue}
+                    onChange={(event) => setTimeOverrideValue(event.target.value)}
+                    disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
+                  />
+                  <button
+                    type="button"
+                    className="ghost-btn compact-btn"
+                    onClick={handleSaveTimeOverride}
+                    disabled={!selectedTimeOverrideItem || !timeOverrideValue || updatingItemId !== ''}
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="menu-activity-panel">
               <p className="menu-subtitle">Atividade do Dia</p>
-              <p className="subtle-text">Histórico de feito e desfeito para {selectedDate}.</p>
+              <p className="subtle-text">Histórico de feito/desfeito e alterações de hora para {selectedDate}.</p>
               <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
                 Ver atividade ({activityEntries.length})
               </button>
@@ -995,7 +1250,7 @@ function App() {
       ) : canReadServiceData ? (
         <Suspense fallback={<ServiceWorkspaceLoadingFallback />}>
           <ServiceWorkspace
-            serviceData={serviceData}
+            serviceData={serviceDataWithOverrides}
             statusMap={statusMap}
             onToggleDone={handleToggleDone}
             disabled={accessState !== 'allowed' || updatingItemId !== ''}
@@ -1041,19 +1296,29 @@ function App() {
                   const serviceLabel = entry.serviceType === 'return' ? 'Recolha' : 'Entrega';
                   const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
                   const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
+                  const isTimeChange = entry.actionType === 'time_change';
+                  const actionLabel = isTimeChange ? 'alterou hora' : entry.done ? 'fez' : 'desfez';
+                  const oldTimeLabel = entry.oldTime || '--:--';
+                  const newTimeLabel = entry.newTime || entry.itemTime || '--:--';
 
                   return (
                     <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
                       <p className="activity-popup-main">
                         <strong>{updatedBy}</strong>{' '}
-                        <span className={`menu-activity-action ${entry.done ? 'is-done' : 'is-undone'}`}>
-                          {entry.done ? 'fez' : 'desfez'}
+                        <span className={`menu-activity-action ${isTimeChange ? 'is-time' : entry.done ? 'is-done' : 'is-undone'}`}>
+                          {actionLabel}
                         </span>{' '}
                         {serviceLabel}
                       </p>
-                      <p className="activity-popup-meta">
-                        {itemLabel} · {reservationLabel} · {entry.itemTime || '--:--'} · {actionTimeLabel}
-                      </p>
+                      {isTimeChange ? (
+                        <p className="activity-popup-meta">
+                          {itemLabel} · {reservationLabel} · {oldTimeLabel} → {newTimeLabel} · {actionTimeLabel}
+                        </p>
+                      ) : (
+                        <p className="activity-popup-meta">
+                          {itemLabel} · {reservationLabel} · {entry.itemTime || '--:--'} · {actionTimeLabel}
+                        </p>
+                      )}
                     </li>
                   );
                 })}

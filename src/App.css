@@ -130,6 +130,12 @@ h1 {
   border-top: 1px dashed var(--stroke);
 }
 
+.menu-time-panel {
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--stroke);
+}
+
 .menu-subtitle {
   margin: 0;
   font-size: 0.78rem;
@@ -168,10 +174,40 @@ h1 {
   border: 1px solid rgba(223, 54, 75, 0.38);
 }
 
+.menu-activity-action.is-time {
+  color: #124f8a;
+  background: rgba(72, 154, 238, 0.16);
+  border: 1px solid rgba(55, 130, 206, 0.38);
+}
+
 .manual-completed-controls {
   display: flex;
   gap: 0.35rem;
   align-items: center;
+}
+
+.menu-time-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.menu-time-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.menu-time-input {
+  flex: 1;
+  min-width: 0;
+  height: 1.9rem;
+  border-radius: 7px;
+  border: 1px solid var(--stroke);
+  padding: 0 0.5rem;
+  color: var(--input-text);
+  background: var(--input-bg);
+  font-size: 0.73rem;
 }
 
 .manual-completed-select {
@@ -815,6 +851,15 @@ h1 {
   letter-spacing: 0.01em;
 }
 
+.item-time-original {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--item-secondary);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: color-mix(in oklab, var(--item-secondary), transparent 25%);
+}
+
 .item-service-type {
   font-size: 0.62rem;
   font-weight: 800;
@@ -1048,6 +1093,11 @@ h1 {
   }
 
   .manual-completed-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-time-row {
     flex-direction: column;
     align-items: stretch;
   }

@@ -1,0 +1,179 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isActiveStaff() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/staff_allowlist/$(request.auth.uid))
+        && get(/databases/$(database)/documents/staff_allowlist/$(request.auth.uid)).data.active == true;
+    }
+
+    function isValidDateString(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidServiceType(value) {
+      return value == 'pickup' || value == 'return';
+    }
+
+    function isValidTimeHHmm(value) {
+      return value is string && value.matches('^([01]\\d|2[0-3]):([0-5]\\d)$');
+    }
+
+    function isValidStatusPayload() {
+      return request.resource.data.keys().hasOnly([
+          'date',
+          'itemId',
+          'serviceType',
+          'done',
+          'updatedAt',
+          'updatedByUid',
+          'updatedByName',
+          'updatedByEmail'
+        ])
+        && isValidDateString(request.resource.data.date)
+        && request.resource.data.itemId is string
+        && request.resource.data.itemId.size() > 0
+        && isValidServiceType(request.resource.data.serviceType)
+        && request.resource.data.done is bool
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.updatedByName is string
+        && request.resource.data.updatedByEmail is string;
+    }
+
+    function isValidTimeOverridePayload() {
+      return request.resource.data.keys().hasOnly([
+          'date',
+          'itemId',
+          'serviceType',
+          'originalTime',
+          'overrideTime',
+          'updatedAt',
+          'updatedByUid',
+          'updatedByName',
+          'updatedByEmail'
+        ])
+        && isValidDateString(request.resource.data.date)
+        && request.resource.data.itemId is string
+        && request.resource.data.itemId.size() > 0
+        && isValidServiceType(request.resource.data.serviceType)
+        && request.resource.data.originalTime is string
+        && isValidTimeHHmm(request.resource.data.overrideTime)
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.updatedByName is string
+        && request.resource.data.updatedByEmail is string;
+    }
+
+    function hasValidOptionalTimeFields() {
+      return (!request.resource.data.keys().hasAny(['oldTime']) || request.resource.data.oldTime is string)
+        && (!request.resource.data.keys().hasAny(['newTime']) || request.resource.data.newTime is string);
+    }
+
+    function isValidActivityPayload(date) {
+      return request.resource.data.keys().hasOnly([
+          'actionType',
+          'date',
+          'itemId',
+          'serviceType',
+          'done',
+          'createdAt',
+          'updatedByUid',
+          'updatedByName',
+          'updatedByEmail',
+          'itemName',
+          'itemTime',
+          'reservationId',
+          'oldTime',
+          'newTime'
+        ])
+        && (request.resource.data.actionType == 'status_toggle' || request.resource.data.actionType == 'time_change')
+        && request.resource.data.date == date
+        && isValidDateString(request.resource.data.date)
+        && request.resource.data.itemId is string
+        && request.resource.data.itemId.size() > 0
+        && isValidServiceType(request.resource.data.serviceType)
+        && request.resource.data.done is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.updatedByName is string
+        && request.resource.data.updatedByEmail is string
+        && request.resource.data.itemName is string
+        && request.resource.data.itemTime is string
+        && request.resource.data.reservationId is string
+        && hasValidOptionalTimeFields()
+        && (
+          request.resource.data.actionType != 'time_change'
+          || (
+            request.resource.data.keys().hasAll(['oldTime', 'newTime'])
+            && request.resource.data.oldTime is string
+            && isValidTimeHHmm(request.resource.data.newTime)
+            && request.resource.data.done == false
+          )
+        );
+    }
+
+    match /staff_allowlist/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /service_status/{docId} {
+      allow read: if isActiveStaff();
+
+      allow create: if isActiveStaff()
+        && isValidStatusPayload()
+        && docId == request.resource.data.date + "_" + request.resource.data.itemId;
+
+      allow update: if isActiveStaff()
+        && isValidStatusPayload()
+        && request.resource.data.itemId == resource.data.itemId
+        && request.resource.data.date == resource.data.date
+        && request.resource.data.serviceType == resource.data.serviceType
+        && docId == resource.data.date + "_" + resource.data.itemId;
+
+      allow delete: if false;
+    }
+
+    match /service_time_overrides/{docId} {
+      allow read: if isActiveStaff();
+
+      allow create: if isActiveStaff()
+        && isValidTimeOverridePayload()
+        && docId == request.resource.data.date + "_" + request.resource.data.itemId;
+
+      allow update: if isActiveStaff()
+        && isValidTimeOverridePayload()
+        && docId == resource.data.date + "_" + resource.data.itemId
+        && request.resource.data.date == resource.data.date
+        && request.resource.data.itemId == resource.data.itemId
+        && request.resource.data.serviceType == resource.data.serviceType
+        && request.resource.data.originalTime == resource.data.originalTime;
+
+      allow delete: if false;
+    }
+
+    match /user_settings/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /scraped-data/{date} {
+      allow read: if isActiveStaff();
+      allow write: if false;
+    }
+
+    match /service_activity/{date}/entries/{entryId} {
+      allow read: if isActiveStaff();
+      allow create: if isActiveStaff() && isValidActivityPayload(date);
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

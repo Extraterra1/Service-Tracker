@@ -30,6 +30,10 @@ function uniqueTimes(items) {
   return output;
 }
 
+function getItemDisplayTime(item) {
+  return String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim()
+}
+
 function ServiceWorkspace({ serviceData, statusMap, onToggleDone, disabled, loading = false, canShowEmptyState = true, lockedMessage = '' }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [plateInfoPopup, setPlateInfoPopup] = useState(null);
@@ -60,7 +64,7 @@ function ServiceWorkspace({ serviceData, statusMap, onToggleDone, disabled, load
       }
 
       const nextTimes = pickupByPlate.get(plate) ?? [];
-      nextTimes.push(item.time);
+      nextTimes.push(getItemDisplayTime(item));
       pickupByPlate.set(plate, nextTimes);
     });
 
@@ -75,7 +79,7 @@ function ServiceWorkspace({ serviceData, statusMap, onToggleDone, disabled, load
       }
 
       const nextTimes = returnByPlate.get(plate) ?? [];
-      nextTimes.push(item.time);
+      nextTimes.push(getItemDisplayTime(item));
       returnByPlate.set(plate, nextTimes);
     });
 

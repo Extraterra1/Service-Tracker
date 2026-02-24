@@ -4,6 +4,7 @@ import { db } from './firebaseDb'
 function normalizeActivityEntry(value, id) {
   return {
     id,
+    actionType: value?.actionType ?? 'status_toggle',
     date: value?.date ?? '',
     itemId: value?.itemId ?? '',
     serviceType: value?.serviceType ?? '',
@@ -15,6 +16,8 @@ function normalizeActivityEntry(value, id) {
     itemName: value?.itemName ?? '',
     itemTime: value?.itemTime ?? '',
     reservationId: value?.reservationId ?? '',
+    oldTime: value?.oldTime ?? '',
+    newTime: value?.newTime ?? '',
   }
 }
 

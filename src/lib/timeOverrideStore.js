@@ -3,15 +3,11 @@ import {
   doc,
   onSnapshot,
   query,
-  Timestamp,
   serverTimestamp,
-  writeBatch,
   where,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebaseDb'
-
-// Add a safety margin so the UI moves items immediately even if the local clock snapshot is up to ~1 minute stale.
-const FORCE_COMPLETED_OFFSET_MS = 65 * 60 * 1000
 
 function getUpdaterFirstName(user) {
   const displayName = String(user?.displayName ?? '').trim()
@@ -31,30 +27,46 @@ function getUpdaterFirstName(user) {
   return 'Unknown'
 }
 
-export function subscribeToDateStatus(date, callback, errorCallback) {
+function normalizeTimeInput(value) {
+  const normalized = String(value ?? '').trim()
+  const match = normalized.match(/^([01]\d|2[0-3]):([0-5]\d)$/)
+  if (!match) {
+    throw new Error('Hora inválida. Usa o formato HH:mm.')
+  }
+
+  return `${match[1]}:${match[2]}`
+}
+
+export function subscribeToDateTimeOverrides(date, callback, errorCallback) {
   if (!db || !date) {
     callback([])
     return () => {}
   }
 
-  const q = query(collection(db, 'service_status'), where('date', '==', date))
+  const q = query(collection(db, 'service_time_overrides'), where('date', '==', date))
 
   return onSnapshot(
     q,
     (snapshot) => {
       const changes = snapshot.docChanges().map((entry) => {
-        const value = entry.doc.data()
+        const value = entry.doc.data() ?? {}
         return {
           changeType: entry.type,
           itemId: value.itemId ?? '',
-          status: {
-            done: value.done === true,
+          override: {
+            date: value.date ?? date,
+            itemId: value.itemId ?? '',
+            serviceType: value.serviceType ?? '',
+            originalTime: value.originalTime ?? '',
+            overrideTime: value.overrideTime ?? '',
             updatedAt: value.updatedAt ?? null,
+            updatedByUid: value.updatedByUid ?? '',
             updatedByName: value.updatedByName ?? '',
             updatedByEmail: value.updatedByEmail ?? '',
           },
         }
       })
+
       callback(changes)
     },
     (error) => {
@@ -65,35 +77,42 @@ export function subscribeToDateStatus(date, callback, errorCallback) {
   )
 }
 
-export async function setItemDoneState({ date, item, done, user, forceCompletedNow = false }) {
+export async function setItemTimeOverride({ date, item, newTime, user }) {
   if (!db) {
     throw new Error('Firestore is not configured.')
+  }
+
+  if (!date) {
+    throw new Error('Date is required.')
   }
 
   if (!item?.itemId) {
     throw new Error('Cannot update item without itemId.')
   }
 
-  const docId = `${date}_${item.itemId}`
-  const updatedAt = forceCompletedNow
-    ? Timestamp.fromDate(new Date(Date.now() - FORCE_COMPLETED_OFFSET_MS))
-    : serverTimestamp()
+  const overrideTime = normalizeTimeInput(newTime)
+  const previousTime = String(item.overrideTime ?? item.displayTime ?? item.time ?? '').trim()
+  const originalTime = String(item.time ?? '').trim()
+  if (overrideTime === (previousTime || originalTime)) {
+    return overrideTime
+  }
   const updaterName = getUpdaterFirstName(user)
   const updaterEmail = user?.email ?? ''
   const updaterUid = user?.uid ?? ''
 
-  const statusRef = doc(db, 'service_status', docId)
+  const overrideRef = doc(db, 'service_time_overrides', `${date}_${item.itemId}`)
   const activityRef = doc(collection(db, 'service_activity', date, 'entries'))
   const batch = writeBatch(db)
 
   batch.set(
-    statusRef,
+    overrideRef,
     {
       date,
       itemId: item.itemId,
-      serviceType: item.serviceType,
-      done,
-      updatedAt,
+      serviceType: item.serviceType ?? '',
+      originalTime,
+      overrideTime,
+      updatedAt: serverTimestamp(),
       updatedByUid: updaterUid,
       updatedByName: updaterName,
       updatedByEmail: updaterEmail,
@@ -102,19 +121,22 @@ export async function setItemDoneState({ date, item, done, user, forceCompletedN
   )
 
   batch.set(activityRef, {
-    actionType: 'status_toggle',
+    actionType: 'time_change',
     date,
     itemId: item.itemId,
     serviceType: item.serviceType ?? '',
-    done,
+    done: false,
     createdAt: serverTimestamp(),
     updatedByUid: updaterUid,
     updatedByName: updaterName,
     updatedByEmail: updaterEmail,
     itemName: item.name ?? '',
-    itemTime: item.overrideTime ?? item.displayTime ?? item.time ?? '',
+    itemTime: overrideTime,
     reservationId: item.id ?? '',
+    oldTime: previousTime || originalTime,
+    newTime: overrideTime,
   })
 
   await batch.commit()
+  return overrideTime
 }

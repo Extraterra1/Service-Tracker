@@ -32,11 +32,18 @@ function getSharedMarkerColor(markers, plateValue) {
   return plateKey ? markers?.[plateKey]?.color ?? '' : '';
 }
 
+function getDisplayTime(item) {
+  return String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim() || '--:--';
+}
+
 function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateTap, onToggleDone, disabled }) {
   const done = status?.done === true;
   const updatedAt = formatAuditTimestamp(status?.updatedAt);
   const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
+  const originalTime = String(item.time ?? '').trim() || '--:--';
+  const displayTime = getDisplayTime(item);
+  const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
 
@@ -44,7 +51,8 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateT
     <article className={`service-item ${done ? 'is-done' : ''}`}>
       <div className="item-head">
         <div className="item-head-main">
-          <span className="item-time">{item.time || '--:--'}</span>
+          <span className="item-time">{displayTime}</span>
+          {hasManualOverride ? <span className="item-time-original">{originalTime}</span> : null}
           <span className="item-service-type">{serviceLabel}</span>
         </div>
 
@@ -118,6 +126,8 @@ function areSameItemProps(prevProps, nextProps) {
   if (
     prevItem.itemId !== nextItem.itemId ||
     prevItem.time !== nextItem.time ||
+    prevItem.overrideTime !== nextItem.overrideTime ||
+    prevItem.displayTime !== nextItem.displayTime ||
     prevItem.serviceType !== nextItem.serviceType ||
     prevItem.name !== nextItem.name ||
     prevItem.id !== nextItem.id ||
