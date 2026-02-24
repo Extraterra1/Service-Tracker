@@ -29,6 +29,7 @@ function ServicePane({
   sharedPlateMarkers,
   onSharedPlateTap,
   onToggleDone,
+  onSaveTimeOverride,
   disabled,
   loading = false,
   canShowEmptyState = true,
@@ -105,6 +106,7 @@ function ServicePane({
                   sharedPlateMarkers={sharedPlateMarkers}
                   onSharedPlateTap={onSharedPlateTap}
                   onToggleDone={onToggleDone}
+                  onSaveTimeOverride={onSaveTimeOverride}
                   disabled={disabled}
                 />
               ))}
@@ -126,6 +128,7 @@ function ServicePane({
               sharedPlateMarkers={sharedPlateMarkers}
               onSharedPlateTap={onSharedPlateTap}
               onToggleDone={onToggleDone}
+              onSaveTimeOverride={onSaveTimeOverride}
               disabled={disabled}
             />
           ))}

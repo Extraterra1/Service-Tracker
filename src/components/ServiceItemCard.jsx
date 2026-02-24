@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { formatAuditTimestamp } from '../lib/date';
-import { Plane, Repeat2 } from 'lucide-react';
+import { Clock3, Plane, Repeat2 } from 'lucide-react';
 
 function normalizePlate(value) {
   return String(value ?? '')
@@ -36,7 +36,7 @@ function getDisplayTime(item) {
   return String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim() || '--:--';
 }
 
-function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateTap, onToggleDone, disabled }) {
+function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateTap, onToggleDone, onSaveTimeOverride, disabled }) {
   const done = status?.done === true;
   const updatedAt = formatAuditTimestamp(status?.updatedAt);
   const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
@@ -46,9 +46,23 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateT
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
+  const [timeMenuOpen, setTimeMenuOpen] = useState(false);
+  const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
+  const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
+
+  const handleSaveTime = async () => {
+    if (!onSaveTimeOverride || !editTimeValue) {
+      return;
+    }
+
+    const success = await onSaveTimeOverride(item, editTimeValue);
+    if (success) {
+      setTimeMenuOpen(false);
+    }
+  };
 
   return (
-    <article className={`service-item ${done ? 'is-done' : ''}`}>
+    <article className={`service-item ${done ? 'is-done' : ''} ${timeMenuOpen ? 'has-time-menu' : ''}`}>
       <div className="item-head">
         <div className="item-head-main">
           <span className="item-time">{displayTime}</span>
@@ -56,10 +70,53 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateT
           <span className="item-service-type">{serviceLabel}</span>
         </div>
 
-        <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
-          <input type="checkbox" checked={done} disabled={disabled} onChange={(event) => onToggleDone(item, event.target.checked)} />
-          <span>Feito</span>
-        </label>
+        <div className="item-actions">
+          <div className="item-time-menu-wrap">
+            <button
+              type="button"
+              className="item-time-menu-trigger"
+              onClick={() => {
+                if (timeMenuOpen) {
+                  setTimeMenuOpen(false);
+                  return;
+                }
+                setEditTimeValue(initialEditorTime);
+                setTimeMenuOpen(true);
+              }}
+              disabled={disabled}
+              aria-label="Editar hora"
+              aria-expanded={timeMenuOpen ? 'true' : 'false'}
+              title="Editar hora"
+            >
+              <Clock3 className="item-time-menu-icon" aria-hidden="true" />
+            </button>
+
+            {timeMenuOpen ? (
+              <div className="item-time-menu">
+                <input type="time" value={editTimeValue} onChange={(event) => setEditTimeValue(event.target.value)} disabled={disabled} />
+                <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={disabled || !editTimeValue}>
+                  Guardar
+                </button>
+                <button
+                  type="button"
+                  className="item-time-menu-cancel"
+                  onClick={() => {
+                    setEditTimeValue(initialEditorTime);
+                    setTimeMenuOpen(false);
+                  }}
+                  disabled={disabled}
+                >
+                  Fechar
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
+            <input type="checkbox" checked={done} disabled={disabled} onChange={(event) => onToggleDone(item, event.target.checked)} />
+            <span>Feito</span>
+          </label>
+        </div>
       </div>
 
       <div className="item-identity-row">
@@ -119,7 +176,11 @@ function areSameItemProps(prevProps, nextProps) {
     return false;
   }
 
-  if (prevProps.onToggleDone !== nextProps.onToggleDone || prevProps.onSharedPlateTap !== nextProps.onSharedPlateTap) {
+  if (
+    prevProps.onToggleDone !== nextProps.onToggleDone ||
+    prevProps.onSharedPlateTap !== nextProps.onSharedPlateTap ||
+    prevProps.onSaveTimeOverride !== nextProps.onSaveTimeOverride
+  ) {
     return false;
   }
 

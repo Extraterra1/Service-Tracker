@@ -1056,33 +1056,49 @@ function App() {
     [allServiceItems]
   );
 
-  const handleSaveTimeOverride = useCallback(async () => {
-    if (accessState !== 'allowed') {
-      return;
-    }
+  const handleSaveItemTimeOverride = useCallback(
+    async (item, nextTimeValue) => {
+      if (accessState !== 'allowed') {
+        return false;
+      }
 
+      if (!item?.itemId) {
+        return false;
+      }
+
+      setUpdatingItemId(item.itemId);
+      setErrorMessage('');
+
+      try {
+        const { setItemTimeOverride } = await loadTimeOverrideStoreModule();
+        const normalizedTime = await setItemTimeOverride({
+          date: selectedDate,
+          item,
+          newTime: nextTimeValue,
+          user
+        });
+
+        if (item.itemId === timeOverrideItemId) {
+          setTimeOverrideValue(normalizedTime);
+        }
+
+        return true;
+      } catch (error) {
+        setErrorMessage(error.message);
+        return false;
+      } finally {
+        setUpdatingItemId('');
+      }
+    },
+    [accessState, selectedDate, timeOverrideItemId, user]
+  );
+
+  const handleSaveTimeOverride = useCallback(async () => {
     if (!selectedTimeOverrideItem) {
       return;
     }
-
-    setUpdatingItemId(selectedTimeOverrideItem.itemId);
-    setErrorMessage('');
-
-    try {
-      const { setItemTimeOverride } = await loadTimeOverrideStoreModule();
-      const normalizedTime = await setItemTimeOverride({
-        date: selectedDate,
-        item: selectedTimeOverrideItem,
-        newTime: timeOverrideValue,
-        user
-      });
-      setTimeOverrideValue(normalizedTime);
-    } catch (error) {
-      setErrorMessage(error.message);
-    } finally {
-      setUpdatingItemId('');
-    }
-  }, [accessState, selectedDate, selectedTimeOverrideItem, timeOverrideValue, user]);
+    await handleSaveItemTimeOverride(selectedTimeOverrideItem, timeOverrideValue);
+  }, [handleSaveItemTimeOverride, selectedTimeOverrideItem, timeOverrideValue]);
 
   const handleManualRefresh = useCallback(() => {
     void refreshServiceDataFromApi({
@@ -1253,6 +1269,7 @@ function App() {
             serviceData={serviceDataWithOverrides}
             statusMap={statusMap}
             onToggleDone={handleToggleDone}
+            onSaveTimeOverride={handleSaveItemTimeOverride}
             disabled={accessState !== 'allowed' || updatingItemId !== ''}
             loading={paneLoading}
             canShowEmptyState={canReadServiceData && hasDayResponse}

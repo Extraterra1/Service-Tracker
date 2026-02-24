@@ -34,7 +34,16 @@ function getItemDisplayTime(item) {
   return String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim()
 }
 
-function ServiceWorkspace({ serviceData, statusMap, onToggleDone, disabled, loading = false, canShowEmptyState = true, lockedMessage = '' }) {
+function ServiceWorkspace({
+  serviceData,
+  statusMap,
+  onToggleDone,
+  onSaveTimeOverride,
+  disabled,
+  loading = false,
+  canShowEmptyState = true,
+  lockedMessage = ''
+}) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [plateInfoPopup, setPlateInfoPopup] = useState(null);
 
@@ -133,6 +142,7 @@ function ServiceWorkspace({ serviceData, statusMap, onToggleDone, disabled, load
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
+          onSaveTimeOverride={onSaveTimeOverride}
           disabled={disabled}
           loading={loading}
           canShowEmptyState={canShowEmptyState}
@@ -147,6 +157,7 @@ function ServiceWorkspace({ serviceData, statusMap, onToggleDone, disabled, load
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
+          onSaveTimeOverride={onSaveTimeOverride}
           disabled={disabled}
           loading={loading}
           canShowEmptyState={canShowEmptyState}
