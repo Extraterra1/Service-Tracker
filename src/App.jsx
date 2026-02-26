@@ -166,8 +166,17 @@ function applyStatusChanges(previousMap, changes) {
 
     const normalizedStatus = normalizeStatusEntry(change.status);
     const currentStatus = baseMap[itemId];
+    const nextStatus =
+      currentStatus && toTimestampMs(normalizedStatus.updatedAt) === 0
+        ? {
+            ...normalizedStatus,
+            updatedAt: currentStatus.updatedAt ?? null,
+            updatedByName: normalizedStatus.updatedByName || currentStatus.updatedByName || '',
+            updatedByEmail: normalizedStatus.updatedByEmail || currentStatus.updatedByEmail || ''
+          }
+        : normalizedStatus;
 
-    if (isSameStatusEntry(currentStatus, normalizedStatus)) {
+    if (isSameStatusEntry(currentStatus, nextStatus)) {
       return;
     }
 
@@ -176,7 +185,7 @@ function applyStatusChanges(previousMap, changes) {
       hasChanges = true;
     }
 
-    nextMap[itemId] = normalizedStatus;
+    nextMap[itemId] = nextStatus;
   });
 
   return hasChanges ? nextMap : previousMap;
