@@ -1507,18 +1507,32 @@ function App() {
                   const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
                   const isTimeChange = entry.actionType === 'time_change';
                   const isReadyToggle = entry.actionType === 'ready_toggle';
-                  const actionLabel = isTimeChange ? 'alterou hora' : isReadyToggle ? (entry.ready ? 'marcou pronta' : 'removeu pronta') : entry.done ? 'fez' : 'desfez';
+                  const actionLabel = isTimeChange
+                    ? 'alterou hora'
+                    : isReadyToggle
+                      ? entry.ready
+                        ? 'viatura pronta'
+                        : 'viatura não pronta'
+                      : entry.done
+                        ? 'fez'
+                        : 'desfez';
                   const oldTimeLabel = entry.oldTime || '--:--';
                   const newTimeLabel = entry.newTime || entry.itemTime || '--:--';
                   const plateLabel = entry.plate || 'Sem matrícula';
-                  const actionClass = isTimeChange ? 'is-time' : isReadyToggle ? 'is-ready' : entry.done ? 'is-done' : 'is-undone';
+                  const actionClass = isTimeChange
+                    ? 'is-time'
+                    : isReadyToggle
+                      ? entry.ready
+                        ? 'is-ready-on'
+                        : 'is-ready-off'
+                      : entry.done
+                        ? 'is-done'
+                        : 'is-undone';
 
                   return (
                     <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
                       <p className="activity-popup-main">
-                        <strong>{updatedBy}</strong>{' '}
-                        <span className={`menu-activity-action ${actionClass}`}>{actionLabel}</span>{' '}
-                        {serviceLabel}
+                        <strong>{updatedBy}</strong> <span className={`menu-activity-action ${actionClass}`}>{actionLabel}</span> {serviceLabel}
                       </p>
                       {isTimeChange ? (
                         <p className="activity-popup-meta">

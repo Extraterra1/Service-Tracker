@@ -251,10 +251,16 @@ h1 {
   border: 1px solid rgba(55, 130, 206, 0.38);
 }
 
-.menu-activity-action.is-ready {
+.menu-activity-action.is-ready-on {
   color: #0f6b2c;
   background: rgba(102, 199, 134, 0.2);
   border: 1px solid rgba(60, 151, 90, 0.4);
+}
+
+.menu-activity-action.is-ready-off {
+  color: #8d2431;
+  background: rgba(248, 56, 72, 0.16);
+  border: 1px solid rgba(223, 54, 75, 0.38);
 }
 
 .manual-completed-controls {
