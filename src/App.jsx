@@ -677,7 +677,10 @@ function App() {
     [allServiceItems, timeOverrideItemId]
   );
   const selectedTimeOverrideOriginalTime = useMemo(
-    () => String(selectedTimeOverrideItem?.time ?? '').trim().slice(0, 5),
+    () =>
+      String(selectedTimeOverrideItem?.time ?? '')
+        .trim()
+        .slice(0, 5),
     [selectedTimeOverrideItem]
   );
   const canResetSelectedTimeOverride = useMemo(() => {
@@ -685,8 +688,7 @@ function App() {
       return false;
     }
 
-    const hasManualOverride =
-      Boolean(selectedTimeOverrideItem.overrideTime) && selectedTimeOverrideItem.overrideTime !== selectedTimeOverrideItem.time;
+    const hasManualOverride = Boolean(selectedTimeOverrideItem.overrideTime) && selectedTimeOverrideItem.overrideTime !== selectedTimeOverrideItem.time;
 
     return hasManualOverride && /^([01]\d|2[0-3]):([0-5]\d)$/.test(selectedTimeOverrideOriginalTime);
   }, [selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
@@ -1325,7 +1327,7 @@ function App() {
       minute: '2-digit'
     }).format(cachedDate);
 
-    return `Cache Firestore: ${formatted}`;
+    return `Ultima Atualização: ${formatted}`;
   }, [lastLoadAt, loadingServices, refreshSource]);
 
   return (
@@ -1461,14 +1463,8 @@ function App() {
                   {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
                 </div>
               </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Sincronização</summary>
-                <div className="menu-section-body">
-                  <p className="status-line status-line-menu">{statusLine}</p>
-                </div>
-              </details>
             </div>
+            <p className="menu-sync-footnote">{statusLine}</p>
           </div>
         </details>
       </header>

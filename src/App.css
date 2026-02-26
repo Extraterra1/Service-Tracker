@@ -132,6 +132,15 @@ h1 {
   gap: 0.34rem;
 }
 
+.menu-sync-footnote {
+  margin: 0.42rem 0 0;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  padding-top: 0.36rem;
+  border-top: 1px dashed var(--stroke);
+}
+
 .menu-section {
   border: 1px solid var(--stroke);
   border-radius: 8px;
