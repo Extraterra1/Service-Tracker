@@ -36,7 +36,17 @@ function getDisplayTime(item) {
   return String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim() || '--:--';
 }
 
-function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateTap, onToggleDone, onSaveTimeOverride, disabled }) {
+function ServiceItemCard({
+  item,
+  status,
+  readyState,
+  sharedPlateMarkers = {},
+  onSharedPlateTap,
+  onToggleDone,
+  onToggleReady,
+  onSaveTimeOverride,
+  disabled,
+}) {
   const done = status?.done === true;
   const updatedAt = formatAuditTimestamp(status?.updatedAt);
   const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
@@ -46,6 +56,9 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateT
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
+  const isDelivery = item.serviceType === 'pickup';
+  const isReady = readyState?.ready === true;
+  const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
@@ -138,7 +151,22 @@ function ServiceItemCard({ item, status, sharedPlateMarkers = {}, onSharedPlateT
           {item.car || 'Sem viatura'}
           {item.plate ? (
             <span className="item-plate-wrap">
-              <span>- {item.plate}</span>
+              {canToggleReady ? (
+                <button
+                  type="button"
+                  className={`item-plate-button ${isReady ? 'is-ready' : ''}`}
+                  onClick={() => onToggleReady(item)}
+                  disabled={disabled}
+                  aria-pressed={isReady ? 'true' : 'false'}
+                  aria-label={isReady ? `Remover viatura ${item.plate} de pronta` : `Marcar viatura ${item.plate} como pronta`}
+                  title={isReady ? 'Pronta - toque para remover' : 'Toque para marcar pronta'}
+                >
+                  <span>- {item.plate}</span>
+                  {isReady ? <span className="item-ready-dot" aria-hidden="true" /> : null}
+                </button>
+              ) : (
+                <span>- {item.plate}</span>
+              )}
               {sharedPlateMarker ? (
                 <button
                   type="button"
@@ -179,6 +207,7 @@ function areSameItemProps(prevProps, nextProps) {
   if (
     prevProps.onToggleDone !== nextProps.onToggleDone ||
     prevProps.onSharedPlateTap !== nextProps.onSharedPlateTap ||
+    prevProps.onToggleReady !== nextProps.onToggleReady ||
     prevProps.onSaveTimeOverride !== nextProps.onSaveTimeOverride
   ) {
     return false;
@@ -213,6 +242,14 @@ function areSameItemProps(prevProps, nextProps) {
     (prevStatus?.updatedByName ?? '') !== (nextStatus?.updatedByName ?? '') ||
     (prevStatus?.updatedByEmail ?? '') !== (nextStatus?.updatedByEmail ?? '') ||
     toTimestampMs(prevStatus?.updatedAt) !== toTimestampMs(nextStatus?.updatedAt)
+  ) {
+    return false;
+  }
+
+  if (
+    (prevProps.readyState?.ready ?? false) !== (nextProps.readyState?.ready ?? false) ||
+    (prevProps.readyState?.plate ?? '') !== (nextProps.readyState?.plate ?? '') ||
+    toTimestampMs(prevProps.readyState?.updatedAt) !== toTimestampMs(nextProps.readyState?.updatedAt)
   ) {
     return false;
   }

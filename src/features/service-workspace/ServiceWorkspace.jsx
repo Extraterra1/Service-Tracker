@@ -37,7 +37,9 @@ function getItemDisplayTime(item) {
 function ServiceWorkspace({
   serviceData,
   statusMap,
+  readyMap,
   onToggleDone,
+  onToggleReady,
   onSaveTimeOverride,
   disabled,
   loading = false,
@@ -138,10 +140,12 @@ function ServiceWorkspace({
           title="Entregas"
           items={serviceData.pickups}
           statusMap={statusMap}
+          readyMap={readyMap}
           nowMs={nowMs}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
+          onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
           disabled={disabled}
           loading={loading}
@@ -153,10 +157,12 @@ function ServiceWorkspace({
           title="Recolhas"
           items={serviceData.returns}
           statusMap={statusMap}
+          readyMap={readyMap}
           nowMs={nowMs}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
+          onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
           disabled={disabled}
           loading={loading}

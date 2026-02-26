@@ -69,9 +69,39 @@ service cloud.firestore {
         && request.resource.data.updatedByEmail is string;
     }
 
+    function isValidReadyPayload() {
+      return request.resource.data.keys().hasOnly([
+          'date',
+          'itemId',
+          'serviceType',
+          'plate',
+          'ready',
+          'updatedAt',
+          'updatedByUid',
+          'updatedByName',
+          'updatedByEmail'
+        ])
+        && isValidDateString(request.resource.data.date)
+        && request.resource.data.itemId is string
+        && request.resource.data.itemId.size() > 0
+        && request.resource.data.serviceType == 'pickup'
+        && request.resource.data.plate is string
+        && request.resource.data.plate.size() > 0
+        && request.resource.data.ready is bool
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.updatedByName is string
+        && request.resource.data.updatedByEmail is string;
+    }
+
     function hasValidOptionalTimeFields() {
       return (!request.resource.data.keys().hasAny(['oldTime']) || request.resource.data.oldTime is string)
         && (!request.resource.data.keys().hasAny(['newTime']) || request.resource.data.newTime is string);
+    }
+
+    function hasValidOptionalReadyFields() {
+      return (!request.resource.data.keys().hasAny(['ready']) || request.resource.data.ready is bool)
+        && (!request.resource.data.keys().hasAny(['plate']) || request.resource.data.plate is string);
     }
 
     function isValidActivityPayload(date) {
@@ -89,9 +119,11 @@ service cloud.firestore {
           'itemTime',
           'reservationId',
           'oldTime',
-          'newTime'
+          'newTime',
+          'ready',
+          'plate'
         ])
-        && (request.resource.data.actionType == 'status_toggle' || request.resource.data.actionType == 'time_change')
+        && (request.resource.data.actionType == 'status_toggle' || request.resource.data.actionType == 'time_change' || request.resource.data.actionType == 'ready_toggle')
         && request.resource.data.date == date
         && isValidDateString(request.resource.data.date)
         && request.resource.data.itemId is string
@@ -106,6 +138,7 @@ service cloud.firestore {
         && request.resource.data.itemTime is string
         && request.resource.data.reservationId is string
         && hasValidOptionalTimeFields()
+        && hasValidOptionalReadyFields()
         && (
           request.resource.data.actionType != 'time_change'
           || (
@@ -113,6 +146,15 @@ service cloud.firestore {
             && request.resource.data.oldTime is string
             && isValidTimeHHmm(request.resource.data.newTime)
             && request.resource.data.done == false
+          )
+        )
+        && (
+          request.resource.data.actionType != 'ready_toggle'
+          || (
+            request.resource.data.keys().hasAll(['ready', 'plate'])
+            && request.resource.data.serviceType == 'pickup'
+            && request.resource.data.plate is string
+            && request.resource.data.plate.size() > 0
           )
         );
     }
@@ -153,6 +195,24 @@ service cloud.firestore {
         && request.resource.data.itemId == resource.data.itemId
         && request.resource.data.serviceType == resource.data.serviceType
         && request.resource.data.originalTime == resource.data.originalTime;
+
+      allow delete: if false;
+    }
+
+    match /service_ready/{docId} {
+      allow read: if isActiveStaff();
+
+      allow create: if isActiveStaff()
+        && isValidReadyPayload()
+        && docId == request.resource.data.date + "_" + request.resource.data.itemId;
+
+      allow update: if isActiveStaff()
+        && isValidReadyPayload()
+        && docId == resource.data.date + "_" + resource.data.itemId
+        && request.resource.data.date == resource.data.date
+        && request.resource.data.itemId == resource.data.itemId
+        && request.resource.data.serviceType == resource.data.serviceType
+        && request.resource.data.plate == resource.data.plate;
 
       allow delete: if false;
     }

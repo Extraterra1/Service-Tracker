@@ -25,10 +25,12 @@ function ServicePane({
   title,
   items,
   statusMap,
+  readyMap = {},
   nowMs = 0,
   sharedPlateMarkers,
   onSharedPlateTap,
   onToggleDone,
+  onToggleReady,
   onSaveTimeOverride,
   disabled,
   loading = false,
@@ -103,9 +105,11 @@ function ServicePane({
                   key={item.itemId}
                   item={item}
                   status={statusMap[item.itemId]}
+                  readyState={readyMap[item.itemId]}
                   sharedPlateMarkers={sharedPlateMarkers}
                   onSharedPlateTap={onSharedPlateTap}
                   onToggleDone={onToggleDone}
+                  onToggleReady={onToggleReady}
                   onSaveTimeOverride={onSaveTimeOverride}
                   disabled={disabled}
                 />
@@ -125,9 +129,11 @@ function ServicePane({
               key={item.itemId}
               item={item}
               status={statusMap[item.itemId]}
+              readyState={readyMap[item.itemId]}
               sharedPlateMarkers={sharedPlateMarkers}
               onSharedPlateTap={onSharedPlateTap}
               onToggleDone={onToggleDone}
+              onToggleReady={onToggleReady}
               onSaveTimeOverride={onSaveTimeOverride}
               disabled={disabled}
             />

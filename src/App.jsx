@@ -20,6 +20,7 @@ let scrapedDataModulePromise;
 let statusStoreModulePromise;
 let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
+let readyStoreModulePromise;
 
 function loadAccessModule() {
   accessModulePromise ??= import('./lib/access');
@@ -54,6 +55,11 @@ function loadActivityStoreModule() {
 function loadTimeOverrideStoreModule() {
   timeOverrideStoreModulePromise ??= import('./lib/timeOverrideStore');
   return timeOverrideStoreModulePromise;
+}
+
+function loadReadyStoreModule() {
+  readyStoreModulePromise ??= import('./lib/readyStore');
+  return readyStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -243,6 +249,73 @@ function applyTimeOverrideChanges(previousMap, changes) {
   return hasChanges ? nextMap : previousMap;
 }
 
+function normalizeReadyEntry(ready) {
+  return {
+    ready: ready?.ready === true,
+    plate: String(ready?.plate ?? '').trim(),
+    updatedAt: ready?.updatedAt ?? null,
+    updatedByName: ready?.updatedByName ?? '',
+    updatedByEmail: ready?.updatedByEmail ?? ''
+  };
+}
+
+function isSameReadyEntry(previousEntry, nextEntry) {
+  return (
+    (previousEntry?.ready ?? false) === (nextEntry?.ready ?? false) &&
+    (previousEntry?.plate ?? '') === (nextEntry?.plate ?? '') &&
+    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
+    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
+    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
+  );
+}
+
+function applyReadyChanges(previousMap, changes) {
+  if (!Array.isArray(changes) || changes.length === 0) {
+    return previousMap;
+  }
+
+  let nextMap = previousMap;
+  let hasChanges = false;
+
+  changes.forEach((change) => {
+    const baseMap = hasChanges ? nextMap : previousMap;
+    const itemId = String(change?.itemId ?? '').trim();
+    if (!itemId) {
+      return;
+    }
+
+    if (change.changeType === 'removed') {
+      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
+        return;
+      }
+
+      if (!hasChanges) {
+        nextMap = { ...previousMap };
+        hasChanges = true;
+      }
+
+      delete nextMap[itemId];
+      return;
+    }
+
+    const normalizedEntry = normalizeReadyEntry(change.ready);
+    const currentEntry = baseMap[itemId];
+
+    if (isSameReadyEntry(currentEntry, normalizedEntry)) {
+      return;
+    }
+
+    if (!hasChanges) {
+      nextMap = { ...previousMap };
+      hasChanges = true;
+    }
+
+    nextMap[itemId] = normalizedEntry;
+  });
+
+  return hasChanges ? nextMap : previousMap;
+}
+
 function ServiceWorkspaceLoadingFallback() {
   return (
     <main className="service-grid" aria-busy="true">
@@ -304,6 +377,7 @@ function App() {
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
+  const [readyMap, setReadyMap] = useState({});
   const [loadingServices, setLoadingServices] = useState(false);
   const [loadingDateData, setLoadingDateData] = useState(true);
   const [hasDayResponse, setHasDayResponse] = useState(false);
@@ -889,6 +963,55 @@ function App() {
 
   useEffect(() => {
     if (!canReadServiceData) {
+      setReadyMap({});
+      return () => {};
+    }
+
+    let isActive = true;
+    let unsubscribe = () => {};
+
+    setReadyMap({});
+
+    void loadReadyStoreModule()
+      .then(({ subscribeToDateReady }) => {
+        if (!isActive) {
+          return;
+        }
+
+        unsubscribe = subscribeToDateReady(
+          selectedDate,
+          (changes) => {
+            if (!isActive) {
+              return;
+            }
+
+            setReadyMap((previousMap) => applyReadyChanges(previousMap, changes));
+          },
+          (error) => {
+            if (!isActive) {
+              return;
+            }
+
+            setErrorMessage(error.message);
+          }
+        );
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
+        setErrorMessage(error.message);
+      });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [canReadServiceData, selectedDate]);
+
+  useEffect(() => {
+    if (!canReadServiceData) {
       setActivityEntries([]);
       setLoadingActivity(false);
       setActivityPopupOpen(false);
@@ -982,6 +1105,7 @@ function App() {
     setServiceData({ pickups: [], returns: [] });
     setStatusMap({});
     setTimeOverrideMap({});
+    setReadyMap({});
     setActivityEntries([]);
     setActivityPopupOpen(false);
     setLoadingActivity(false);
@@ -1017,6 +1141,44 @@ function App() {
       }
     },
     [accessState, selectedDate, user]
+  );
+
+  const handleToggleReady = useCallback(
+    async (item) => {
+      if (accessState !== 'allowed') {
+        return;
+      }
+
+      if (item?.serviceType !== 'pickup') {
+        return;
+      }
+
+      const plate = String(item?.plate ?? '').trim();
+      if (!plate) {
+        return;
+      }
+
+      const currentReady = readyMap[item.itemId]?.ready === true;
+      const nextReady = !currentReady;
+
+      setUpdatingItemId(item.itemId);
+      setErrorMessage('');
+
+      try {
+        const { setItemReadyState } = await loadReadyStoreModule();
+        await setItemReadyState({
+          date: selectedDate,
+          item,
+          ready: nextReady,
+          user
+        });
+      } catch (error) {
+        setErrorMessage(error.message);
+      } finally {
+        setUpdatingItemId('');
+      }
+    },
+    [accessState, readyMap, selectedDate, user]
   );
 
   const handleAddToCompleted = useCallback(async () => {
@@ -1262,7 +1424,7 @@ function App() {
               <details className="menu-section">
                 <summary className="menu-section-summary">Atividade do Dia</summary>
                 <div className="menu-section-body">
-                  <p className="subtle-text">Histórico de alterações de hora para {selectedDate}.</p>
+                  <p className="subtle-text">Histórico de hora, pronto/não pronto e concluídos em {selectedDate}.</p>
                   <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
                     Ver atividade ({activityEntries.length})
                   </button>
@@ -1296,7 +1458,9 @@ function App() {
           <ServiceWorkspace
             serviceData={serviceDataWithOverrides}
             statusMap={statusMap}
+            readyMap={readyMap}
             onToggleDone={handleToggleDone}
+            onToggleReady={handleToggleReady}
             onSaveTimeOverride={handleSaveItemTimeOverride}
             disabled={accessState !== 'allowed' || updatingItemId !== ''}
             loading={paneLoading}
@@ -1342,20 +1506,27 @@ function App() {
                   const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
                   const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
                   const isTimeChange = entry.actionType === 'time_change';
-                  const actionLabel = isTimeChange ? 'alterou hora' : entry.done ? 'fez' : 'desfez';
+                  const isReadyToggle = entry.actionType === 'ready_toggle';
+                  const actionLabel = isTimeChange ? 'alterou hora' : isReadyToggle ? (entry.ready ? 'marcou pronta' : 'removeu pronta') : entry.done ? 'fez' : 'desfez';
                   const oldTimeLabel = entry.oldTime || '--:--';
                   const newTimeLabel = entry.newTime || entry.itemTime || '--:--';
+                  const plateLabel = entry.plate || 'Sem matrícula';
+                  const actionClass = isTimeChange ? 'is-time' : isReadyToggle ? 'is-ready' : entry.done ? 'is-done' : 'is-undone';
 
                   return (
                     <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
                       <p className="activity-popup-main">
                         <strong>{updatedBy}</strong>{' '}
-                        <span className={`menu-activity-action ${isTimeChange ? 'is-time' : entry.done ? 'is-done' : 'is-undone'}`}>{actionLabel}</span>{' '}
+                        <span className={`menu-activity-action ${actionClass}`}>{actionLabel}</span>{' '}
                         {serviceLabel}
                       </p>
                       {isTimeChange ? (
                         <p className="activity-popup-meta">
                           {itemLabel} · {reservationLabel} · {oldTimeLabel} → {newTimeLabel} · {actionTimeLabel}
+                        </p>
+                      ) : isReadyToggle ? (
+                        <p className="activity-popup-meta">
+                          {itemLabel} · {reservationLabel} · {plateLabel} · {actionTimeLabel}
                         </p>
                       ) : (
                         <p className="activity-popup-meta">

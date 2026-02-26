@@ -251,6 +251,12 @@ h1 {
   border: 1px solid rgba(55, 130, 206, 0.38);
 }
 
+.menu-activity-action.is-ready {
+  color: #0f6b2c;
+  background: rgba(102, 199, 134, 0.2);
+  border: 1px solid rgba(60, 151, 90, 0.4);
+}
+
 .manual-completed-controls {
   display: flex;
   gap: 0.35rem;
@@ -1112,6 +1118,39 @@ h1 {
   align-items: center;
   gap: 0.28rem;
   flex-wrap: wrap;
+}
+
+.item-plate-button {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1.2;
+  padding: 0 0.16rem;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  cursor: pointer;
+}
+
+.item-plate-button:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.item-plate-button.is-ready {
+  color: #0e6a2d;
+  border-color: rgba(55, 148, 86, 0.38);
+  background: rgba(102, 199, 134, 0.18);
+}
+
+.item-ready-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .item-shared-plate-tag {

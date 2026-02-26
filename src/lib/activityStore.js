@@ -18,6 +18,8 @@ function normalizeActivityEntry(value, id) {
     reservationId: value?.reservationId ?? '',
     oldTime: value?.oldTime ?? '',
     newTime: value?.newTime ?? '',
+    ready: value?.ready === true,
+    plate: value?.plate ?? '',
   }
 }
 
