@@ -1162,6 +1162,28 @@ h1 {
   color: var(--item-secondary);
 }
 
+.item-phone-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.item-phone-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 0.74rem;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--stroke), transparent 30%);
+  overflow: hidden;
+}
+
+.item-phone-flag > * {
+  display: block;
+}
+
 .item-flight-tag {
   display: inline-flex;
   align-items: center;

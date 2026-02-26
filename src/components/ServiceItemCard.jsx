@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import ReactCountryFlag from 'react-country-flag';
 import { formatAuditTimestamp } from '../lib/date';
+import { detectPhoneCountryCode } from '../lib/phone';
 import { Clock3, Plane, Repeat2 } from 'lucide-react';
 
 function normalizePlate(value) {
@@ -57,6 +59,8 @@ function ServiceItemCard({
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
   const originalTime = String(item.time ?? '').trim() || '--:--';
   const displayTime = getDisplayTime(item);
+  const phoneValue = String(item.phone ?? '').trim();
+  const phoneCountryCode = useMemo(() => detectPhoneCountryCode(phoneValue), [phoneValue]);
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
@@ -234,7 +238,23 @@ function ServiceItemCard({
         <p className="item-name">{item.name || 'Sem nome'}</p>
         <p className="item-subline">
           <span>#{item.id || 'n/a'}</span>
-          <span>{item.phone || 'Sem telefone'}</span>
+          {phoneValue ? (
+            <span className="item-phone-inline">
+              {phoneCountryCode ? (
+                <span className="item-phone-flag" aria-hidden="true">
+                  <ReactCountryFlag
+                    countryCode={phoneCountryCode}
+                    svg
+                    title={phoneCountryCode}
+                    style={{ width: '1rem', height: '0.74rem' }}
+                  />
+                </span>
+              ) : null}
+              <span>{phoneValue}</span>
+            </span>
+          ) : (
+            <span>Sem telefone</span>
+          )}
           {item.flightNumber ? (
             <span className="item-flight-tag">
               <Plane className="item-flight-icon" aria-hidden="true" />
