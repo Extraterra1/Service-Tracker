@@ -1219,6 +1219,44 @@ h1 {
     font-size: 0.95rem;
   }
 
+  .item-time-menu-trigger {
+    width: 1.52rem;
+    height: 1.52rem;
+  }
+
+  .item-time-menu-icon {
+    width: 0.82rem;
+    height: 0.82rem;
+  }
+
+  .item-head-main {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      'time label'
+      'old label';
+    column-gap: 0.38rem;
+    row-gap: 0.05rem;
+    align-items: center;
+  }
+
+  .item-time {
+    grid-area: time;
+  }
+
+  .item-service-type {
+    grid-area: label;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .item-time-original {
+    grid-area: old;
+    flex: none;
+    line-height: 1;
+    margin-top: -0.06rem;
+  }
+
   .item-time-menu {
     left: 50%;
     right: auto;
