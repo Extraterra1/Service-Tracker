@@ -676,6 +676,20 @@ function App() {
     () => allServiceItems.find((item) => item.itemId === timeOverrideItemId) ?? null,
     [allServiceItems, timeOverrideItemId]
   );
+  const selectedTimeOverrideOriginalTime = useMemo(
+    () => String(selectedTimeOverrideItem?.time ?? '').trim().slice(0, 5),
+    [selectedTimeOverrideItem]
+  );
+  const canResetSelectedTimeOverride = useMemo(() => {
+    if (!selectedTimeOverrideItem) {
+      return false;
+    }
+
+    const hasManualOverride =
+      Boolean(selectedTimeOverrideItem.overrideTime) && selectedTimeOverrideItem.overrideTime !== selectedTimeOverrideItem.time;
+
+    return hasManualOverride && /^([01]\d|2[0-3]):([0-5]\d)$/.test(selectedTimeOverrideOriginalTime);
+  }, [selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
 
   useEffect(() => {
     setTimeOverrideItemId('');
@@ -1263,6 +1277,14 @@ function App() {
     await handleSaveItemTimeOverride(selectedTimeOverrideItem, timeOverrideValue);
   }, [handleSaveItemTimeOverride, selectedTimeOverrideItem, timeOverrideValue]);
 
+  const handleResetTimeOverride = useCallback(async () => {
+    if (!selectedTimeOverrideItem || !canResetSelectedTimeOverride) {
+      return;
+    }
+
+    await handleSaveItemTimeOverride(selectedTimeOverrideItem, selectedTimeOverrideOriginalTime);
+  }, [canResetSelectedTimeOverride, handleSaveItemTimeOverride, selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
+
   const handleManualRefresh = useCallback(() => {
     void refreshServiceDataFromApi({
       date: selectedDate,
@@ -1415,6 +1437,14 @@ function App() {
                         disabled={!selectedTimeOverrideItem || !timeOverrideValue || updatingItemId !== ''}
                       >
                         Guardar
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn compact-btn"
+                        onClick={handleResetTimeOverride}
+                        disabled={!canResetSelectedTimeOverride || updatingItemId !== ''}
+                      >
+                        Reset
                       </button>
                     </div>
                   </div>

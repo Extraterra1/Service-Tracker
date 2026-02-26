@@ -36,6 +36,10 @@ function getDisplayTime(item) {
   return String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim() || '--:--';
 }
 
+function isValidTimeInput(value) {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
+}
+
 function ServiceItemCard({
   item,
   status,
@@ -61,7 +65,9 @@ function ServiceItemCard({
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
+  const originalEditorTime = useMemo(() => (String(item.time ?? '').trim() || '').slice(0, 5), [item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
+  const canResetTime = hasManualOverride && isValidTimeInput(originalEditorTime);
 
   const handleSaveTime = async () => {
     if (!onSaveTimeOverride || !editTimeValue) {
@@ -70,6 +76,18 @@ function ServiceItemCard({
 
     const success = await onSaveTimeOverride(item, editTimeValue);
     if (success) {
+      setTimeMenuOpen(false);
+    }
+  };
+
+  const handleResetTime = async () => {
+    if (!onSaveTimeOverride || !canResetTime) {
+      return;
+    }
+
+    const success = await onSaveTimeOverride(item, originalEditorTime);
+    if (success) {
+      setEditTimeValue(originalEditorTime);
       setTimeMenuOpen(false);
     }
   };
@@ -109,6 +127,9 @@ function ServiceItemCard({
                 <input type="time" value={editTimeValue} onChange={(event) => setEditTimeValue(event.target.value)} disabled={disabled} />
                 <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={disabled || !editTimeValue}>
                   Guardar
+                </button>
+                <button type="button" className="item-time-menu-reset" onClick={handleResetTime} disabled={disabled || !canResetTime}>
+                  Reset
                 </button>
                 <button
                   type="button"
