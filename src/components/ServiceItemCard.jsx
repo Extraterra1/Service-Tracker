@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import ReactCountryFlag from 'react-country-flag';
 import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode } from '../lib/phone';
@@ -42,6 +43,16 @@ function isValidTimeInput(value) {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
 }
 
+const doneCardVariants = {
+  active: {
+    opacity: 1
+  },
+  done: {
+    opacity: 0.9
+  }
+};
+const MotionArticle = motion.article;
+
 function ServiceItemCard({
   item,
   status,
@@ -68,9 +79,7 @@ function ServiceItemCard({
   const isReady = readyState?.ready === true;
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
-  const itemRef = useRef(null);
   const timeMenuWrapRef = useRef(null);
-  const previousDoneRef = useRef(done);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
   const originalEditorTime = useMemo(() => (String(item.time ?? '').trim() || '').slice(0, 5), [item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
@@ -115,38 +124,6 @@ function ServiceItemCard({
     };
   }, [timeMenuOpen]);
 
-  useEffect(() => {
-    const node = itemRef.current;
-    if (!node) {
-      previousDoneRef.current = done;
-      return undefined;
-    }
-
-    const wasDone = previousDoneRef.current;
-    previousDoneRef.current = done;
-
-    if (!done) {
-      node.classList.remove('is-done-animating');
-      return undefined;
-    }
-
-    if (wasDone) {
-      return undefined;
-    }
-
-    node.classList.remove('is-done-animating');
-    void node.offsetWidth;
-    node.classList.add('is-done-animating');
-
-    const timer = window.setTimeout(() => {
-      node.classList.remove('is-done-animating');
-    }, 560);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [done]);
-
   const handleSaveTime = async () => {
     if (!onSaveTimeOverride || !editTimeValue) {
       return;
@@ -171,7 +148,18 @@ function ServiceItemCard({
   };
 
   return (
-    <article ref={itemRef} className={`service-item ${done ? 'is-done' : ''} ${timeMenuOpen ? 'has-time-menu' : ''}`}>
+    <MotionArticle
+      layout
+      initial={false}
+      animate={done ? 'done' : 'active'}
+      variants={doneCardVariants}
+      transition={{
+        layout: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+        duration: 0.2,
+        ease: [0.22, 1, 0.36, 1]
+      }}
+      className={`service-item ${done ? 'is-done' : ''} ${timeMenuOpen ? 'has-time-menu' : ''}`}
+    >
       <div className="item-head">
         <div className="item-head-main">
           <span className="item-time">{displayTime}</span>
@@ -308,7 +296,7 @@ function ServiceItemCard({
       {item.notes ? <p className="item-note item-note-highlight">Notas: {item.notes}</p> : null}
 
       <footer className="item-footer">{updatedBy && updatedAt ? `Atualizado por ${updatedBy} às ${updatedAt}` : 'Sem atualização de equipa'}</footer>
-    </article>
+    </MotionArticle>
   );
 }
 

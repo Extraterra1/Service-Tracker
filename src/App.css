@@ -928,7 +928,7 @@ h1 {
 }
 
 .service-item.is-done {
-  opacity: 0.73;
+  opacity: 0.9;
 }
 
 .service-item .item-name,
@@ -942,7 +942,7 @@ h1 {
   text-decoration-skip-ink: none;
   transition:
     color 0.2s ease,
-    text-decoration-color 0.26s ease;
+    text-decoration-color 0.38s ease-out;
 }
 
 .service-item.is-done .item-name,
@@ -951,29 +951,6 @@ h1 {
 .service-item.is-done .item-location,
 .service-item.is-done .item-note {
   text-decoration-color: var(--line-through);
-}
-
-.service-item.is-done-animating {
-  animation: done-item-pop 0.56s cubic-bezier(0.22, 0.68, 0.22, 1);
-}
-
-@keyframes done-item-pop {
-  0% {
-    transform: translateY(0);
-    box-shadow: var(--shadow);
-  }
-
-  40% {
-    transform: translateY(-1px);
-    box-shadow:
-      0 0 0 1px color-mix(in oklab, var(--accent), transparent 38%),
-      0 10px 18px color-mix(in oklab, var(--accent), transparent 78%);
-  }
-
-  100% {
-    transform: translateY(0);
-    box-shadow: var(--shadow);
-  }
 }
 
 .item-head {
