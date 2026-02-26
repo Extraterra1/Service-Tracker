@@ -246,7 +246,7 @@ function applyTimeOverrideChanges(previousMap, changes) {
 function ServiceWorkspaceLoadingFallback() {
   return (
     <main className="service-grid" aria-busy="true">
-      {["Entregas", "Recolhas"].map((title) => (
+      {['Entregas', 'Recolhas'].map((title) => (
         <section key={`fallback-${title}`} className="service-pane" aria-label={title}>
           <header className="pane-header">
             <h2>{title}</h2>
@@ -275,7 +275,7 @@ function ServiceWorkspaceLocked({ lockedMessage }) {
 
   return (
     <main className="service-grid" aria-label="Service lists">
-      {["Entregas", "Recolhas"].map((title) => (
+      {['Entregas', 'Recolhas'].map((title) => (
         <section key={`locked-${title}`} className="service-pane" aria-label={title}>
           <header className="pane-header">
             <h2>{title}</h2>
@@ -1222,7 +1222,7 @@ function App() {
               <details className="menu-section">
                 <summary className="menu-section-summary">Alterar Hora</summary>
                 <div className="menu-section-body">
-                  <p className="subtle-text">Define uma hora manual sem alterar o valor original em `scraped-data`.</p>
+                  <p className="subtle-text">Define uma hora manual.</p>
                   <div className="menu-time-controls">
                     <select
                       className="manual-completed-select"
@@ -1262,7 +1262,7 @@ function App() {
               <details className="menu-section">
                 <summary className="menu-section-summary">Atividade do Dia</summary>
                 <div className="menu-section-body">
-                  <p className="subtle-text">Histórico de feito/desfeito e alterações de hora para {selectedDate}.</p>
+                  <p className="subtle-text">Histórico de alterações de hora para {selectedDate}.</p>
                   <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
                     Ver atividade ({activityEntries.length})
                   </button>
@@ -1350,9 +1350,7 @@ function App() {
                     <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
                       <p className="activity-popup-main">
                         <strong>{updatedBy}</strong>{' '}
-                        <span className={`menu-activity-action ${isTimeChange ? 'is-time' : entry.done ? 'is-done' : 'is-undone'}`}>
-                          {actionLabel}
-                        </span>{' '}
+                        <span className={`menu-activity-action ${isTimeChange ? 'is-time' : entry.done ? 'is-done' : 'is-undone'}`}>{actionLabel}</span>{' '}
                         {serviceLabel}
                       </p>
                       {isTimeChange ? (
