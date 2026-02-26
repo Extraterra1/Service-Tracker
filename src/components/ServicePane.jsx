@@ -3,6 +3,27 @@ import ServiceItemCard from './ServiceItemCard'
 
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000
 
+function toSortMinutes(item) {
+  const value = String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim()
+  if (!value) {
+    return null
+  }
+
+  const match = value.match(/^(\d{1,2}):(\d{2})$/)
+  if (!match) {
+    return null
+  }
+
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null
+  }
+
+  return hours * 60 + minutes
+}
+
 function toMillis(timestampLike) {
   if (!timestampLike) {
     return null
@@ -40,10 +61,32 @@ function ServicePane({
   const resolvedNowMs = Number.isFinite(nowMs) ? nowMs : 0
 
   const { activeItems, completedItems } = useMemo(() => {
+    const sortedItems = items
+      .map((item, index) => ({
+        item,
+        index,
+        sortMinutes: toSortMinutes(item)
+      }))
+      .sort((a, b) => {
+        const aHasTime = a.sortMinutes !== null
+        const bHasTime = b.sortMinutes !== null
+
+        if (aHasTime && bHasTime && a.sortMinutes !== b.sortMinutes) {
+          return a.sortMinutes - b.sortMinutes
+        }
+
+        if (aHasTime !== bHasTime) {
+          return aHasTime ? -1 : 1
+        }
+
+        return a.index - b.index
+      })
+      .map((entry) => entry.item)
+
     const active = []
     const completed = []
 
-    items.forEach((item) => {
+    sortedItems.forEach((item) => {
       const status = statusMap[item.itemId]
       const isDone = status?.done === true
 
