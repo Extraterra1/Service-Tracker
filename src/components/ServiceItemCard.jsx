@@ -71,6 +71,19 @@ function ServiceItemCard({
   const originalEditorTime = useMemo(() => (String(item.time ?? '').trim() || '').slice(0, 5), [item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
   const canResetTime = hasManualOverride && isValidTimeInput(originalEditorTime);
+  const handleToggleTimeMenu = () => {
+    if (disabled) {
+      return;
+    }
+
+    if (timeMenuOpen) {
+      setTimeMenuOpen(false);
+      return;
+    }
+
+    setEditTimeValue(initialEditorTime);
+    setTimeMenuOpen(true);
+  };
 
   useEffect(() => {
     if (!timeMenuOpen) {
@@ -163,33 +176,11 @@ function ServiceItemCard({
         </div>
 
         <div className="item-actions">
-          <div
-            ref={timeMenuWrapRef}
-            className="item-time-menu-wrap"
-            onClick={(event) => {
-              if (disabled || timeMenuOpen) {
-                return;
-              }
-
-              if (event.target.closest('.item-time-menu')) {
-                return;
-              }
-
-              setEditTimeValue(initialEditorTime);
-              setTimeMenuOpen(true);
-            }}
-          >
+          <div ref={timeMenuWrapRef} className="item-time-menu-wrap">
             <button
               type="button"
               className="item-time-menu-trigger"
-              onClick={() => {
-                if (timeMenuOpen) {
-                  setTimeMenuOpen(false);
-                  return;
-                }
-                setEditTimeValue(initialEditorTime);
-                setTimeMenuOpen(true);
-              }}
+              onClick={handleToggleTimeMenu}
               disabled={disabled}
               aria-label="Editar hora"
               aria-expanded={timeMenuOpen ? 'true' : 'false'}
@@ -200,7 +191,17 @@ function ServiceItemCard({
 
             {timeMenuOpen ? (
               <div className="item-time-menu">
-                <input type="time" value={editTimeValue} onChange={(event) => setEditTimeValue(event.target.value)} disabled={disabled} />
+                <input
+                  type="text"
+                  inputMode="text"
+                  placeholder="HH:mm"
+                  pattern="^([01]\\d|2[0-3]):([0-5]\\d)$"
+                  maxLength={5}
+                  value={editTimeValue}
+                  onChange={(event) => setEditTimeValue(event.target.value)}
+                  disabled={disabled}
+                  aria-label="Hora manual no formato 24 horas"
+                />
                 <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={disabled || !editTimeValue}>
                   Guardar
                 </button>

@@ -1426,11 +1426,16 @@ function App() {
 
                     <div className="menu-time-row">
                       <input
-                        type="time"
+                        type="text"
+                        inputMode="text"
+                        placeholder="HH:mm"
+                        pattern="^([01]\\d|2[0-3]):([0-5]\\d)$"
+                        maxLength={5}
                         className="menu-time-input"
                         value={timeOverrideValue}
                         onChange={(event) => setTimeOverrideValue(event.target.value)}
                         disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
+                        aria-label="Hora manual no formato 24 horas"
                       />
                       <button
                         type="button"
