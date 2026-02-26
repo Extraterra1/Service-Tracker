@@ -767,6 +767,7 @@ h1 {
   margin: 0;
   padding: 0.46rem 0.52rem;
   border-bottom: 1px solid var(--stroke);
+  border-radius: 1rem 1rem 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
