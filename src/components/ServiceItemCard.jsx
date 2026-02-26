@@ -64,7 +64,9 @@ function ServiceItemCard({
   const isReady = readyState?.ready === true;
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
+  const itemRef = useRef(null);
   const timeMenuWrapRef = useRef(null);
+  const previousDoneRef = useRef(done);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
   const originalEditorTime = useMemo(() => (String(item.time ?? '').trim() || '').slice(0, 5), [item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
@@ -96,6 +98,38 @@ function ServiceItemCard({
     };
   }, [timeMenuOpen]);
 
+  useEffect(() => {
+    const node = itemRef.current;
+    if (!node) {
+      previousDoneRef.current = done;
+      return undefined;
+    }
+
+    const wasDone = previousDoneRef.current;
+    previousDoneRef.current = done;
+
+    if (!done) {
+      node.classList.remove('is-done-animating');
+      return undefined;
+    }
+
+    if (wasDone) {
+      return undefined;
+    }
+
+    node.classList.remove('is-done-animating');
+    void node.offsetWidth;
+    node.classList.add('is-done-animating');
+
+    const timer = window.setTimeout(() => {
+      node.classList.remove('is-done-animating');
+    }, 560);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [done]);
+
   const handleSaveTime = async () => {
     if (!onSaveTimeOverride || !editTimeValue) {
       return;
@@ -120,7 +154,7 @@ function ServiceItemCard({
   };
 
   return (
-    <article className={`service-item ${done ? 'is-done' : ''} ${timeMenuOpen ? 'has-time-menu' : ''}`}>
+    <article ref={itemRef} className={`service-item ${done ? 'is-done' : ''} ${timeMenuOpen ? 'has-time-menu' : ''}`}>
       <div className="item-head">
         <div className="item-head-main">
           <span className="item-time">{displayTime}</span>
