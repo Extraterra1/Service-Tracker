@@ -1019,7 +1019,15 @@ h1 {
 .item-time-menu-reset:disabled,
 .item-time-menu-cancel:disabled {
   opacity: 0.7;
+}
+
+.item-time-menu-save:disabled,
+.item-time-menu-cancel:disabled {
   cursor: progress;
+}
+
+.item-time-menu-reset:disabled {
+  cursor: not-allowed;
 }
 
 .item-head-main {

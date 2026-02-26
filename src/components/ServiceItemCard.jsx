@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { formatAuditTimestamp } from '../lib/date';
 import { Clock3, Plane, Repeat2 } from 'lucide-react';
 
@@ -64,10 +64,37 @@ function ServiceItemCard({
   const isReady = readyState?.ready === true;
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
+  const timeMenuWrapRef = useRef(null);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
   const originalEditorTime = useMemo(() => (String(item.time ?? '').trim() || '').slice(0, 5), [item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
   const canResetTime = hasManualOverride && isValidTimeInput(originalEditorTime);
+
+  useEffect(() => {
+    if (!timeMenuOpen) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      if (!timeMenuWrapRef.current?.contains(event.target)) {
+        setTimeMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setTimeMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [timeMenuOpen]);
 
   const handleSaveTime = async () => {
     if (!onSaveTimeOverride || !editTimeValue) {
@@ -102,7 +129,22 @@ function ServiceItemCard({
         </div>
 
         <div className="item-actions">
-          <div className="item-time-menu-wrap">
+          <div
+            ref={timeMenuWrapRef}
+            className="item-time-menu-wrap"
+            onClick={(event) => {
+              if (disabled || timeMenuOpen) {
+                return;
+              }
+
+              if (event.target.closest('.item-time-menu')) {
+                return;
+              }
+
+              setEditTimeValue(initialEditorTime);
+              setTimeMenuOpen(true);
+            }}
+          >
             <button
               type="button"
               className="item-time-menu-trigger"
