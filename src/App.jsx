@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MoonStar, SunMedium } from 'lucide-react';
 import './App.css';
 import AuthPanel from './components/AuthPanel';
 import DateNavigator from './components/DateNavigator';
@@ -1154,101 +1155,128 @@ function App() {
         <details ref={menuPanelRef} className="menu-panel">
           <summary className="ghost-btn menu-summary">Menu</summary>
           <div className="menu-content">
-            <p className="menu-title">Operação diária</p>
-            <p className="subtle-text">Conta, PIN e estado de sincronização.</p>
-            <label className="theme-toggle" htmlFor="theme-switch">
-              <input id="theme-switch" type="checkbox" checked={theme === 'dark'} onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')} />
-              <span>Modo escuro</span>
-            </label>
-
-            <AuthPanel
-              user={user}
-              accessState={accessState}
-              checkingAccess={checkingAccess}
-              pin={pin}
-              pinSyncState={pinSyncState}
-              onPinChange={setPin}
-              onSignIn={handleSignIn}
-              onSignOut={handleSignOut}
-            />
-
-            <div className="menu-completed-panel">
-              <p className="menu-subtitle">Completados</p>
-              <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
-              <div className="manual-completed-controls">
-                <select
-                  className="manual-completed-select"
-                  value={manualCompletedItemId}
-                  onChange={(event) => setManualCompletedItemId(event.target.value)}
-                  disabled={manualCompletedCandidates.length === 0 || updatingItemId !== ''}
-                >
-                  {manualCompletedCandidates.length === 0 ? <option value="">Sem concluídos recentes</option> : null}
-                  {manualCompletedCandidates.map((item) => (
-                    <option key={item.itemId} value={item.itemId}>
-                      {getMenuItemLabel(item)}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="button"
-                  className="ghost-btn compact-btn"
-                  onClick={handleAddToCompleted}
-                  disabled={!manualCompletedItemId || updatingItemId !== ''}
-                >
-                  Adicionar
-                </button>
+            <div className="menu-head">
+              <div className="menu-head-copy">
+                <p className="menu-title">Operação diária</p>
+                <p className="subtle-text">Definições rápidas para a operação de hoje.</p>
               </div>
-            </div>
-
-            <div className="menu-time-panel">
-              <p className="menu-subtitle">Alterar Hora</p>
-              <p className="subtle-text">Define uma hora manual sem alterar o valor original em `scraped-data`.</p>
-              <div className="menu-time-controls">
-                <select
-                  className="manual-completed-select"
-                  value={timeOverrideItemId}
-                  onChange={(event) => handleTimeOverrideSelectionChange(event.target.value)}
-                  disabled={allServiceItems.length === 0 || updatingItemId !== ''}
-                >
-                  {allServiceItems.length === 0 ? <option value="">Sem serviços disponíveis</option> : null}
-                  {allServiceItems.map((item) => (
-                    <option key={item.itemId} value={item.itemId}>
-                      {getMenuItemLabel(item)}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="menu-time-row">
-                  <input
-                    type="time"
-                    className="menu-time-input"
-                    value={timeOverrideValue}
-                    onChange={(event) => setTimeOverrideValue(event.target.value)}
-                    disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
-                  />
-                  <button
-                    type="button"
-                    className="ghost-btn compact-btn"
-                    onClick={handleSaveTimeOverride}
-                    disabled={!selectedTimeOverrideItem || !timeOverrideValue || updatingItemId !== ''}
-                  >
-                    Guardar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="menu-activity-panel">
-              <p className="menu-subtitle">Atividade do Dia</p>
-              <p className="subtle-text">Histórico de feito/desfeito e alterações de hora para {selectedDate}.</p>
-              <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
-                Ver atividade ({activityEntries.length})
+              <button
+                type="button"
+                className="theme-icon-btn"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              >
+                {theme === 'dark' ? <SunMedium className="theme-icon" aria-hidden="true" /> : <MoonStar className="theme-icon" aria-hidden="true" />}
               </button>
-              {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
             </div>
 
-            <p className="status-line status-line-menu">{statusLine}</p>
+            <div className="menu-sections">
+              <details className="menu-section" open>
+                <summary className="menu-section-summary">Conta e PIN</summary>
+                <div className="menu-section-body">
+                  <AuthPanel
+                    user={user}
+                    accessState={accessState}
+                    checkingAccess={checkingAccess}
+                    pin={pin}
+                    pinSyncState={pinSyncState}
+                    onPinChange={setPin}
+                    onSignIn={handleSignIn}
+                    onSignOut={handleSignOut}
+                  />
+                </div>
+              </details>
+
+              <details className="menu-section">
+                <summary className="menu-section-summary">Completados</summary>
+                <div className="menu-section-body">
+                  <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
+                  <div className="manual-completed-controls">
+                    <select
+                      className="manual-completed-select"
+                      value={manualCompletedItemId}
+                      onChange={(event) => setManualCompletedItemId(event.target.value)}
+                      disabled={manualCompletedCandidates.length === 0 || updatingItemId !== ''}
+                    >
+                      {manualCompletedCandidates.length === 0 ? <option value="">Sem concluídos recentes</option> : null}
+                      {manualCompletedCandidates.map((item) => (
+                        <option key={item.itemId} value={item.itemId}>
+                          {getMenuItemLabel(item)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      className="ghost-btn compact-btn"
+                      onClick={handleAddToCompleted}
+                      disabled={!manualCompletedItemId || updatingItemId !== ''}
+                    >
+                      Adicionar
+                    </button>
+                  </div>
+                </div>
+              </details>
+
+              <details className="menu-section">
+                <summary className="menu-section-summary">Alterar Hora</summary>
+                <div className="menu-section-body">
+                  <p className="subtle-text">Define uma hora manual sem alterar o valor original em `scraped-data`.</p>
+                  <div className="menu-time-controls">
+                    <select
+                      className="manual-completed-select"
+                      value={timeOverrideItemId}
+                      onChange={(event) => handleTimeOverrideSelectionChange(event.target.value)}
+                      disabled={allServiceItems.length === 0 || updatingItemId !== ''}
+                    >
+                      {allServiceItems.length === 0 ? <option value="">Sem serviços disponíveis</option> : null}
+                      {allServiceItems.map((item) => (
+                        <option key={item.itemId} value={item.itemId}>
+                          {getMenuItemLabel(item)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="menu-time-row">
+                      <input
+                        type="time"
+                        className="menu-time-input"
+                        value={timeOverrideValue}
+                        onChange={(event) => setTimeOverrideValue(event.target.value)}
+                        disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
+                      />
+                      <button
+                        type="button"
+                        className="ghost-btn compact-btn"
+                        onClick={handleSaveTimeOverride}
+                        disabled={!selectedTimeOverrideItem || !timeOverrideValue || updatingItemId !== ''}
+                      >
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <details className="menu-section">
+                <summary className="menu-section-summary">Atividade do Dia</summary>
+                <div className="menu-section-body">
+                  <p className="subtle-text">Histórico de feito/desfeito e alterações de hora para {selectedDate}.</p>
+                  <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
+                    Ver atividade ({activityEntries.length})
+                  </button>
+                  {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
+                </div>
+              </details>
+
+              <details className="menu-section">
+                <summary className="menu-section-summary">Sincronização</summary>
+                <div className="menu-section-body">
+                  <p className="status-line status-line-menu">{statusLine}</p>
+                </div>
+              </details>
+            </div>
           </div>
         </details>
       </header>

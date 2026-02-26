@@ -85,6 +85,95 @@ h1 {
   background: var(--menu-bg);
 }
 
+.menu-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.menu-head-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.theme-icon-btn {
+  width: 1.95rem;
+  height: 1.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: color-mix(in oklab, var(--ghost-bg), var(--accent) 7%);
+  color: var(--ghost-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.theme-icon-btn:hover {
+  border-color: color-mix(in oklab, var(--accent), transparent 24%);
+}
+
+.theme-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke-width: 2.2;
+}
+
+.menu-sections {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.menu-section {
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  overflow: hidden;
+}
+
+.menu-section-summary {
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  color: var(--menu-title-color);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.menu-section-summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-section-summary::after {
+  content: '▾';
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  transition: transform 0.16s ease;
+}
+
+.menu-section[open] .menu-section-summary::after {
+  transform: rotate(180deg);
+}
+
+.menu-section-body {
+  border-top: 1px dashed var(--stroke);
+  padding: 0.45rem 0.5rem;
+}
+
+.menu-section-body .status-line-menu {
+  margin-top: 0;
+}
+
 .menu-title {
   margin: 0;
   font-weight: 700;
@@ -116,24 +205,6 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-}
-
-.menu-completed-panel {
-  margin-top: 0.45rem;
-  padding-top: 0.45rem;
-  border-top: 1px dashed var(--stroke);
-}
-
-.menu-activity-panel {
-  margin-top: 0.45rem;
-  padding-top: 0.45rem;
-  border-top: 1px dashed var(--stroke);
-}
-
-.menu-time-panel {
-  margin-top: 0.45rem;
-  padding-top: 0.45rem;
-  border-top: 1px dashed var(--stroke);
 }
 
 .menu-subtitle {
@@ -1139,6 +1210,10 @@ h1 {
   .app-shell {
     padding: 0.34rem;
     gap: 0.34rem;
+  }
+
+  .menu-content {
+    width: min(50vw, 320px);
   }
 
   .field-inline-date input {
