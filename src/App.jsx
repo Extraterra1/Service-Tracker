@@ -3,6 +3,7 @@ import { MoonStar, SunMedium } from 'lucide-react';
 import './App.css';
 import AuthPanel from './components/AuthPanel';
 import DateNavigator from './components/DateNavigator';
+import SignedOutLanding from './components/SignedOutLanding';
 import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges } from './lib/auth';
 import { getTodayDate } from './lib/date';
 import { hasFirebaseConfig } from './lib/firebaseApp';
@@ -1354,6 +1355,12 @@ function App() {
 
     return `Ultima Atualização: ${formatted}`;
   }, [lastLoadAt, loadingServices, refreshSource]);
+
+  const showSignedOutLanding = !checkingAccess && accessState === 'signed_out';
+
+  if (showSignedOutLanding) {
+    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage} />;
+  }
 
   return (
     <div className="app-shell">
