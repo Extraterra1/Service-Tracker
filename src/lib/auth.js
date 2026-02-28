@@ -25,6 +25,24 @@ export function subscribeToAuthChanges(callback) {
   return onAuthStateChanged(auth, callback)
 }
 
+export async function waitForAuthStateReady() {
+  if (!auth) {
+    return
+  }
+
+  if (typeof auth.authStateReady === 'function') {
+    await auth.authStateReady()
+    return
+  }
+
+  await new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      unsubscribe()
+      resolve()
+    })
+  })
+}
+
 export async function signInWithGoogle() {
   if (!auth || !hasFirebaseConfig) {
     throw new Error('Firebase environment variables are missing.')

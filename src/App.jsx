@@ -4,7 +4,7 @@ import './App.css';
 import AuthPanel from './components/AuthPanel';
 import DateNavigator from './components/DateNavigator';
 import SignedOutLanding from './components/SignedOutLanding';
-import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges } from './lib/auth';
+import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges, waitForAuthStateReady } from './lib/auth';
 import { getTodayDate } from './lib/date';
 import { hasFirebaseConfig } from './lib/firebaseApp';
 
@@ -383,7 +383,7 @@ function App() {
   const [pinSyncState, setPinSyncState] = useState('idle');
   const [user, setUser] = useState(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
-  const [accessState, setAccessState] = useState('signed_out');
+  const [accessState, setAccessState] = useState('checking');
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
@@ -411,10 +411,6 @@ function App() {
   const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
   const allowlistCheckTokenRef = useRef(0);
-
-  useEffect(() => {
-    void configureAuthPersistence();
-  }, []);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -573,7 +569,10 @@ function App() {
       return () => {};
     }
 
-    const unsubscribe = subscribeToAuthChanges((currentUser) => {
+    let isMounted = true;
+    let unsubscribe = () => {};
+
+    const handleCurrentUser = (currentUser) => {
       const checkToken = allowlistCheckTokenRef.current + 1;
       allowlistCheckTokenRef.current = checkToken;
 
@@ -586,6 +585,7 @@ function App() {
         return;
       }
 
+      setAccessState('checking');
       setCheckingAccess(true);
       void loadAccessModule()
         .then(({ checkAllowlist }) => checkAllowlist(currentUser.uid))
@@ -607,9 +607,32 @@ function App() {
             setCheckingAccess(false);
           }
         });
-    });
+    };
+
+    const initializeAuthSubscription = async () => {
+      try {
+        await configureAuthPersistence();
+      } catch {
+        // Keep auth flow moving even if persistence setup fails.
+      }
+
+      try {
+        await waitForAuthStateReady();
+      } catch {
+        // Fallback to subscription callback if auth-ready promise fails.
+      }
+
+      if (!isMounted) {
+        return;
+      }
+
+      unsubscribe = subscribeToAuthChanges(handleCurrentUser);
+    };
+
+    void initializeAuthSubscription();
 
     return () => {
+      isMounted = false;
       allowlistCheckTokenRef.current += 1;
       unsubscribe();
     };
@@ -1356,7 +1379,19 @@ function App() {
     return `Ultima Atualização: ${formatted}`;
   }, [lastLoadAt, loadingServices, refreshSource]);
 
+  const showAuthResolvingScreen = checkingAccess && accessState === 'checking';
   const showSignedOutLanding = !checkingAccess && accessState === 'signed_out';
+
+  if (showAuthResolvingScreen) {
+    return (
+      <main className="auth-resolving-screen" aria-busy="true" aria-label="A validar sessão">
+        <div className="auth-resolving-card">
+          <span className="auth-resolving-spinner" aria-hidden="true" />
+          <p>A validar sessão...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (showSignedOutLanding) {
     return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage} />;
