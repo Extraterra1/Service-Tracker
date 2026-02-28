@@ -51,6 +51,89 @@
   }
 }
 
+.access-gate-screen {
+  min-height: 100vh;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(95% 90% at 4% 6%, color-mix(in oklab, var(--accent), transparent 90%), transparent 66%),
+    radial-gradient(80% 70% at 100% 100%, color-mix(in oklab, var(--accent-strong), transparent 92%), transparent 70%),
+    var(--bg);
+}
+
+.access-gate-card {
+  width: min(92vw, 440px);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  background: var(--panel-bg-strong);
+  box-shadow: 0 16px 36px color-mix(in oklab, var(--shadow), transparent 30%);
+  padding: 1.15rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+}
+
+.access-gate-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.access-gate-title {
+  margin: 0;
+  font-family: 'Sora', 'Urbanist', sans-serif;
+  font-size: 1.2rem;
+  line-height: 1.18;
+  color: var(--text);
+}
+
+.access-gate-body {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.access-gate-message {
+  margin: 0.15rem 0 0;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--panel-bg), white 4%);
+  color: var(--text);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.access-gate-actions {
+  margin-top: 0.2rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.access-gate-btn {
+  flex: 1;
+  min-height: 2rem;
+}
+
+.access-gate-denied .access-gate-eyebrow,
+.access-gate-blocked .access-gate-eyebrow {
+  color: var(--error-text);
+}
+
+.access-gate-denied .access-gate-message,
+.access-gate-blocked .access-gate-message {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
 .landing-page {
   min-height: 100vh;
   padding: 1rem;
@@ -1533,6 +1616,33 @@ h1 {
 }
 
 @media (max-width: 780px) {
+  .access-gate-screen {
+    padding: 0.78rem;
+  }
+
+  .access-gate-card {
+    border-radius: 14px;
+    padding: 0.9rem 0.82rem;
+    gap: 0.4rem;
+  }
+
+  .access-gate-title {
+    font-size: 1.05rem;
+  }
+
+  .access-gate-body {
+    font-size: 0.76rem;
+  }
+
+  .access-gate-message {
+    font-size: 0.7rem;
+  }
+
+  .access-gate-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .landing-page {
     padding: 0.78rem;
   }

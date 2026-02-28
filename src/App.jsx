@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import { MoonStar, SunMedium } from 'lucide-react';
 import './App.css';
 import AuthPanel from './components/AuthPanel';
+import AccessGateScreen from './components/AccessGateScreen';
 import DateNavigator from './components/DateNavigator';
 import SignedOutLanding from './components/SignedOutLanding';
 import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges, waitForAuthStateReady } from './lib/auth';
@@ -13,6 +14,7 @@ const ServiceWorkspace = lazy(() => import('./features/service-workspace/Service
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
+const ACCESS_POLL_INTERVAL_MS = 20 * 1000;
 
 let accessModulePromise;
 let pinStoreModulePromise;
@@ -384,6 +386,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [accessState, setAccessState] = useState('checking');
+  const [accessGateMessage, setAccessGateMessage] = useState('');
+  const [accessPollInFlight, setAccessPollInFlight] = useState(false);
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
@@ -411,6 +415,24 @@ function App() {
   const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
   const allowlistCheckTokenRef = useRef(0);
+  const accessPollInFlightRef = useRef(false);
+
+  const applyAccessResult = useCallback((accessResult) => {
+    const nextState = String(accessResult?.state ?? 'denied');
+    setAccessState(nextState);
+
+    if (nextState === 'allowed' || nextState === 'signed_out' || nextState === 'checking') {
+      setAccessGateMessage('');
+      return;
+    }
+
+    setAccessGateMessage(String(accessResult?.message ?? '').trim());
+  }, []);
+
+  const setAccessPollingState = useCallback((value) => {
+    accessPollInFlightRef.current = value;
+    setAccessPollInFlight(value);
+  }, []);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -565,6 +587,7 @@ function App() {
   useEffect(() => {
     if (!hasFirebaseConfig) {
       setAccessState('firebase_missing');
+      setAccessGateMessage('');
       setCheckingAccess(false);
       return () => {};
     }
@@ -580,26 +603,31 @@ function App() {
       setUser(currentUser);
 
       if (!currentUser) {
-        setAccessState('signed_out');
+        setAccessGateMessage('');
+        setAccessPollingState(false);
+        applyAccessResult({ state: 'signed_out', message: '' });
         setCheckingAccess(false);
         return;
       }
 
-      setAccessState('checking');
+      applyAccessResult({ state: 'checking', message: '' });
       setCheckingAccess(true);
       void loadAccessModule()
-        .then(({ checkAllowlist }) => checkAllowlist(currentUser.uid))
+        .then(({ resolveAccessState }) => resolveAccessState(currentUser))
         .then((accessResult) => {
           if (allowlistCheckTokenRef.current !== checkToken) {
             return;
           }
-          setAccessState(accessResult.allowed ? 'allowed' : 'denied');
+          applyAccessResult(accessResult);
         })
         .catch((error) => {
           if (allowlistCheckTokenRef.current !== checkToken) {
             return;
           }
-          setAccessState('denied');
+          applyAccessResult({
+            state: 'denied',
+            message: 'Falha ao validar acesso. Tenta novamente.'
+          });
           setErrorMessage(error.message);
         })
         .finally(() => {
@@ -636,7 +664,81 @@ function App() {
       allowlistCheckTokenRef.current += 1;
       unsubscribe();
     };
-  }, []);
+  }, [applyAccessResult, setAccessPollingState]);
+
+  const handleManualAccessRetry = useCallback(async () => {
+    if (!user?.uid || accessState === 'signed_out' || accessState === 'firebase_missing') {
+      return;
+    }
+
+    setErrorMessage('');
+    setAccessPollingState(true);
+
+    try {
+      const { resolveAccessState, pollApprovalState } = await loadAccessModule();
+      const result =
+        accessState === 'pending'
+          ? await pollApprovalState(user)
+          : await resolveAccessState(user);
+      applyAccessResult(result);
+    } catch (error) {
+      applyAccessResult({
+        state: accessState === 'pending' ? 'pending' : 'denied',
+        message: 'Falha ao verificar acesso. Tenta novamente.'
+      });
+      setErrorMessage(error.message);
+    } finally {
+      setAccessPollingState(false);
+    }
+  }, [accessState, applyAccessResult, setAccessPollingState, user]);
+
+  useEffect(() => {
+    if (accessState !== 'pending' || !user?.uid) {
+      return () => {};
+    }
+
+    let isActive = true;
+
+    const poll = async () => {
+      if (!isActive) {
+        return;
+      }
+
+      if (accessPollInFlightRef.current) {
+        return;
+      }
+
+      setAccessPollingState(true);
+      try {
+        const { pollApprovalState } = await loadAccessModule();
+        const result = await pollApprovalState(user);
+        if (!isActive) {
+          return;
+        }
+        applyAccessResult(result);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+        setErrorMessage(error.message);
+      } finally {
+        if (isActive) {
+          setAccessPollingState(false);
+        }
+      }
+    };
+
+    void poll();
+
+    const intervalId = window.setInterval(() => {
+      void poll();
+    }, ACCESS_POLL_INTERVAL_MS);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
+  }, [accessState, applyAccessResult, setAccessPollingState, user]);
 
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
@@ -652,6 +754,10 @@ function App() {
 
     if (accessState === 'denied') {
       return 'Conta sem acesso. Pede ativação na allowlist.';
+    }
+
+    if (accessState === 'blocked') {
+      return 'Conta bloqueada. Contacta o administrador.';
     }
 
     if (accessState === 'firebase_missing') {
@@ -1151,6 +1257,8 @@ function App() {
   const handleSignOut = async () => {
     setErrorMessage('');
     await signOutUser();
+    setAccessGateMessage('');
+    setAccessPollingState(false);
     setServiceData({ pickups: [], returns: [] });
     setStatusMap({});
     setTimeOverrideMap({});
@@ -1381,6 +1489,7 @@ function App() {
 
   const showAuthResolvingScreen = checkingAccess && accessState === 'checking';
   const showSignedOutLanding = !checkingAccess && accessState === 'signed_out';
+  const showAccessGateScreen = !checkingAccess && (accessState === 'pending' || accessState === 'denied' || accessState === 'blocked');
 
   if (showAuthResolvingScreen) {
     return (
@@ -1395,6 +1504,19 @@ function App() {
 
   if (showSignedOutLanding) {
     return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage} />;
+  }
+
+  if (showAccessGateScreen) {
+    return (
+      <AccessGateScreen
+        state={accessState}
+        message={accessGateMessage || errorMessage}
+        checking={checkingAccess}
+        polling={accessPollInFlight}
+        onRetry={handleManualAccessRetry}
+        onSignOut={handleSignOut}
+      />
+    );
   }
 
   return (

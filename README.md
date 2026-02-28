@@ -8,6 +8,7 @@ Mobile-first PWA for daily rental-car workflow.
 - Manual API refresh only (no polling / no automatic refresh timer).
 - Team-shared realtime checklist state via Firestore listeners.
 - Google Sign-In and allowlist gate (`staff_allowlist` collection).
+- Telegram-based access approval queue (`access_requests` + Cloud Functions webhook).
 - API PIN synced per Google account across devices (`user_settings` collection).
 - Installable PWA (manifest + service worker).
 
@@ -34,6 +35,7 @@ Required variables:
 - `VITE_FIREBASE_PROJECT_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID` (optional)
+- `VITE_FIREBASE_FUNCTIONS_REGION` (optional, default `europe-west9`)
 
 ## Run
 
@@ -47,6 +49,40 @@ Build:
 ```bash
 npm run build
 npm run preview
+```
+
+## Access approval backend (Telegram)
+
+This repo now includes Firebase Cloud Functions under `functions/`:
+
+- `requestAccessApproval` (callable): user-side request trigger.
+- `telegramWebhook` (HTTPS): handles Telegram inline Approve / Deny / Block.
+
+### Configure secrets
+
+```bash
+firebase functions:secrets:set TELEGRAM_BOT_TOKEN
+firebase functions:secrets:set TELEGRAM_ADMIN_CHAT_ID
+firebase functions:secrets:set TELEGRAM_WEBHOOK_SECRET
+```
+
+### Deploy functions + rules
+
+```bash
+firebase deploy --only functions,firestore:rules
+```
+
+### Set Telegram webhook
+
+Replace `<REGION>`, `<PROJECT_ID>`, `<WEBHOOK_SECRET>`, `<BOT_TOKEN>`:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url":"https://<REGION>-<PROJECT_ID>.cloudfunctions.net/telegramWebhook",
+    "secret_token":"<WEBHOOK_SECRET>"
+  }'
 ```
 
 ## Firestore collections expected
@@ -90,6 +126,21 @@ Required Firestore rule behavior for this collection:
 
 - users can read/write only their own `user_settings/{uid}` document
 - `uid` must match `request.auth.uid`
+
+### `access_requests/{uid}` (server-managed)
+
+```json
+{
+  "uid": "firebaseUid",
+  "email": "user@example.com",
+  "emailNormalized": "user@example.com",
+  "displayName": "User Name",
+  "status": "pending",
+  "requestCount": 1
+}
+```
+
+Client reads own document only. Writes are denied for clients.
 
 ## API contract used by this app
 

@@ -232,6 +232,19 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /access_requests/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /access_blocks_uid/{uid} {
+      allow read, write: if false;
+    }
+
+    match /access_blocks_email/{emailNormalized} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
