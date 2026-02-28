@@ -41,6 +41,7 @@ function ServiceWorkspace({
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
+  updatingItemId = '',
   disabled,
   loading = false,
   canShowEmptyState = true,
@@ -147,6 +148,7 @@ function ServiceWorkspace({
           onToggleDone={onToggleDone}
           onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
+          updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
           canShowEmptyState={canShowEmptyState}
@@ -164,6 +166,7 @@ function ServiceWorkspace({
           onToggleDone={onToggleDone}
           onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
+          updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
           canShowEmptyState={canShowEmptyState}

@@ -53,6 +53,7 @@ function ServicePane({
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
+  updatingItemId = '',
   disabled,
   loading = false,
   canShowEmptyState = true,
@@ -154,6 +155,7 @@ function ServicePane({
                   onToggleDone={onToggleDone}
                   onToggleReady={onToggleReady}
                   onSaveTimeOverride={onSaveTimeOverride}
+                  isUpdating={updatingItemId === item.itemId}
                   disabled={disabled}
                 />
               ))}
@@ -178,6 +180,7 @@ function ServicePane({
               onToggleDone={onToggleDone}
               onToggleReady={onToggleReady}
               onSaveTimeOverride={onSaveTimeOverride}
+              isUpdating={updatingItemId === item.itemId}
               disabled={disabled}
             />
           ))}

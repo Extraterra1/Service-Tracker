@@ -1148,6 +1148,10 @@ function App() {
         return;
       }
 
+      if (updatingItemId) {
+        return;
+      }
+
       setUpdatingItemId(item.itemId);
       setErrorMessage('');
 
@@ -1165,7 +1169,7 @@ function App() {
         setUpdatingItemId('');
       }
     },
-    [accessState, selectedDate, user]
+    [accessState, selectedDate, updatingItemId, user]
   );
 
   const handleToggleReady = useCallback(
@@ -1175,6 +1179,10 @@ function App() {
       }
 
       if (item?.serviceType !== 'pickup') {
+        return;
+      }
+
+      if (updatingItemId) {
         return;
       }
 
@@ -1203,7 +1211,7 @@ function App() {
         setUpdatingItemId('');
       }
     },
-    [accessState, readyMap, selectedDate, user]
+    [accessState, readyMap, selectedDate, updatingItemId, user]
   );
 
   const handleAddToCompleted = useCallback(async () => {
@@ -1213,6 +1221,10 @@ function App() {
 
     const item = manualCompletedCandidates.find((entry) => entry.itemId === manualCompletedItemId);
     if (!item) {
+      return;
+    }
+
+    if (updatingItemId) {
       return;
     }
 
@@ -1233,7 +1245,7 @@ function App() {
     } finally {
       setUpdatingItemId('');
     }
-  }, [accessState, manualCompletedCandidates, manualCompletedItemId, selectedDate, user]);
+  }, [accessState, manualCompletedCandidates, manualCompletedItemId, selectedDate, updatingItemId, user]);
 
   const handleTimeOverrideSelectionChange = useCallback(
     (nextItemId) => {
@@ -1251,6 +1263,10 @@ function App() {
       }
 
       if (!item?.itemId) {
+        return false;
+      }
+
+      if (updatingItemId) {
         return false;
       }
 
@@ -1278,7 +1294,7 @@ function App() {
         setUpdatingItemId('');
       }
     },
-    [accessState, selectedDate, timeOverrideItemId, user]
+    [accessState, selectedDate, timeOverrideItemId, updatingItemId, user]
   );
 
   const handleSaveTimeOverride = useCallback(async () => {
@@ -1502,7 +1518,8 @@ function App() {
             onToggleDone={handleToggleDone}
             onToggleReady={handleToggleReady}
             onSaveTimeOverride={handleSaveItemTimeOverride}
-            disabled={accessState !== 'allowed' || updatingItemId !== ''}
+            updatingItemId={updatingItemId}
+            disabled={accessState !== 'allowed'}
             loading={paneLoading}
             canShowEmptyState={canReadServiceData && hasDayResponse}
             lockedMessage=""

@@ -62,6 +62,7 @@ function ServiceItemCard({
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
+  isUpdating = false,
   disabled,
 }) {
   const done = status?.done === true;
@@ -84,8 +85,9 @@ function ServiceItemCard({
   const originalEditorTime = useMemo(() => (String(item.time ?? '').trim() || '').slice(0, 5), [item.time]);
   const [editTimeValue, setEditTimeValue] = useState(initialEditorTime);
   const canResetTime = hasManualOverride && isValidTimeInput(originalEditorTime);
+  const controlsDisabled = disabled || isUpdating;
   const handleToggleTimeMenu = () => {
-    if (disabled) {
+    if (controlsDisabled) {
       return;
     }
 
@@ -173,7 +175,7 @@ function ServiceItemCard({
               type="button"
               className="item-time-menu-trigger"
               onClick={handleToggleTimeMenu}
-              disabled={disabled}
+              disabled={controlsDisabled}
               aria-label="Editar hora"
               aria-expanded={timeMenuOpen ? 'true' : 'false'}
               title="Editar hora"
@@ -191,13 +193,13 @@ function ServiceItemCard({
                   maxLength={5}
                   value={editTimeValue}
                   onChange={(event) => setEditTimeValue(event.target.value)}
-                  disabled={disabled}
+                  disabled={controlsDisabled}
                   aria-label="Hora manual no formato 24 horas"
                 />
-                <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={disabled || !editTimeValue}>
+                <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={controlsDisabled || !editTimeValue}>
                   Guardar
                 </button>
-                <button type="button" className="item-time-menu-reset" onClick={handleResetTime} disabled={disabled || !canResetTime}>
+                <button type="button" className="item-time-menu-reset" onClick={handleResetTime} disabled={controlsDisabled || !canResetTime}>
                   Reset
                 </button>
                 <button
@@ -207,7 +209,7 @@ function ServiceItemCard({
                     setEditTimeValue(initialEditorTime);
                     setTimeMenuOpen(false);
                   }}
-                  disabled={disabled}
+                  disabled={controlsDisabled}
                 >
                   Fechar
                 </button>
@@ -216,7 +218,7 @@ function ServiceItemCard({
           </div>
 
           <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
-            <input type="checkbox" checked={done} disabled={disabled} onChange={(event) => onToggleDone(item, event.target.checked)} />
+            <input type="checkbox" checked={done} disabled={controlsDisabled} onChange={(event) => onToggleDone(item, event.target.checked)} />
             <span>Feito</span>
           </label>
         </div>
@@ -262,7 +264,7 @@ function ServiceItemCard({
                   type="button"
                   className={`item-plate-button ${isReady ? 'is-ready' : ''}`}
                   onClick={() => onToggleReady(item)}
-                  disabled={disabled}
+                  disabled={controlsDisabled}
                   aria-pressed={isReady ? 'true' : 'false'}
                   aria-label={isReady ? `Remover viatura ${item.plate} de pronta` : `Marcar viatura ${item.plate} como pronta`}
                   title={isReady ? 'Pronta - toque para remover' : 'Toque para marcar pronta'}
@@ -307,6 +309,10 @@ function areSameItemProps(prevProps, nextProps) {
   const nextStatus = nextProps.status;
 
   if (prevProps.disabled !== nextProps.disabled) {
+    return false;
+  }
+
+  if (prevProps.isUpdating !== nextProps.isUpdating) {
     return false;
   }
 
