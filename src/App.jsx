@@ -1262,22 +1262,27 @@ function App() {
 
   const handleSignOut = async () => {
     setErrorMessage('');
-    await signOutUser();
-    setAccessGateMessage('');
-    setAccessPollingState(false);
-    setServiceData({ pickups: [], returns: [] });
-    setStatusMap({});
-    setTimeOverrideMap({});
-    setReadyMap({});
-    setActivityEntries([]);
-    setActivityPopupOpen(false);
-    setLoadingActivity(false);
-    setTimeOverrideItemId('');
-    setTimeOverrideValue('');
-    setLastLoadAt(null);
-    setHasDayResponse(false);
-    setStaleWarning('');
-    setLoadingDateData(false);
+    try {
+      await signOutUser();
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setAccessGateMessage('');
+      setAccessPollingState(false);
+      setServiceData({ pickups: [], returns: [] });
+      setStatusMap({});
+      setTimeOverrideMap({});
+      setReadyMap({});
+      setActivityEntries([]);
+      setActivityPopupOpen(false);
+      setLoadingActivity(false);
+      setTimeOverrideItemId('');
+      setTimeOverrideValue('');
+      setLastLoadAt(null);
+      setHasDayResponse(false);
+      setStaleWarning('');
+      setLoadingDateData(false);
+    }
   };
 
   const handleToggleDone = useCallback(
