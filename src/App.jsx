@@ -527,10 +527,6 @@ function App() {
     await handleSaveItemTimeOverride(selectedTimeOverrideItem, selectedTimeOverrideOriginalTime);
   }, [canResetSelectedTimeOverride, handleSaveItemTimeOverride, selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
 
-  const handleManualRefresh = useCallback(() => {
-    manualRefresh();
-  }, [manualRefresh]);
-
   const handleOpenActivityPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
     setActivityPopupOpen(true);
@@ -634,7 +630,7 @@ function App() {
         statusLine={statusLine}
       />
 
-      <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={handleManualRefresh} loading={loadingServices} />
+      <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} />
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
 
