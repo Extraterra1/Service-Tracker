@@ -5,9 +5,9 @@ import AuthPanel from './components/AuthPanel';
 import AccessGateScreen from './components/AccessGateScreen';
 import DateNavigator from './components/DateNavigator';
 import SignedOutLanding from './components/SignedOutLanding';
-import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges, waitForAuthStateReady } from './lib/auth';
+import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
-import { hasFirebaseConfig } from './lib/firebaseApp';
+import { useAccessGate } from './hooks/useAccessGate';
 import { toDateValue, toTimestampMs } from './lib/timestamp';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
@@ -15,9 +15,7 @@ const ServiceWorkspace = lazy(() => import('./features/service-workspace/Service
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
-const ACCESS_POLL_INTERVAL_MS = 20 * 1000;
 
-let accessModulePromise;
 let pinStoreModulePromise;
 let apiModulePromise;
 let scrapedDataModulePromise;
@@ -25,11 +23,6 @@ let statusStoreModulePromise;
 let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
-
-function loadAccessModule() {
-  accessModulePromise ??= import('./lib/access');
-  return accessModulePromise;
-}
 
 function loadPinStoreModule() {
   pinStoreModulePromise ??= import('./lib/pinStore');
@@ -362,11 +355,15 @@ function App() {
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
   const [pinSyncState, setPinSyncState] = useState('idle');
-  const [user, setUser] = useState(null);
-  const [checkingAccess, setCheckingAccess] = useState(true);
-  const [accessState, setAccessState] = useState('checking');
-  const [accessGateMessage, setAccessGateMessage] = useState('');
-  const [accessPollInFlight, setAccessPollInFlight] = useState(false);
+  const {
+    user,
+    accessState,
+    checkingAccess,
+    accessGateMessage,
+    accessPollInFlight,
+    error: accessErrorMessage,
+    retryAccessCheck
+  } = useAccessGate();
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
@@ -393,25 +390,6 @@ function App() {
   const refreshInFlightRef = useRef(false);
   const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
-  const allowlistCheckTokenRef = useRef(0);
-  const accessPollInFlightRef = useRef(false);
-
-  const applyAccessResult = useCallback((accessResult) => {
-    const nextState = String(accessResult?.state ?? 'denied');
-    setAccessState(nextState);
-
-    if (nextState === 'allowed' || nextState === 'signed_out' || nextState === 'checking') {
-      setAccessGateMessage('');
-      return;
-    }
-
-    setAccessGateMessage(String(accessResult?.message ?? '').trim());
-  }, []);
-
-  const setAccessPollingState = useCallback((value) => {
-    accessPollInFlightRef.current = value;
-    setAccessPollInFlight(value);
-  }, []);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -562,162 +540,6 @@ function App() {
       isActive = false;
     };
   }, [accessState, pin, user?.uid]);
-
-  useEffect(() => {
-    if (!hasFirebaseConfig) {
-      setAccessState('firebase_missing');
-      setAccessGateMessage('');
-      setCheckingAccess(false);
-      return () => {};
-    }
-
-    let isMounted = true;
-    let unsubscribe = () => {};
-
-    const handleCurrentUser = (currentUser) => {
-      const checkToken = allowlistCheckTokenRef.current + 1;
-      allowlistCheckTokenRef.current = checkToken;
-
-      setErrorMessage('');
-      setUser(currentUser);
-
-      if (!currentUser) {
-        setAccessGateMessage('');
-        setAccessPollingState(false);
-        applyAccessResult({ state: 'signed_out', message: '' });
-        setCheckingAccess(false);
-        return;
-      }
-
-      applyAccessResult({ state: 'checking', message: '' });
-      setCheckingAccess(true);
-      void loadAccessModule()
-        .then(({ resolveAccessState }) => resolveAccessState(currentUser))
-        .then((accessResult) => {
-          if (allowlistCheckTokenRef.current !== checkToken) {
-            return;
-          }
-          applyAccessResult(accessResult);
-        })
-        .catch((error) => {
-          if (allowlistCheckTokenRef.current !== checkToken) {
-            return;
-          }
-          applyAccessResult({
-            state: 'denied',
-            message: 'Falha ao validar acesso. Tenta novamente.'
-          });
-          setErrorMessage(error.message);
-        })
-        .finally(() => {
-          if (allowlistCheckTokenRef.current === checkToken) {
-            setCheckingAccess(false);
-          }
-        });
-    };
-
-    const initializeAuthSubscription = async () => {
-      try {
-        await configureAuthPersistence();
-      } catch {
-        // Keep auth flow moving even if persistence setup fails.
-      }
-
-      try {
-        await waitForAuthStateReady();
-      } catch {
-        // Fallback to subscription callback if auth-ready promise fails.
-      }
-
-      if (!isMounted) {
-        return;
-      }
-
-      unsubscribe = subscribeToAuthChanges(handleCurrentUser);
-    };
-
-    void initializeAuthSubscription();
-
-    return () => {
-      isMounted = false;
-      allowlistCheckTokenRef.current += 1;
-      unsubscribe();
-    };
-  }, [applyAccessResult, setAccessPollingState]);
-
-  const handleManualAccessRetry = useCallback(async () => {
-    if (!user?.uid || accessState === 'signed_out' || accessState === 'firebase_missing') {
-      return;
-    }
-
-    setErrorMessage('');
-    setAccessPollingState(true);
-
-    try {
-      const { resolveAccessState, pollApprovalState } = await loadAccessModule();
-      const result =
-        accessState === 'pending'
-          ? await pollApprovalState(user)
-          : await resolveAccessState(user);
-      applyAccessResult(result);
-    } catch (error) {
-      applyAccessResult({
-        state: accessState === 'pending' ? 'pending' : 'denied',
-        message: 'Falha ao verificar acesso. Tenta novamente.'
-      });
-      setErrorMessage(error.message);
-    } finally {
-      setAccessPollingState(false);
-    }
-  }, [accessState, applyAccessResult, setAccessPollingState, user]);
-
-  useEffect(() => {
-    if (accessState !== 'pending' || !user?.uid) {
-      return () => {};
-    }
-
-    let isActive = true;
-
-    const poll = async () => {
-      if (!isActive) {
-        return;
-      }
-
-      if (accessPollInFlightRef.current) {
-        return;
-      }
-
-      setAccessPollingState(true);
-      try {
-        const { pollApprovalState } = await loadAccessModule();
-        const result = await pollApprovalState(user);
-        if (!isActive) {
-          return;
-        }
-        applyAccessResult(result);
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-        setErrorMessage(error.message);
-      } finally {
-        if (isActive) {
-          setAccessPollingState(false);
-        }
-      }
-    };
-
-    void poll();
-
-    const intervalId = window.setInterval(() => {
-      void poll();
-    }, ACCESS_POLL_INTERVAL_MS);
-
-    return () => {
-      isActive = false;
-      window.clearInterval(intervalId);
-    };
-  }, [accessState, applyAccessResult, setAccessPollingState, user]);
 
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
@@ -1242,8 +1064,6 @@ function App() {
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
-      setAccessGateMessage('');
-      setAccessPollingState(false);
       setServiceData({ pickups: [], returns: [] });
       setStatusMap({});
       setTimeOverrideMap({});
@@ -1489,17 +1309,17 @@ function App() {
   }
 
   if (showSignedOutLanding) {
-    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage} />;
+    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage || accessErrorMessage} />;
   }
 
   if (showAccessGateScreen) {
     return (
       <AccessGateScreen
         state={accessState}
-        message={accessGateMessage || errorMessage}
+        message={accessGateMessage || accessErrorMessage || errorMessage}
         checking={checkingAccess}
         polling={accessPollInFlight}
-        onRetry={handleManualAccessRetry}
+        onRetry={retryAccessCheck}
         onSignOut={handleSignOut}
       />
     );
@@ -1656,7 +1476,7 @@ function App() {
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
+      {errorMessage || accessErrorMessage ? <p className="error-banner">{errorMessage || accessErrorMessage}</p> : null}
 
       {paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
