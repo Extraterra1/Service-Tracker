@@ -9,6 +9,7 @@ import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
 import { useAccessGate } from './hooks/useAccessGate';
 import { usePinSync } from './hooks/usePinSync';
+import { useServiceDayData } from './hooks/useServiceDayData';
 import { toDateValue, toTimestampMs } from './lib/timestamp';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
@@ -17,22 +18,10 @@ const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 
-let apiModulePromise;
-let scrapedDataModulePromise;
 let statusStoreModulePromise;
 let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
-
-function loadApiModule() {
-  apiModulePromise ??= import('./lib/api');
-  return apiModulePromise;
-}
-
-function loadScrapedDataModule() {
-  scrapedDataModulePromise ??= import('./lib/scrapedDataStore');
-  return scrapedDataModulePromise;
-}
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
@@ -68,11 +57,6 @@ function getStoredPin() {
   }
 
   return '';
-}
-
-function getCacheVersionKey(cachedAt) {
-  const cacheDate = toDateValue(cachedAt);
-  return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
 }
 
 function getMenuItemLabel(item) {
@@ -358,20 +342,31 @@ function App() {
     error: accessErrorMessage,
     retryAccessCheck
   } = useAccessGate();
+  const canReadServiceData = accessState === 'allowed';
   const { pinSyncState, error: pinSyncErrorMessage } = usePinSync({
     accessState,
     user,
     pin,
     setPin
   });
-  const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
+  const {
+    serviceData,
+    loadingServices,
+    loadingDateData,
+    hasDayResponse,
+    refreshSource,
+    lastLoadAt,
+    staleWarning,
+    error: serviceDataErrorMessage,
+    manualRefresh
+  } = useServiceDayData({
+    canReadServiceData,
+    selectedDate,
+    pin
+  });
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
   const [readyMap, setReadyMap] = useState({});
-  const [loadingServices, setLoadingServices] = useState(false);
-  const [loadingDateData, setLoadingDateData] = useState(true);
-  const [hasDayResponse, setHasDayResponse] = useState(false);
-  const [refreshSource, setRefreshSource] = useState('idle');
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
   const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
@@ -379,12 +374,8 @@ function App() {
   const [activityEntries, setActivityEntries] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
-  const [lastLoadAt, setLastLoadAt] = useState(null);
-  const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const refreshInFlightRef = useRef(false);
-  const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
 
   useEffect(() => {
@@ -418,8 +409,6 @@ function App() {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
-  const canReadServiceData = accessState === 'allowed';
-  const canCallApi = canReadServiceData && Boolean(pin);
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
   const lockedListMessage = useMemo(() => {
     if (checkingAccess) {
@@ -527,176 +516,6 @@ function App() {
       }),
     []
   );
-
-  const refreshServiceDataFromApi = useCallback(
-    async ({ date, forceRefresh, source, hasRenderableData }) => {
-      if (!canReadServiceData) {
-        return false;
-      }
-
-      if (!canCallApi) {
-        const pinError = 'Introduz o PIN da API para atualizar os serviços.';
-        if (source === 'manual') {
-          setErrorMessage(pinError);
-        } else if (hasRenderableData) {
-          setStaleWarning('Dados desatualizados (mais de 2 horas). Introduz o PIN para atualizar.');
-        } else {
-          setErrorMessage(pinError);
-        }
-        return false;
-      }
-
-      if (refreshInFlightRef.current) {
-        return false;
-      }
-
-      refreshInFlightRef.current = true;
-      setLoadingServices(true);
-      setRefreshSource(source);
-
-      if (source === 'manual') {
-        setErrorMessage('');
-      }
-
-      try {
-        const { refreshServiceDayViaApi } = await loadApiModule();
-        await refreshServiceDayViaApi({
-          date,
-          pin,
-          forceRefresh
-        });
-
-        if (source === 'manual') {
-          setStaleWarning('');
-        }
-
-        return true;
-      } catch (error) {
-        if (source === 'manual') {
-          setErrorMessage(error.message);
-        } else if (hasRenderableData) {
-          setStaleWarning('Dados desatualizados. Falha na atualização automática. Usa Atualizar para tentar novamente.');
-        } else {
-          setErrorMessage(error.message);
-        }
-        return false;
-      } finally {
-        refreshInFlightRef.current = false;
-        setLoadingServices(false);
-        setRefreshSource('idle');
-      }
-    },
-    [canCallApi, canReadServiceData, pin]
-  );
-
-  useEffect(() => {
-    autoRefreshAttemptRef.current = new Set();
-    setStaleWarning('');
-
-    if (!canReadServiceData) {
-      setServiceData({ pickups: [], returns: [] });
-      setLastLoadAt(null);
-      setLoadingDateData(false);
-      setHasDayResponse(false);
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setLoadingDateData(true);
-    setHasDayResponse(false);
-
-    void loadScrapedDataModule()
-      .then(({ isScrapedDocStale, subscribeToScrapedDay }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToScrapedDay(
-          selectedDate,
-          (payload) => {
-            if (!isActive) {
-              return;
-            }
-
-            setServiceData({ pickups: payload.pickups, returns: payload.returns });
-            setLastLoadAt(payload.cachedAt ?? null);
-            setHasDayResponse(true);
-            setLoadingDateData(false);
-
-            const isStale = isScrapedDocStale(payload.cachedAt);
-            if (!isStale) {
-              setStaleWarning('');
-              return;
-            }
-
-            const staleKey = `${selectedDate}:${getCacheVersionKey(payload.cachedAt)}`;
-            if (autoRefreshAttemptRef.current.has(staleKey)) {
-              return;
-            }
-
-            autoRefreshAttemptRef.current.add(staleKey);
-            void refreshServiceDataFromApi({
-              date: selectedDate,
-              forceRefresh: false,
-              source: 'auto',
-              hasRenderableData: true
-            });
-          },
-          () => {
-            if (!isActive) {
-              return;
-            }
-
-            setServiceData({ pickups: [], returns: [] });
-            setLastLoadAt(null);
-
-            const missingKey = `${selectedDate}:missing`;
-            if (autoRefreshAttemptRef.current.has(missingKey)) {
-              return;
-            }
-
-            autoRefreshAttemptRef.current.add(missingKey);
-            void refreshServiceDataFromApi({
-              date: selectedDate,
-              forceRefresh: false,
-              source: 'auto',
-              hasRenderableData: false
-            }).then((success) => {
-              if (!isActive) {
-                return;
-              }
-
-              if (!success) {
-                setLoadingDateData(false);
-              }
-            });
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-            setLoadingDateData(false);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-        setLoadingDateData(false);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, refreshServiceDataFromApi, selectedDate]);
 
   useEffect(() => {
     if (!canReadServiceData) {
@@ -941,7 +760,6 @@ function App() {
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
-      setServiceData({ pickups: [], returns: [] });
       setStatusMap({});
       setTimeOverrideMap({});
       setReadyMap({});
@@ -950,10 +768,6 @@ function App() {
       setLoadingActivity(false);
       setTimeOverrideItemId('');
       setTimeOverrideValue('');
-      setLastLoadAt(null);
-      setHasDayResponse(false);
-      setStaleWarning('');
-      setLoadingDateData(false);
     }
   };
 
@@ -1128,13 +942,8 @@ function App() {
   }, [canResetSelectedTimeOverride, handleSaveItemTimeOverride, selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
 
   const handleManualRefresh = useCallback(() => {
-    void refreshServiceDataFromApi({
-      date: selectedDate,
-      forceRefresh: true,
-      source: 'manual',
-      hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0
-    });
-  }, [refreshServiceDataFromApi, selectedDate, serviceData.pickups.length, serviceData.returns.length]);
+    manualRefresh();
+  }, [manualRefresh]);
 
   const handleOpenActivityPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
@@ -1353,8 +1162,8 @@ function App() {
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage || accessErrorMessage || pinSyncErrorMessage ? (
-        <p className="error-banner">{errorMessage || accessErrorMessage || pinSyncErrorMessage}</p>
+      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage ? (
+        <p className="error-banner">{errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage}</p>
       ) : null}
 
       {paneLoading ? (
