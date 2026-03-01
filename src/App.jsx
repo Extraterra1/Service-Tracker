@@ -1,8 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MoonStar, SunMedium } from 'lucide-react';
 import './App.css';
-import AuthPanel from './components/AuthPanel';
 import AccessGateScreen from './components/AccessGateScreen';
+import ActivityPopup from './components/ActivityPopup';
+import AppHeaderMenu from './components/AppHeaderMenu';
 import DateNavigator from './components/DateNavigator';
 import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
@@ -52,13 +52,6 @@ function getStoredPin() {
   }
 
   return '';
-}
-
-function getMenuItemLabel(item) {
-  const serviceLabel = item.serviceType === 'return' ? 'Recolha' : 'Entrega';
-  const itemName = item.name || item.id || item.itemId;
-  const displayTime = item.overrideTime || item.displayTime || item.time || '--:--';
-  return `${displayTime} - ${serviceLabel} - ${itemName}`;
 }
 
 function isValidTimeInput(value) {
@@ -606,148 +599,40 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header app-header-compact">
-        <div className="title-block">
-          <p className="eyebrow">JustDrive</p>
-          <h1>Lista de Serviço</h1>
-        </div>
-
-        <details ref={menuPanelRef} className="menu-panel">
-          <summary className="ghost-btn menu-summary">Menu</summary>
-          <div className="menu-content">
-            <div className="menu-head">
-              <div className="menu-head-copy">
-                <p className="menu-title">Operação diária</p>
-                <p className="subtle-text">Definições rápidas para a operação de hoje.</p>
-              </div>
-              <button
-                type="button"
-                className="theme-icon-btn"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-                title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-              >
-                {theme === 'dark' ? <SunMedium className="theme-icon" aria-hidden="true" /> : <MoonStar className="theme-icon" aria-hidden="true" />}
-              </button>
-            </div>
-
-            <div className="menu-sections">
-              <details className="menu-section" open>
-                <summary className="menu-section-summary">Conta e PIN</summary>
-                <div className="menu-section-body">
-                  <AuthPanel
-                    user={user}
-                    accessState={accessState}
-                    checkingAccess={checkingAccess}
-                    pin={pin}
-                    pinSyncState={pinSyncState}
-                    onPinChange={setPin}
-                    onSignIn={handleSignIn}
-                    onSignOut={handleSignOut}
-                  />
-                </div>
-              </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Completados</summary>
-                <div className="menu-section-body">
-                  <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
-                  <div className="manual-completed-controls">
-                    <select
-                      className="manual-completed-select"
-                      value={manualCompletedItemId}
-                      onChange={(event) => setManualCompletedItemId(event.target.value)}
-                      disabled={manualCompletedCandidates.length === 0 || updatingItemId !== ''}
-                    >
-                      {manualCompletedCandidates.length === 0 ? <option value="">Sem concluídos recentes</option> : null}
-                      {manualCompletedCandidates.map((item) => (
-                        <option key={item.itemId} value={item.itemId}>
-                          {getMenuItemLabel(item)}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      className="ghost-btn compact-btn"
-                      onClick={handleAddToCompleted}
-                      disabled={!manualCompletedItemId || updatingItemId !== ''}
-                    >
-                      Adicionar
-                    </button>
-                  </div>
-                </div>
-              </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Alterar Hora</summary>
-                <div className="menu-section-body">
-                  <p className="subtle-text">Define uma hora manual.</p>
-                  <div className="menu-time-controls">
-                    <select
-                      className="manual-completed-select"
-                      value={timeOverrideItemId}
-                      onChange={(event) => handleTimeOverrideSelectionChange(event.target.value)}
-                      disabled={allServiceItems.length === 0 || updatingItemId !== ''}
-                    >
-                      {allServiceItems.length === 0 ? <option value="">Sem serviços disponíveis</option> : null}
-                      {allServiceItems.map((item) => (
-                        <option key={item.itemId} value={item.itemId}>
-                          {getMenuItemLabel(item)}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="menu-time-row">
-                      <input
-                        type="text"
-                        inputMode="text"
-                        placeholder="HH:mm"
-                        pattern="^([01]\\d|2[0-3]):([0-5]\\d)$"
-                        maxLength={5}
-                        className="menu-time-input"
-                        value={timeOverrideValue}
-                        onChange={(event) => setTimeOverrideValue(event.target.value)}
-                        disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
-                        aria-label="Hora manual no formato 24 horas"
-                      />
-                      <button
-                        type="button"
-                        className="ghost-btn compact-btn"
-                        onClick={handleSaveTimeOverride}
-                        disabled={!selectedTimeOverrideItem || !hasMenuTimeOverrideInput || !isMenuTimeOverrideValid || updatingItemId !== ''}
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-btn compact-btn"
-                        onClick={handleResetTimeOverride}
-                        disabled={!canResetSelectedTimeOverride || updatingItemId !== ''}
-                      >
-                        Reset
-                      </button>
-                    </div>
-                    {hasMenuTimeOverrideInput && !isMenuTimeOverrideValid ? <p className="helper-text">Formato inválido. Usa HH:mm.</p> : null}
-                  </div>
-                </div>
-              </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Atividade do Dia</summary>
-                <div className="menu-section-body">
-                  <p className="subtle-text">Histórico de hora, pronto/não pronto e concluídos em {selectedDate}.</p>
-                  <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
-                    Ver atividade ({activityEntries.length})
-                  </button>
-                  {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
-                </div>
-              </details>
-            </div>
-            <p className="menu-sync-footnote">{statusLine}</p>
-          </div>
-        </details>
-      </header>
+      <AppHeaderMenu
+        menuPanelRef={menuPanelRef}
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        user={user}
+        accessState={accessState}
+        checkingAccess={checkingAccess}
+        pin={pin}
+        pinSyncState={pinSyncState}
+        onPinChange={setPin}
+        onSignIn={handleSignIn}
+        onSignOut={handleSignOut}
+        manualCompletedCandidates={manualCompletedCandidates}
+        manualCompletedItemId={manualCompletedItemId}
+        onManualCompletedItemIdChange={setManualCompletedItemId}
+        onAddToCompleted={handleAddToCompleted}
+        updatingItemId={updatingItemId}
+        allServiceItems={allServiceItems}
+        timeOverrideItemId={timeOverrideItemId}
+        onTimeOverrideSelectionChange={handleTimeOverrideSelectionChange}
+        timeOverrideValue={timeOverrideValue}
+        onTimeOverrideValueChange={setTimeOverrideValue}
+        hasMenuTimeOverrideInput={hasMenuTimeOverrideInput}
+        isMenuTimeOverrideValid={isMenuTimeOverrideValid}
+        selectedTimeOverrideItem={selectedTimeOverrideItem}
+        onSaveTimeOverride={handleSaveTimeOverride}
+        canResetSelectedTimeOverride={canResetSelectedTimeOverride}
+        onResetTimeOverride={handleResetTimeOverride}
+        selectedDate={selectedDate}
+        onOpenActivityPopup={handleOpenActivityPopup}
+        activityEntriesCount={activityEntries.length}
+        loadingActivity={loadingActivity}
+        statusLine={statusLine}
+      />
 
       <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={handleManualRefresh} loading={loadingServices} />
 
@@ -784,87 +669,13 @@ function App() {
       )}
 
       {activityPopupOpen ? (
-        <div
-          className="activity-popup-backdrop"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              handleCloseActivityPopup();
-            }
-          }}
-        >
-          <section className="activity-popup" role="dialog" aria-modal="true" aria-label="Atividade do dia">
-            <header className="activity-popup-header">
-              <div>
-                <p className="activity-popup-kicker">Atividade do Dia</p>
-                <h3>{selectedDate}</h3>
-              </div>
-              <button type="button" className="activity-popup-close" onClick={handleCloseActivityPopup} aria-label="Fechar atividade">
-                ✕
-              </button>
-            </header>
-
-            {loadingActivity ? (
-              <p className="helper-text">A carregar atividade...</p>
-            ) : activityEntries.length === 0 ? (
-              <p className="helper-text">Sem atividade registada para este dia.</p>
-            ) : (
-              <ul className="activity-popup-list">
-                {activityEntries.map((entry) => {
-                  const actionTime = toDateValue(entry.createdAt);
-                  const actionTimeLabel = actionTime ? activityTimeFormatter.format(actionTime) : '--/-- --:--';
-                  const updatedBy = entry.updatedByName || entry.updatedByEmail || 'Equipa';
-                  const serviceLabel = entry.serviceType === 'return' ? 'Recolha' : 'Entrega';
-                  const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
-                  const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
-                  const isTimeChange = entry.actionType === 'time_change';
-                  const isReadyToggle = entry.actionType === 'ready_toggle';
-                  const actionLabel = isTimeChange
-                    ? 'alterou hora'
-                    : isReadyToggle
-                      ? entry.ready
-                        ? 'viatura pronta'
-                        : 'viatura não pronta'
-                      : entry.done
-                        ? 'fez'
-                        : 'desfez';
-                  const oldTimeLabel = entry.oldTime || '--:--';
-                  const newTimeLabel = entry.newTime || entry.itemTime || '--:--';
-                  const plateLabel = entry.plate || 'Sem matrícula';
-                  const actionClass = isTimeChange
-                    ? 'is-time'
-                    : isReadyToggle
-                      ? entry.ready
-                        ? 'is-ready-on'
-                        : 'is-ready-off'
-                      : entry.done
-                        ? 'is-done'
-                        : 'is-undone';
-
-                  return (
-                    <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
-                      <p className="activity-popup-main">
-                        <strong>{updatedBy}</strong> <span className={`menu-activity-action ${actionClass}`}>{actionLabel}</span> {serviceLabel}
-                      </p>
-                      {isTimeChange ? (
-                        <p className="activity-popup-meta">
-                          {itemLabel} · {reservationLabel} · {oldTimeLabel} → {newTimeLabel} · {actionTimeLabel}
-                        </p>
-                      ) : isReadyToggle ? (
-                        <p className="activity-popup-meta">
-                          {itemLabel} · {reservationLabel} · {plateLabel} · {actionTimeLabel}
-                        </p>
-                      ) : (
-                        <p className="activity-popup-meta">
-                          {itemLabel} · {reservationLabel} · {entry.itemTime || '--:--'} · {actionTimeLabel}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-        </div>
+        <ActivityPopup
+          selectedDate={selectedDate}
+          loadingActivity={loadingActivity}
+          activityEntries={activityEntries}
+          activityTimeFormatter={activityTimeFormatter}
+          onClose={handleCloseActivityPopup}
+        />
       ) : null}
     </div>
   );
