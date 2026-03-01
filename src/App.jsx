@@ -8,6 +8,7 @@ import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
 import { useAccessGate } from './hooks/useAccessGate';
+import { usePinSync } from './hooks/usePinSync';
 import { toDateValue, toTimestampMs } from './lib/timestamp';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
@@ -16,18 +17,12 @@ const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 
-let pinStoreModulePromise;
 let apiModulePromise;
 let scrapedDataModulePromise;
 let statusStoreModulePromise;
 let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
-
-function loadPinStoreModule() {
-  pinStoreModulePromise ??= import('./lib/pinStore');
-  return pinStoreModulePromise;
-}
 
 function loadApiModule() {
   apiModulePromise ??= import('./lib/api');
@@ -354,7 +349,6 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
-  const [pinSyncState, setPinSyncState] = useState('idle');
   const {
     user,
     accessState,
@@ -364,6 +358,12 @@ function App() {
     error: accessErrorMessage,
     retryAccessCheck
   } = useAccessGate();
+  const { pinSyncState, error: pinSyncErrorMessage } = usePinSync({
+    accessState,
+    user,
+    pin,
+    setPin
+  });
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
@@ -383,10 +383,6 @@ function App() {
   const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const cloudPinRef = useRef('');
-  const latestPinRef = useRef(pin);
-  const hasLoadedCloudPinRef = useRef(false);
-  const applyingCloudPinRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
@@ -410,10 +406,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    latestPinRef.current = pin;
-  }, [pin]);
-
-  useEffect(() => {
     if (pin) {
       localStorage.setItem(PIN_STORAGE_KEY, pin);
     } else {
@@ -425,121 +417,6 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
-
-  useEffect(() => {
-    cloudPinRef.current = '';
-    hasLoadedCloudPinRef.current = false;
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    if (accessState !== 'allowed' || !user?.uid) {
-      setPinSyncState('idle');
-      return () => {};
-    }
-
-    setPinSyncState('syncing');
-
-    void loadPinStoreModule()
-      .then(({ saveUserPin, subscribeToUserPin }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToUserPin(
-          user.uid,
-          (cloudPin) => {
-            if (!isActive) {
-              return;
-            }
-
-            const normalizedCloudPin = String(cloudPin ?? '')
-              .replace(/[^0-9]/g, '')
-              .slice(0, 4);
-
-            hasLoadedCloudPinRef.current = true;
-            cloudPinRef.current = normalizedCloudPin;
-
-            if (normalizedCloudPin && normalizedCloudPin !== latestPinRef.current) {
-              applyingCloudPinRef.current = true;
-              setPin(normalizedCloudPin);
-            } else if (!normalizedCloudPin && latestPinRef.current) {
-              void saveUserPin(user.uid, latestPinRef.current).catch((error) => {
-                if (!isActive) {
-                  return;
-                }
-                setPinSyncState('error');
-                setErrorMessage(error.message);
-              });
-            }
-
-            setPinSyncState('synced');
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-            setPinSyncState('error');
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-        setPinSyncState('error');
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [accessState, user?.uid]);
-
-  useEffect(() => {
-    if (applyingCloudPinRef.current) {
-      applyingCloudPinRef.current = false;
-      return;
-    }
-
-    if (accessState !== 'allowed' || !user?.uid) {
-      return;
-    }
-
-    if (!hasLoadedCloudPinRef.current) {
-      return;
-    }
-
-    if (pin === cloudPinRef.current) {
-      return;
-    }
-
-    let isActive = true;
-
-    setPinSyncState('syncing');
-    void loadPinStoreModule()
-      .then(({ saveUserPin }) => saveUserPin(user.uid, pin))
-      .then(() => {
-        if (!isActive) {
-          return;
-        }
-        cloudPinRef.current = pin;
-        setPinSyncState('synced');
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-        setPinSyncState('error');
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [accessState, pin, user?.uid]);
 
   const canReadServiceData = accessState === 'allowed';
   const canCallApi = canReadServiceData && Boolean(pin);
@@ -1476,7 +1353,9 @@ function App() {
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage || accessErrorMessage ? <p className="error-banner">{errorMessage || accessErrorMessage}</p> : null}
+      {errorMessage || accessErrorMessage || pinSyncErrorMessage ? (
+        <p className="error-banner">{errorMessage || accessErrorMessage || pinSyncErrorMessage}</p>
+      ) : null}
 
       {paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
