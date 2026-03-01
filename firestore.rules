@@ -193,8 +193,7 @@ service cloud.firestore {
         && docId == resource.data.date + "_" + resource.data.itemId
         && request.resource.data.date == resource.data.date
         && request.resource.data.itemId == resource.data.itemId
-        && request.resource.data.serviceType == resource.data.serviceType
-        && request.resource.data.originalTime == resource.data.originalTime;
+        && request.resource.data.serviceType == resource.data.serviceType;
 
       allow delete: if false;
     }
@@ -211,8 +210,7 @@ service cloud.firestore {
         && docId == resource.data.date + "_" + resource.data.itemId
         && request.resource.data.date == resource.data.date
         && request.resource.data.itemId == resource.data.itemId
-        && request.resource.data.serviceType == resource.data.serviceType
-        && request.resource.data.plate == resource.data.plate;
+        && request.resource.data.serviceType == resource.data.serviceType;
 
       allow delete: if false;
     }
