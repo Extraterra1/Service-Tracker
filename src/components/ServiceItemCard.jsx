@@ -127,7 +127,7 @@ function ServiceItemCard({
   }, [timeMenuOpen]);
 
   const handleSaveTime = async () => {
-    if (!onSaveTimeOverride || !editTimeValue) {
+    if (!onSaveTimeOverride || !editTimeValue || !isValidTimeInput(editTimeValue)) {
       return;
     }
 
@@ -196,7 +196,13 @@ function ServiceItemCard({
                   disabled={controlsDisabled}
                   aria-label="Hora manual no formato 24 horas"
                 />
-                <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={controlsDisabled || !editTimeValue}>
+                {!isValidTimeInput(editTimeValue) && editTimeValue ? <p className="helper-text">Formato inválido. Usa HH:mm.</p> : null}
+                <button
+                  type="button"
+                  className="item-time-menu-save"
+                  onClick={handleSaveTime}
+                  disabled={controlsDisabled || !editTimeValue || !isValidTimeInput(editTimeValue)}
+                >
                   Guardar
                 </button>
                 <button type="button" className="item-time-menu-reset" onClick={handleResetTime} disabled={controlsDisabled || !canResetTime}>

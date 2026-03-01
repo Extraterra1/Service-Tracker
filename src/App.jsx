@@ -119,6 +119,10 @@ function getMenuItemLabel(item) {
   return `${displayTime} - ${serviceLabel} - ${itemName}`;
 }
 
+function isValidTimeInput(value) {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
+}
+
 function normalizeStatusEntry(status) {
   return {
     done: status?.done === true,
@@ -831,6 +835,8 @@ function App() {
 
     return hasManualOverride && /^([01]\d|2[0-3]):([0-5]\d)$/.test(selectedTimeOverrideOriginalTime);
   }, [selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
+  const hasMenuTimeOverrideInput = String(timeOverrideValue ?? '').trim().length > 0;
+  const isMenuTimeOverrideValid = isValidTimeInput(timeOverrideValue);
 
   useEffect(() => {
     setTimeOverrideItemId('');
@@ -1430,7 +1436,7 @@ function App() {
   );
 
   const handleSaveTimeOverride = useCallback(async () => {
-    if (!selectedTimeOverrideItem) {
+    if (!selectedTimeOverrideItem || !isValidTimeInput(timeOverrideValue)) {
       return;
     }
     await handleSaveItemTimeOverride(selectedTimeOverrideItem, timeOverrideValue);
@@ -1630,7 +1636,7 @@ function App() {
                         type="button"
                         className="ghost-btn compact-btn"
                         onClick={handleSaveTimeOverride}
-                        disabled={!selectedTimeOverrideItem || !timeOverrideValue || updatingItemId !== ''}
+                        disabled={!selectedTimeOverrideItem || !hasMenuTimeOverrideInput || !isMenuTimeOverrideValid || updatingItemId !== ''}
                       >
                         Guardar
                       </button>
@@ -1643,6 +1649,7 @@ function App() {
                         Reset
                       </button>
                     </div>
+                    {hasMenuTimeOverrideInput && !isMenuTimeOverrideValid ? <p className="helper-text">Formato inválido. Usa HH:mm.</p> : null}
                   </div>
                 </div>
               </details>
