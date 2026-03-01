@@ -8,9 +8,10 @@ import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
 import { useAccessGate } from './hooks/useAccessGate';
+import { useDateCollections } from './hooks/useDateCollections';
 import { usePinSync } from './hooks/usePinSync';
 import { useServiceDayData } from './hooks/useServiceDayData';
-import { toDateValue, toTimestampMs } from './lib/timestamp';
+import { toDateValue } from './lib/timestamp';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 
@@ -19,18 +20,12 @@ const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 
 let statusStoreModulePromise;
-let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
   return statusStoreModulePromise;
-}
-
-function loadActivityStoreModule() {
-  activityStoreModulePromise ??= import('./lib/activityStore');
-  return activityStoreModulePromise;
 }
 
 function loadTimeOverrideStoreModule() {
@@ -68,215 +63,6 @@ function getMenuItemLabel(item) {
 
 function isValidTimeInput(value) {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
-}
-
-function normalizeStatusEntry(status) {
-  return {
-    done: status?.done === true,
-    updatedAt: status?.updatedAt ?? null,
-    updatedByName: status?.updatedByName ?? '',
-    updatedByEmail: status?.updatedByEmail ?? ''
-  };
-}
-
-function isSameStatusEntry(prevStatus, nextStatus) {
-  return (
-    (prevStatus?.done ?? false) === (nextStatus?.done ?? false) &&
-    (prevStatus?.updatedByName ?? '') === (nextStatus?.updatedByName ?? '') &&
-    (prevStatus?.updatedByEmail ?? '') === (nextStatus?.updatedByEmail ?? '') &&
-    toTimestampMs(prevStatus?.updatedAt) === toTimestampMs(nextStatus?.updatedAt)
-  );
-}
-
-function applyStatusChanges(previousMap, changes) {
-  if (!Array.isArray(changes) || changes.length === 0) {
-    return previousMap;
-  }
-
-  let nextMap = previousMap;
-  let hasChanges = false;
-
-  changes.forEach((change) => {
-    const baseMap = hasChanges ? nextMap : previousMap;
-    const itemId = String(change?.itemId ?? '').trim();
-    if (!itemId) {
-      return;
-    }
-
-    const isRemoved = change.changeType === 'removed';
-    if (isRemoved) {
-      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
-        return;
-      }
-
-      if (!hasChanges) {
-        nextMap = { ...previousMap };
-        hasChanges = true;
-      }
-
-      delete nextMap[itemId];
-      return;
-    }
-
-    const normalizedStatus = normalizeStatusEntry(change.status);
-    const currentStatus = baseMap[itemId];
-    const nextStatus =
-      currentStatus && toTimestampMs(normalizedStatus.updatedAt) === 0
-        ? {
-            ...normalizedStatus,
-            updatedAt: currentStatus.updatedAt ?? null,
-            updatedByName: normalizedStatus.updatedByName || currentStatus.updatedByName || '',
-            updatedByEmail: normalizedStatus.updatedByEmail || currentStatus.updatedByEmail || ''
-          }
-        : normalizedStatus;
-
-    if (isSameStatusEntry(currentStatus, nextStatus)) {
-      return;
-    }
-
-    if (!hasChanges) {
-      nextMap = { ...previousMap };
-      hasChanges = true;
-    }
-
-    nextMap[itemId] = nextStatus;
-  });
-
-  return hasChanges ? nextMap : previousMap;
-}
-
-function normalizeTimeOverrideEntry(override) {
-  return {
-    overrideTime: String(override?.overrideTime ?? '').trim(),
-    originalTime: String(override?.originalTime ?? '').trim(),
-    updatedAt: override?.updatedAt ?? null,
-    updatedByName: override?.updatedByName ?? '',
-    updatedByEmail: override?.updatedByEmail ?? ''
-  };
-}
-
-function isSameTimeOverrideEntry(previousEntry, nextEntry) {
-  return (
-    (previousEntry?.overrideTime ?? '') === (nextEntry?.overrideTime ?? '') &&
-    (previousEntry?.originalTime ?? '') === (nextEntry?.originalTime ?? '') &&
-    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
-    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
-    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
-  );
-}
-
-function applyTimeOverrideChanges(previousMap, changes) {
-  if (!Array.isArray(changes) || changes.length === 0) {
-    return previousMap;
-  }
-
-  let nextMap = previousMap;
-  let hasChanges = false;
-
-  changes.forEach((change) => {
-    const baseMap = hasChanges ? nextMap : previousMap;
-    const itemId = String(change?.itemId ?? '').trim();
-    if (!itemId) {
-      return;
-    }
-
-    if (change.changeType === 'removed') {
-      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
-        return;
-      }
-
-      if (!hasChanges) {
-        nextMap = { ...previousMap };
-        hasChanges = true;
-      }
-
-      delete nextMap[itemId];
-      return;
-    }
-
-    const normalizedEntry = normalizeTimeOverrideEntry(change.override);
-    const currentEntry = baseMap[itemId];
-
-    if (isSameTimeOverrideEntry(currentEntry, normalizedEntry)) {
-      return;
-    }
-
-    if (!hasChanges) {
-      nextMap = { ...previousMap };
-      hasChanges = true;
-    }
-
-    nextMap[itemId] = normalizedEntry;
-  });
-
-  return hasChanges ? nextMap : previousMap;
-}
-
-function normalizeReadyEntry(ready) {
-  return {
-    ready: ready?.ready === true,
-    plate: String(ready?.plate ?? '').trim(),
-    updatedAt: ready?.updatedAt ?? null,
-    updatedByName: ready?.updatedByName ?? '',
-    updatedByEmail: ready?.updatedByEmail ?? ''
-  };
-}
-
-function isSameReadyEntry(previousEntry, nextEntry) {
-  return (
-    (previousEntry?.ready ?? false) === (nextEntry?.ready ?? false) &&
-    (previousEntry?.plate ?? '') === (nextEntry?.plate ?? '') &&
-    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
-    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
-    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
-  );
-}
-
-function applyReadyChanges(previousMap, changes) {
-  if (!Array.isArray(changes) || changes.length === 0) {
-    return previousMap;
-  }
-
-  let nextMap = previousMap;
-  let hasChanges = false;
-
-  changes.forEach((change) => {
-    const baseMap = hasChanges ? nextMap : previousMap;
-    const itemId = String(change?.itemId ?? '').trim();
-    if (!itemId) {
-      return;
-    }
-
-    if (change.changeType === 'removed') {
-      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
-        return;
-      }
-
-      if (!hasChanges) {
-        nextMap = { ...previousMap };
-        hasChanges = true;
-      }
-
-      delete nextMap[itemId];
-      return;
-    }
-
-    const normalizedEntry = normalizeReadyEntry(change.ready);
-    const currentEntry = baseMap[itemId];
-
-    if (isSameReadyEntry(currentEntry, normalizedEntry)) {
-      return;
-    }
-
-    if (!hasChanges) {
-      nextMap = { ...previousMap };
-      hasChanges = true;
-    }
-
-    nextMap[itemId] = normalizedEntry;
-  });
-
-  return hasChanges ? nextMap : previousMap;
 }
 
 function ServiceWorkspaceLoadingFallback() {
@@ -364,15 +150,21 @@ function App() {
     selectedDate,
     pin
   });
-  const [statusMap, setStatusMap] = useState({});
-  const [timeOverrideMap, setTimeOverrideMap] = useState({});
-  const [readyMap, setReadyMap] = useState({});
+  const {
+    statusMap,
+    timeOverrideMap,
+    readyMap,
+    activityEntries,
+    loadingActivity,
+    error: dateCollectionsErrorMessage
+  } = useDateCollections({
+    canReadServiceData,
+    selectedDate
+  });
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
   const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
   const [timeOverrideValue, setTimeOverrideValue] = useState('');
-  const [activityEntries, setActivityEntries] = useState([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -519,203 +311,9 @@ function App() {
 
   useEffect(() => {
     if (!canReadServiceData) {
-      setStatusMap({});
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setStatusMap({});
-
-    void loadStatusStoreModule()
-      .then(({ subscribeToDateStatus }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateStatus(
-          selectedDate,
-          (changes) => {
-            if (!isActive) {
-              return;
-            }
-
-            setStatusMap((previousMap) => applyStatusChanges(previousMap, changes));
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
-  useEffect(() => {
-    if (!canReadServiceData) {
-      setTimeOverrideMap({});
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setTimeOverrideMap({});
-
-    void loadTimeOverrideStoreModule()
-      .then(({ subscribeToDateTimeOverrides }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateTimeOverrides(
-          selectedDate,
-          (changes) => {
-            if (!isActive) {
-              return;
-            }
-
-            setTimeOverrideMap((previousMap) => applyTimeOverrideChanges(previousMap, changes));
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
-  useEffect(() => {
-    if (!canReadServiceData) {
-      setReadyMap({});
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setReadyMap({});
-
-    void loadReadyStoreModule()
-      .then(({ subscribeToDateReady }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateReady(
-          selectedDate,
-          (changes) => {
-            if (!isActive) {
-              return;
-            }
-
-            setReadyMap((previousMap) => applyReadyChanges(previousMap, changes));
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
-  useEffect(() => {
-    if (!canReadServiceData) {
-      setActivityEntries([]);
-      setLoadingActivity(false);
       setActivityPopupOpen(false);
-      return () => {};
     }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setLoadingActivity(true);
-    setActivityEntries([]);
-
-    void loadActivityStoreModule()
-      .then(({ subscribeToDateActivity }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateActivity(
-          selectedDate,
-          (entries) => {
-            if (!isActive) {
-              return;
-            }
-            setActivityEntries(entries);
-            setLoadingActivity(false);
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-            setErrorMessage(error.message);
-            setLoadingActivity(false);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-        setLoadingActivity(false);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
+  }, [canReadServiceData]);
 
   useEffect(() => {
     if (manualCompletedCandidates.length === 0) {
@@ -760,12 +358,7 @@ function App() {
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
-      setStatusMap({});
-      setTimeOverrideMap({});
-      setReadyMap({});
-      setActivityEntries([]);
       setActivityPopupOpen(false);
-      setLoadingActivity(false);
       setTimeOverrideItemId('');
       setTimeOverrideValue('');
     }
@@ -1162,8 +755,10 @@ function App() {
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage ? (
-        <p className="error-banner">{errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage}</p>
+      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage ? (
+        <p className="error-banner">
+          {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage}
+        </p>
       ) : null}
 
       {paneLoading ? (
