@@ -254,6 +254,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Required for collectionGroup('entries') leaderboard queries.
+    match /{path=**}/entries/{entryId} {
+      allow read: if isActiveStaff();
+      allow write: if false;
+    }
+
     match /access_requests/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow write: if false;

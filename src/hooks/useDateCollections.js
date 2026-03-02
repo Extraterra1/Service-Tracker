@@ -32,12 +32,32 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
   const [readyMap, setReadyMap] = useState({});
   const [activityEntries, setActivityEntries] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({
+    status: '',
+    timeOverride: '',
+    ready: '',
+    activity: ''
+  });
+
+  const setStreamError = (key, message) => {
+    setErrors((previous) => {
+      const nextMessage = String(message ?? '');
+      if (previous[key] === nextMessage) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [key]: nextMessage
+      };
+    });
+  };
 
   useEffect(() => {
     if (!canReadServiceData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatusMap({});
+      setStreamError('status', '');
       return () => {};
     }
 
@@ -45,6 +65,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     let unsubscribe = () => {};
 
     setStatusMap({});
+    setStreamError('status', '');
 
     void loadStatusStoreModule()
       .then(({ subscribeToDateStatus }) => {
@@ -59,6 +80,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
               return;
             }
 
+            setStreamError('status', '');
             setStatusMap((previousMap) => applyStatusChanges(previousMap, changes));
           },
           (nextError) => {
@@ -66,7 +88,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
               return;
             }
 
-            setError(nextError.message);
+            setStreamError('status', nextError.message);
           }
         );
       })
@@ -75,7 +97,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
           return;
         }
 
-        setError(nextError.message);
+        setStreamError('status', nextError.message);
       });
 
     return () => {
@@ -88,6 +110,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     if (!canReadServiceData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimeOverrideMap({});
+      setStreamError('timeOverride', '');
       return () => {};
     }
 
@@ -95,6 +118,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     let unsubscribe = () => {};
 
     setTimeOverrideMap({});
+    setStreamError('timeOverride', '');
 
     void loadTimeOverrideStoreModule()
       .then(({ subscribeToDateTimeOverrides }) => {
@@ -109,6 +133,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
               return;
             }
 
+            setStreamError('timeOverride', '');
             setTimeOverrideMap((previousMap) => applyTimeOverrideChanges(previousMap, changes));
           },
           (nextError) => {
@@ -116,7 +141,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
               return;
             }
 
-            setError(nextError.message);
+            setStreamError('timeOverride', nextError.message);
           }
         );
       })
@@ -125,7 +150,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
           return;
         }
 
-        setError(nextError.message);
+        setStreamError('timeOverride', nextError.message);
       });
 
     return () => {
@@ -138,6 +163,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     if (!canReadServiceData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setReadyMap({});
+      setStreamError('ready', '');
       return () => {};
     }
 
@@ -145,6 +171,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     let unsubscribe = () => {};
 
     setReadyMap({});
+    setStreamError('ready', '');
 
     void loadReadyStoreModule()
       .then(({ subscribeToDateReady }) => {
@@ -159,6 +186,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
               return;
             }
 
+            setStreamError('ready', '');
             setReadyMap((previousMap) => applyReadyChanges(previousMap, changes));
           },
           (nextError) => {
@@ -166,7 +194,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
               return;
             }
 
-            setError(nextError.message);
+            setStreamError('ready', nextError.message);
           }
         );
       })
@@ -175,7 +203,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
           return;
         }
 
-        setError(nextError.message);
+        setStreamError('ready', nextError.message);
       });
 
     return () => {
@@ -189,6 +217,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivityEntries([]);
       setLoadingActivity(false);
+      setStreamError('activity', '');
       return () => {};
     }
 
@@ -197,6 +226,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
 
     setLoadingActivity(true);
     setActivityEntries([]);
+    setStreamError('activity', '');
 
     void loadActivityStoreModule()
       .then(({ subscribeToDateActivity }) => {
@@ -210,6 +240,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
             if (!isActive) {
               return;
             }
+            setStreamError('activity', '');
             setActivityEntries(entries);
             setLoadingActivity(false);
           },
@@ -217,7 +248,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
             if (!isActive) {
               return;
             }
-            setError(nextError.message);
+            setStreamError('activity', nextError.message);
             setLoadingActivity(false);
           }
         );
@@ -227,7 +258,7 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
           return;
         }
 
-        setError(nextError.message);
+        setStreamError('activity', nextError.message);
         setLoadingActivity(false);
       });
 
@@ -243,6 +274,6 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     readyMap,
     activityEntries,
     loadingActivity,
-    error
+    error: errors.status || errors.timeOverride || errors.ready || errors.activity
   };
 }
