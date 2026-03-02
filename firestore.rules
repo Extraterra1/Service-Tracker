@@ -94,6 +94,24 @@ service cloud.firestore {
         && request.resource.data.updatedByEmail is string;
     }
 
+    function isValidStaffProfilePayload(uid) {
+      return request.resource.data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'firstName',
+          'email',
+          'photoURL',
+          'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.displayName is string
+        && request.resource.data.firstName is string
+        && request.resource.data.email is string
+        && request.resource.data.photoURL is string
+        && request.resource.data.updatedAt is timestamp;
+    }
+
     function hasValidOptionalTimeFields() {
       return (!request.resource.data.keys().hasAny(['oldTime']) || request.resource.data.oldTime is string)
         && (!request.resource.data.keys().hasAny(['newTime']) || request.resource.data.newTime is string);
@@ -162,6 +180,12 @@ service cloud.firestore {
     match /staff_allowlist/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow write: if false;
+    }
+
+    match /staff_profiles/{uid} {
+      allow read: if isActiveStaff();
+      allow create, update: if isSignedIn() && request.auth.uid == uid && isValidStaffProfilePayload(uid);
+      allow delete: if false;
     }
 
     match /service_status/{docId} {

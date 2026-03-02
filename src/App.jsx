@@ -4,6 +4,7 @@ import AccessGateScreen from './components/AccessGateScreen';
 import ActivityPopup from './components/ActivityPopup';
 import AppHeaderMenu from './components/AppHeaderMenu';
 import DateNavigator from './components/DateNavigator';
+import LeaderboardPopup from './components/LeaderboardPopup';
 import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
@@ -22,6 +23,8 @@ const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
+let staffProfileStoreModulePromise;
+let leaderboardStoreModulePromise;
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
@@ -36,6 +39,16 @@ function loadTimeOverrideStoreModule() {
 function loadReadyStoreModule() {
   readyStoreModulePromise ??= import('./lib/readyStore');
   return readyStoreModulePromise;
+}
+
+function loadStaffProfileStoreModule() {
+  staffProfileStoreModulePromise ??= import('./lib/staffProfileStore');
+  return staffProfileStoreModulePromise;
+}
+
+function loadLeaderboardStoreModule() {
+  leaderboardStoreModulePromise ??= import('./lib/leaderboardStore');
+  return leaderboardStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -160,9 +173,16 @@ function App() {
   const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
   const [timeOverrideValue, setTimeOverrideValue] = useState('');
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
+  const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
+  const [leaderboardData, setLeaderboardData] = useState(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState('');
+  const [leaderboardLastLoadedAt, setLeaderboardLastLoadedAt] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
   const menuPanelRef = useRef(null);
+  const lastSyncedProfileRef = useRef('');
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -194,6 +214,25 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!canReadServiceData || !user?.uid) {
+      return;
+    }
+
+    const syncFingerprint = [user.uid, user.displayName ?? '', user.email ?? '', user.photoURL ?? ''].join('|');
+    if (lastSyncedProfileRef.current === syncFingerprint) {
+      return;
+    }
+
+    lastSyncedProfileRef.current = syncFingerprint;
+
+    void loadStaffProfileStoreModule()
+      .then(({ upsertOwnStaffProfile }) => upsertOwnStaffProfile(user))
+      .catch((error) => {
+        console.error('Failed to sync staff profile:', error);
+      });
+  }, [canReadServiceData, user]);
 
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
   const lockedListMessage = useMemo(() => {
@@ -306,6 +345,10 @@ function App() {
   useEffect(() => {
     if (!canReadServiceData) {
       setActivityPopupOpen(false);
+      setLeaderboardPopupOpen(false);
+      setLeaderboardData(null);
+      setLeaderboardError('');
+      setLeaderboardLoading(false);
     }
   }, [canReadServiceData]);
 
@@ -537,6 +580,59 @@ function App() {
     setActivityPopupOpen(false);
   }, []);
 
+  const loadLeaderboard = useCallback(
+    async (period, forceRefresh = false) => {
+      if (accessState !== 'allowed') {
+        return;
+      }
+
+      setLeaderboardLoading(true);
+      setLeaderboardError('');
+
+      try {
+        const { fetchLeaderboard } = await loadLeaderboardStoreModule();
+        const response = await fetchLeaderboard({
+          period,
+          now: new Date(),
+          forceRefresh,
+        });
+        setLeaderboardData(response);
+        setLeaderboardLastLoadedAt(new Date());
+      } catch (error) {
+        setLeaderboardError(error.message);
+      } finally {
+        setLeaderboardLoading(false);
+      }
+    },
+    [accessState]
+  );
+
+  const handleOpenLeaderboardPopup = useCallback(() => {
+    menuPanelRef.current?.removeAttribute('open');
+    setLeaderboardPopupOpen(true);
+    void loadLeaderboard(leaderboardPeriod, false);
+  }, [leaderboardPeriod, loadLeaderboard]);
+
+  const handleCloseLeaderboardPopup = useCallback(() => {
+    setLeaderboardPopupOpen(false);
+  }, []);
+
+  const handleLeaderboardPeriodChange = useCallback(
+    (nextPeriod) => {
+      if (nextPeriod === leaderboardPeriod) {
+        return;
+      }
+
+      setLeaderboardPeriod(nextPeriod);
+      void loadLeaderboard(nextPeriod, false);
+    },
+    [leaderboardPeriod, loadLeaderboard]
+  );
+
+  const handleRefreshLeaderboard = useCallback(() => {
+    void loadLeaderboard(leaderboardPeriod, true);
+  }, [leaderboardPeriod, loadLeaderboard]);
+
   const statusLine = useMemo(() => {
     if (loadingServices && refreshSource === 'manual') {
       return 'Atualização manual forçada em curso...';
@@ -618,6 +714,8 @@ function App() {
         onOpenActivityPopup={handleOpenActivityPopup}
         activityEntriesCount={activityEntries.length}
         loadingActivity={loadingActivity}
+        onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
+        leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
       />
 
@@ -662,6 +760,19 @@ function App() {
           activityEntries={activityEntries}
           activityTimeFormatter={activityTimeFormatter}
           onClose={handleCloseActivityPopup}
+        />
+      ) : null}
+
+      {leaderboardPopupOpen ? (
+        <LeaderboardPopup
+          period={leaderboardPeriod}
+          data={leaderboardData}
+          lastLoadedAt={leaderboardLastLoadedAt}
+          loading={leaderboardLoading}
+          errorMessage={leaderboardError}
+          onClose={handleCloseLeaderboardPopup}
+          onPeriodChange={handleLeaderboardPeriodChange}
+          onRefresh={handleRefreshLeaderboard}
         />
       ) : null}
     </div>
