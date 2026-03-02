@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
 import AccessGateScreen from './components/AccessGateScreen';
 import ActivityPopup from './components/ActivityPopup';
@@ -777,6 +778,7 @@ function App() {
         />
       ) : null}
       <Analytics />
+      <SpeedInsights />
     </div>
   );
 }
