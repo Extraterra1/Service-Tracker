@@ -22,6 +22,7 @@ const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
+let staffProfileStoreModulePromise;
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
@@ -36,6 +37,11 @@ function loadTimeOverrideStoreModule() {
 function loadReadyStoreModule() {
   readyStoreModulePromise ??= import('./lib/readyStore');
   return readyStoreModulePromise;
+}
+
+function loadStaffProfileStoreModule() {
+  staffProfileStoreModulePromise ??= import('./lib/staffProfileStore');
+  return staffProfileStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -163,6 +169,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const menuPanelRef = useRef(null);
+  const lastSyncedProfileRef = useRef('');
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -194,6 +201,25 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!canReadServiceData || !user?.uid) {
+      return;
+    }
+
+    const syncFingerprint = [user.uid, user.displayName ?? '', user.email ?? '', user.photoURL ?? ''].join('|');
+    if (lastSyncedProfileRef.current === syncFingerprint) {
+      return;
+    }
+
+    lastSyncedProfileRef.current = syncFingerprint;
+
+    void loadStaffProfileStoreModule()
+      .then(({ upsertOwnStaffProfile }) => upsertOwnStaffProfile(user))
+      .catch((error) => {
+        console.error('Failed to sync staff profile:', error);
+      });
+  }, [canReadServiceData, user]);
 
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
   const lockedListMessage = useMemo(() => {
