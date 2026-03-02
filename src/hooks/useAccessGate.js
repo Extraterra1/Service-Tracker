@@ -3,6 +3,33 @@ import { configureAuthPersistence, subscribeToAuthChanges, waitForAuthStateReady
 import { hasFirebaseConfig } from '../lib/firebaseApp';
 
 const ACCESS_POLL_INTERVAL_MS = 20 * 1000;
+const AUTH_HINT_STORAGE_KEY = 'service_tracker_last_auth_hint';
+
+function getStoredAuthHint() {
+  try {
+    const storedValue = localStorage.getItem(AUTH_HINT_STORAGE_KEY);
+    if (storedValue === 'signed_in' || storedValue === 'signed_out') {
+      return storedValue;
+    }
+  } catch {
+    // Ignore storage access errors and fall back to unknown state.
+  }
+
+  return 'unknown';
+}
+
+function setStoredAuthHint(value) {
+  try {
+    if (value === 'signed_in' || value === 'signed_out') {
+      localStorage.setItem(AUTH_HINT_STORAGE_KEY, value);
+      return;
+    }
+
+    localStorage.removeItem(AUTH_HINT_STORAGE_KEY);
+  } catch {
+    // Ignore storage access errors.
+  }
+}
 
 let accessModulePromise;
 
@@ -13,6 +40,7 @@ function loadAccessModule() {
 
 export function useAccessGate() {
   const [user, setUser] = useState(null);
+  const [authHint, setAuthHint] = useState(getStoredAuthHint);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [accessState, setAccessState] = useState('checking');
   const [accessGateMessage, setAccessGateMessage] = useState('');
@@ -58,6 +86,8 @@ export function useAccessGate() {
       setUser(currentUser);
 
       if (!currentUser) {
+        setAuthHint('signed_out');
+        setStoredAuthHint('signed_out');
         setAccessGateMessage('');
         setAccessPollingState(false);
         applyAccessResult({ state: 'signed_out', message: '' });
@@ -65,6 +95,8 @@ export function useAccessGate() {
         return;
       }
 
+      setAuthHint('signed_in');
+      setStoredAuthHint('signed_in');
       applyAccessResult({ state: 'checking', message: '' });
       setCheckingAccess(true);
       void loadAccessModule()
@@ -99,17 +131,17 @@ export function useAccessGate() {
         // Keep auth flow moving even if persistence setup fails.
       }
 
-      try {
-        await waitForAuthStateReady();
-      } catch {
-        // Fallback to subscription callback if auth-ready promise fails.
-      }
-
       if (!isMounted) {
         return;
       }
 
       unsubscribe = subscribeToAuthChanges(handleCurrentUser);
+
+      try {
+        await waitForAuthStateReady();
+      } catch {
+        // Subscription callback still handles final auth resolution.
+      }
     };
 
     void initializeAuthSubscription();
@@ -197,6 +229,7 @@ export function useAccessGate() {
 
   return {
     user,
+    authHint,
     accessState,
     checkingAccess,
     accessGateMessage,

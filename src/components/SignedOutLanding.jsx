@@ -1,6 +1,6 @@
 import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
 
-function SignedOutLanding({ onSignIn, errorMessage = '' }) {
+function SignedOutLanding({ onSignIn, errorMessage = '', signInDisabled = false }) {
   return (
     <main className="landing-page" aria-labelledby="landing-title">
       <div className="landing-background-blur"></div>
@@ -18,7 +18,7 @@ function SignedOutLanding({ onSignIn, errorMessage = '' }) {
         </div>
 
         <div className="landing-action">
-          <button type="button" className="landing-google-btn" onClick={onSignIn}>
+          <button type="button" className="landing-google-btn" onClick={onSignIn} disabled={signInDisabled}>
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="google-icon" aria-hidden="true">
               <path
                 fill="#EA4335"
@@ -38,7 +38,7 @@ function SignedOutLanding({ onSignIn, errorMessage = '' }) {
               ></path>
               <path fill="none" d="M0 0h48v48H0z"></path>
             </svg>
-            Entrar com Google
+            {signInDisabled ? 'A validar sessão...' : 'Entrar com Google'}
           </button>
 
           {errorMessage ? <p className="landing-error">{errorMessage}</p> : null}

@@ -114,6 +114,7 @@ function App() {
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
   const {
     user,
+    authHint,
     accessState,
     checkingAccess,
     accessGateMessage,
@@ -561,23 +562,13 @@ function App() {
     return `Ultima Atualização: ${formatted}`;
   }, [lastLoadAt, loadingServices, refreshSource]);
 
-  const showAuthResolvingScreen = checkingAccess && accessState === 'checking';
-  const showSignedOutLanding = !checkingAccess && accessState === 'signed_out';
+  const showSignedOutLanding =
+    accessState === 'signed_out' ||
+    (checkingAccess && accessState === 'checking' && authHint !== 'signed_in');
   const showAccessGateScreen = !checkingAccess && (accessState === 'pending' || accessState === 'denied' || accessState === 'blocked');
 
-  if (showAuthResolvingScreen) {
-    return (
-      <main className="auth-resolving-screen" aria-busy="true" aria-label="A validar sessão">
-        <div className="auth-resolving-card">
-          <span className="auth-resolving-spinner" aria-hidden="true" />
-          <p>A validar sessão...</p>
-        </div>
-      </main>
-    );
-  }
-
   if (showSignedOutLanding) {
-    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage || accessErrorMessage} />;
+    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage || accessErrorMessage} signInDisabled={checkingAccess} />;
   }
 
   if (showAccessGateScreen) {
