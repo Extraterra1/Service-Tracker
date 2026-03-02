@@ -57,7 +57,7 @@ function AppHeaderMenu({
           <div className="menu-head">
             <div className="menu-head-copy">
               <p className="menu-title">Operação diária</p>
-              <p className="subtle-text">Definições rápidas para a operação de hoje.</p>
+              <p className="subtle-text">Definições rápidas.</p>
             </div>
             <button
               type="button"
@@ -71,7 +71,7 @@ function AppHeaderMenu({
           </div>
 
           <div className="menu-sections">
-            <details className="menu-section" open>
+            <details className="menu-section">
               <summary className="menu-section-summary">Conta e PIN</summary>
               <div className="menu-section-body">
                 <AuthPanel
@@ -106,12 +106,7 @@ function AppHeaderMenu({
                     ))}
                   </select>
 
-                  <button
-                    type="button"
-                    className="ghost-btn compact-btn"
-                    onClick={onAddToCompleted}
-                    disabled={!manualCompletedItemId || updatingItemId !== ''}
-                  >
+                  <button type="button" className="ghost-btn compact-btn" onClick={onAddToCompleted} disabled={!manualCompletedItemId || updatingItemId !== ''}>
                     Adicionar
                   </button>
                 </div>
@@ -186,7 +181,7 @@ function AppHeaderMenu({
             <details className="menu-section">
               <summary className="menu-section-summary">Leaderboard</summary>
               <div className="menu-section-body">
-                <p className="subtle-text">Ranking divertido de ações da equipa (semana, mês e all time).</p>
+                <p className="subtle-text">Ranking de ações da equipa (semana, mês e all time).</p>
                 <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={onOpenLeaderboardPopup}>
                   {leaderboardLoading ? 'A carregar...' : 'Ver leaderboard'}
                 </button>
