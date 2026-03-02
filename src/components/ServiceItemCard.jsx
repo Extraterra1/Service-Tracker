@@ -49,8 +49,16 @@ function ServiceItemCard({
   disabled,
 }) {
   const done = status?.done === true;
-  const updatedAt = formatAuditTimestamp(status?.updatedAt);
-  const updatedBy = status?.updatedByName || status?.updatedByEmail || '';
+  const statusUpdatedAtMs = toTimestampMs(status?.updatedAt);
+  const readyUpdatedAtMs = toTimestampMs(readyState?.updatedAt);
+  const statusUpdatedBy = status?.updatedByName || status?.updatedByEmail || '';
+  const readyUpdatedBy = readyState?.updatedByName || readyState?.updatedByEmail || '';
+  const updateSource = readyUpdatedAtMs > statusUpdatedAtMs ? 'ready' : 'status';
+  const updatedAt =
+    updateSource === 'ready' && readyUpdatedAtMs > 0
+      ? formatAuditTimestamp(readyState?.updatedAt)
+      : formatAuditTimestamp(status?.updatedAt);
+  const updatedBy = updateSource === 'ready' && readyUpdatedAtMs > 0 ? readyUpdatedBy : statusUpdatedBy;
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
   const originalTime = String(item.time ?? '').trim() || '--:--';
   const displayTime = getDisplayTime(item);

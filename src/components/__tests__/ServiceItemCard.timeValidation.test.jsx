@@ -20,11 +20,17 @@ function createItem(overrides = {}) {
   };
 }
 
-function renderCard({ onSaveTimeOverride = vi.fn().mockResolvedValue(true), item = createItem() } = {}) {
+function renderCard({
+  onSaveTimeOverride = vi.fn().mockResolvedValue(true),
+  item = createItem(),
+  status = { done: false },
+  readyState = undefined
+} = {}) {
   render(
     <ServiceItemCard
       item={item}
-      status={{ done: false }}
+      status={status}
+      readyState={readyState}
       sharedPlateMarkers={{}}
       onToggleDone={vi.fn()}
       onToggleReady={vi.fn()}
@@ -70,5 +76,18 @@ describe('ServiceItemCard time validation', () => {
 
     expect(onSaveTimeOverride).toHaveBeenCalledTimes(1);
     expect(onSaveTimeOverride).toHaveBeenCalledWith(item, '10:30');
+  });
+
+  it('shows team update footer when ready state is updated', () => {
+    renderCard({
+      readyState: {
+        ready: true,
+        updatedAt: new Date('2026-03-02T09:15:00.000Z'),
+        updatedByName: 'Joao',
+        updatedByEmail: 'joao@example.com'
+      }
+    });
+
+    expect(screen.getByText(/Atualizado por Joao/)).toBeInTheDocument();
   });
 });
