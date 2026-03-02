@@ -19,11 +19,7 @@ function getAvatarInitials(entry) {
     .split(/\s+/)
     .filter(Boolean);
 
-  if (words.length >= 2) {
-    return `${words[0][0]}${words[1][0]}`.toUpperCase();
-  }
-
-  return (words[0]?.slice(0, 2) ?? 'EQ').toUpperCase();
+  return (words[0]?.charAt(0) ?? 'E').toUpperCase();
 }
 
 function LeaderboardAvatar({ entry }) {
