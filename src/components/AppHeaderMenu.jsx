@@ -40,6 +40,8 @@ function AppHeaderMenu({
   onOpenActivityPopup,
   activityEntriesCount,
   loadingActivity,
+  onOpenLeaderboardPopup,
+  leaderboardLoading,
   statusLine
 }) {
   return (
@@ -178,6 +180,16 @@ function AppHeaderMenu({
                   Ver atividade ({activityEntriesCount})
                 </button>
                 {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
+              </div>
+            </details>
+
+            <details className="menu-section">
+              <summary className="menu-section-summary">Leaderboard</summary>
+              <div className="menu-section-body">
+                <p className="subtle-text">Ranking divertido de ações da equipa (semana, mês e all time).</p>
+                <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={onOpenLeaderboardPopup}>
+                  {leaderboardLoading ? 'A carregar...' : 'Ver leaderboard'}
+                </button>
               </div>
             </details>
           </div>

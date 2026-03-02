@@ -63,6 +63,7 @@ function LeaderboardPodiumCard({ entry, position }) {
 function LeaderboardPopup({
   period = 'weekly',
   data = null,
+  lastLoadedAt = null,
   loading = false,
   errorMessage = '',
   onClose,
@@ -76,6 +77,12 @@ function LeaderboardPopup({
   const remainder = rows.slice(3);
   const totalActions = Number(data?.totalActions ?? 0);
   const participants = Number(data?.participants ?? rows.length);
+  const lastLoadedLabel = lastLoadedAt
+    ? new Intl.DateTimeFormat('pt-PT', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(lastLoadedAt))
+    : '';
 
   return (
     <div
@@ -126,6 +133,7 @@ function LeaderboardPopup({
         <p className="leaderboard-meta">
           {participants} participantes · {totalActions} ações
           {data?.capped ? ' · limitado aos últimos 10000 registos' : ''}
+          {lastLoadedLabel ? ` · atualizado às ${lastLoadedLabel}` : ''}
         </p>
 
         {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
