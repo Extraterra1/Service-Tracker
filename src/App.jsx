@@ -1,58 +1,31 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MoonStar, SunMedium } from 'lucide-react';
 import './App.css';
-import AuthPanel from './components/AuthPanel';
 import AccessGateScreen from './components/AccessGateScreen';
+import ActivityPopup from './components/ActivityPopup';
+import AppHeaderMenu from './components/AppHeaderMenu';
 import DateNavigator from './components/DateNavigator';
 import SignedOutLanding from './components/SignedOutLanding';
-import { configureAuthPersistence, signInWithGoogle, signOutUser, subscribeToAuthChanges, waitForAuthStateReady } from './lib/auth';
+import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
-import { hasFirebaseConfig } from './lib/firebaseApp';
+import { useAccessGate } from './hooks/useAccessGate';
+import { useDateCollections } from './hooks/useDateCollections';
+import { usePinSync } from './hooks/usePinSync';
+import { useServiceDayData } from './hooks/useServiceDayData';
+import { toDateValue } from './lib/timestamp';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
-const ACCESS_POLL_INTERVAL_MS = 20 * 1000;
 
-let accessModulePromise;
-let pinStoreModulePromise;
-let apiModulePromise;
-let scrapedDataModulePromise;
 let statusStoreModulePromise;
-let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
-
-function loadAccessModule() {
-  accessModulePromise ??= import('./lib/access');
-  return accessModulePromise;
-}
-
-function loadPinStoreModule() {
-  pinStoreModulePromise ??= import('./lib/pinStore');
-  return pinStoreModulePromise;
-}
-
-function loadApiModule() {
-  apiModulePromise ??= import('./lib/api');
-  return apiModulePromise;
-}
-
-function loadScrapedDataModule() {
-  scrapedDataModulePromise ??= import('./lib/scrapedDataStore');
-  return scrapedDataModulePromise;
-}
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
   return statusStoreModulePromise;
-}
-
-function loadActivityStoreModule() {
-  activityStoreModulePromise ??= import('./lib/activityStore');
-  return activityStoreModulePromise;
 }
 
 function loadTimeOverrideStoreModule() {
@@ -81,251 +54,8 @@ function getStoredPin() {
   return '';
 }
 
-function toDateValue(timestampLike) {
-  if (!timestampLike) {
-    return null;
-  }
-
-  if (typeof timestampLike.toDate === 'function') {
-    return timestampLike.toDate();
-  }
-
-  if (typeof timestampLike.seconds === 'number') {
-    return new Date(timestampLike.seconds * 1000);
-  }
-
-  const parsed = new Date(timestampLike);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function toTimestampMs(timestampLike) {
-  const parsed = toDateValue(timestampLike);
-  return parsed ? parsed.getTime() : 0;
-}
-
-function getCacheVersionKey(cachedAt) {
-  const cacheDate = toDateValue(cachedAt);
-  return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
-}
-
-function getMenuItemLabel(item) {
-  const serviceLabel = item.serviceType === 'return' ? 'Recolha' : 'Entrega';
-  const itemName = item.name || item.id || item.itemId;
-  const displayTime = item.overrideTime || item.displayTime || item.time || '--:--';
-  return `${displayTime} - ${serviceLabel} - ${itemName}`;
-}
-
-function normalizeStatusEntry(status) {
-  return {
-    done: status?.done === true,
-    updatedAt: status?.updatedAt ?? null,
-    updatedByName: status?.updatedByName ?? '',
-    updatedByEmail: status?.updatedByEmail ?? ''
-  };
-}
-
-function isSameStatusEntry(prevStatus, nextStatus) {
-  return (
-    (prevStatus?.done ?? false) === (nextStatus?.done ?? false) &&
-    (prevStatus?.updatedByName ?? '') === (nextStatus?.updatedByName ?? '') &&
-    (prevStatus?.updatedByEmail ?? '') === (nextStatus?.updatedByEmail ?? '') &&
-    toTimestampMs(prevStatus?.updatedAt) === toTimestampMs(nextStatus?.updatedAt)
-  );
-}
-
-function applyStatusChanges(previousMap, changes) {
-  if (!Array.isArray(changes) || changes.length === 0) {
-    return previousMap;
-  }
-
-  let nextMap = previousMap;
-  let hasChanges = false;
-
-  changes.forEach((change) => {
-    const baseMap = hasChanges ? nextMap : previousMap;
-    const itemId = String(change?.itemId ?? '').trim();
-    if (!itemId) {
-      return;
-    }
-
-    const isRemoved = change.changeType === 'removed';
-    if (isRemoved) {
-      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
-        return;
-      }
-
-      if (!hasChanges) {
-        nextMap = { ...previousMap };
-        hasChanges = true;
-      }
-
-      delete nextMap[itemId];
-      return;
-    }
-
-    const normalizedStatus = normalizeStatusEntry(change.status);
-    const currentStatus = baseMap[itemId];
-    const nextStatus =
-      currentStatus && toTimestampMs(normalizedStatus.updatedAt) === 0
-        ? {
-            ...normalizedStatus,
-            updatedAt: currentStatus.updatedAt ?? null,
-            updatedByName: normalizedStatus.updatedByName || currentStatus.updatedByName || '',
-            updatedByEmail: normalizedStatus.updatedByEmail || currentStatus.updatedByEmail || ''
-          }
-        : normalizedStatus;
-
-    if (isSameStatusEntry(currentStatus, nextStatus)) {
-      return;
-    }
-
-    if (!hasChanges) {
-      nextMap = { ...previousMap };
-      hasChanges = true;
-    }
-
-    nextMap[itemId] = nextStatus;
-  });
-
-  return hasChanges ? nextMap : previousMap;
-}
-
-function normalizeTimeOverrideEntry(override) {
-  return {
-    overrideTime: String(override?.overrideTime ?? '').trim(),
-    originalTime: String(override?.originalTime ?? '').trim(),
-    updatedAt: override?.updatedAt ?? null,
-    updatedByName: override?.updatedByName ?? '',
-    updatedByEmail: override?.updatedByEmail ?? ''
-  };
-}
-
-function isSameTimeOverrideEntry(previousEntry, nextEntry) {
-  return (
-    (previousEntry?.overrideTime ?? '') === (nextEntry?.overrideTime ?? '') &&
-    (previousEntry?.originalTime ?? '') === (nextEntry?.originalTime ?? '') &&
-    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
-    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
-    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
-  );
-}
-
-function applyTimeOverrideChanges(previousMap, changes) {
-  if (!Array.isArray(changes) || changes.length === 0) {
-    return previousMap;
-  }
-
-  let nextMap = previousMap;
-  let hasChanges = false;
-
-  changes.forEach((change) => {
-    const baseMap = hasChanges ? nextMap : previousMap;
-    const itemId = String(change?.itemId ?? '').trim();
-    if (!itemId) {
-      return;
-    }
-
-    if (change.changeType === 'removed') {
-      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
-        return;
-      }
-
-      if (!hasChanges) {
-        nextMap = { ...previousMap };
-        hasChanges = true;
-      }
-
-      delete nextMap[itemId];
-      return;
-    }
-
-    const normalizedEntry = normalizeTimeOverrideEntry(change.override);
-    const currentEntry = baseMap[itemId];
-
-    if (isSameTimeOverrideEntry(currentEntry, normalizedEntry)) {
-      return;
-    }
-
-    if (!hasChanges) {
-      nextMap = { ...previousMap };
-      hasChanges = true;
-    }
-
-    nextMap[itemId] = normalizedEntry;
-  });
-
-  return hasChanges ? nextMap : previousMap;
-}
-
-function normalizeReadyEntry(ready) {
-  return {
-    ready: ready?.ready === true,
-    plate: String(ready?.plate ?? '').trim(),
-    updatedAt: ready?.updatedAt ?? null,
-    updatedByName: ready?.updatedByName ?? '',
-    updatedByEmail: ready?.updatedByEmail ?? ''
-  };
-}
-
-function isSameReadyEntry(previousEntry, nextEntry) {
-  return (
-    (previousEntry?.ready ?? false) === (nextEntry?.ready ?? false) &&
-    (previousEntry?.plate ?? '') === (nextEntry?.plate ?? '') &&
-    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
-    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
-    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
-  );
-}
-
-function applyReadyChanges(previousMap, changes) {
-  if (!Array.isArray(changes) || changes.length === 0) {
-    return previousMap;
-  }
-
-  let nextMap = previousMap;
-  let hasChanges = false;
-
-  changes.forEach((change) => {
-    const baseMap = hasChanges ? nextMap : previousMap;
-    const itemId = String(change?.itemId ?? '').trim();
-    if (!itemId) {
-      return;
-    }
-
-    if (change.changeType === 'removed') {
-      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
-        return;
-      }
-
-      if (!hasChanges) {
-        nextMap = { ...previousMap };
-        hasChanges = true;
-      }
-
-      delete nextMap[itemId];
-      return;
-    }
-
-    const normalizedEntry = normalizeReadyEntry(change.ready);
-    const currentEntry = baseMap[itemId];
-
-    if (isSameReadyEntry(currentEntry, normalizedEntry)) {
-      return;
-    }
-
-    if (!hasChanges) {
-      nextMap = { ...previousMap };
-      hasChanges = true;
-    }
-
-    nextMap[itemId] = normalizedEntry;
-  });
-
-  return hasChanges ? nextMap : previousMap;
+function isValidTimeInput(value) {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
 }
 
 function ServiceWorkspaceLoadingFallback() {
@@ -382,57 +112,56 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
-  const [pinSyncState, setPinSyncState] = useState('idle');
-  const [user, setUser] = useState(null);
-  const [checkingAccess, setCheckingAccess] = useState(true);
-  const [accessState, setAccessState] = useState('checking');
-  const [accessGateMessage, setAccessGateMessage] = useState('');
-  const [accessPollInFlight, setAccessPollInFlight] = useState(false);
-  const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
-  const [statusMap, setStatusMap] = useState({});
-  const [timeOverrideMap, setTimeOverrideMap] = useState({});
-  const [readyMap, setReadyMap] = useState({});
-  const [loadingServices, setLoadingServices] = useState(false);
-  const [loadingDateData, setLoadingDateData] = useState(true);
-  const [hasDayResponse, setHasDayResponse] = useState(false);
-  const [refreshSource, setRefreshSource] = useState('idle');
+  const {
+    user,
+    accessState,
+    checkingAccess,
+    accessGateMessage,
+    accessPollInFlight,
+    error: accessErrorMessage,
+    retryAccessCheck
+  } = useAccessGate();
+  const canReadServiceData = accessState === 'allowed';
+  const { pinSyncState, error: pinSyncErrorMessage } = usePinSync({
+    accessState,
+    user,
+    pin,
+    setPin
+  });
+  const {
+    serviceData,
+    loadingServices,
+    loadingDateData,
+    hasDayResponse,
+    refreshSource,
+    lastLoadAt,
+    staleWarning,
+    error: serviceDataErrorMessage,
+    manualRefresh
+  } = useServiceDayData({
+    canReadServiceData,
+    selectedDate,
+    pin
+  });
+  const {
+    statusMap,
+    timeOverrideMap,
+    readyMap,
+    activityEntries,
+    loadingActivity,
+    error: dateCollectionsErrorMessage
+  } = useDateCollections({
+    canReadServiceData,
+    selectedDate
+  });
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
   const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
   const [timeOverrideValue, setTimeOverrideValue] = useState('');
-  const [activityEntries, setActivityEntries] = useState([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
-  const [lastLoadAt, setLastLoadAt] = useState(null);
-  const [staleWarning, setStaleWarning] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const cloudPinRef = useRef('');
-  const latestPinRef = useRef(pin);
-  const hasLoadedCloudPinRef = useRef(false);
-  const applyingCloudPinRef = useRef(false);
-  const refreshInFlightRef = useRef(false);
-  const autoRefreshAttemptRef = useRef(new Set());
   const menuPanelRef = useRef(null);
-  const allowlistCheckTokenRef = useRef(0);
-  const accessPollInFlightRef = useRef(false);
-
-  const applyAccessResult = useCallback((accessResult) => {
-    const nextState = String(accessResult?.state ?? 'denied');
-    setAccessState(nextState);
-
-    if (nextState === 'allowed' || nextState === 'signed_out' || nextState === 'checking') {
-      setAccessGateMessage('');
-      return;
-    }
-
-    setAccessGateMessage(String(accessResult?.message ?? '').trim());
-  }, []);
-
-  const setAccessPollingState = useCallback((value) => {
-    accessPollInFlightRef.current = value;
-    setAccessPollInFlight(value);
-  }, []);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -453,10 +182,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    latestPinRef.current = pin;
-  }, [pin]);
-
-  useEffect(() => {
     if (pin) {
       localStorage.setItem(PIN_STORAGE_KEY, pin);
     } else {
@@ -469,279 +194,6 @@ function App() {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
-  useEffect(() => {
-    cloudPinRef.current = '';
-    hasLoadedCloudPinRef.current = false;
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    if (accessState !== 'allowed' || !user?.uid) {
-      setPinSyncState('idle');
-      return () => {};
-    }
-
-    setPinSyncState('syncing');
-
-    void loadPinStoreModule()
-      .then(({ saveUserPin, subscribeToUserPin }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToUserPin(
-          user.uid,
-          (cloudPin) => {
-            if (!isActive) {
-              return;
-            }
-
-            const normalizedCloudPin = String(cloudPin ?? '')
-              .replace(/[^0-9]/g, '')
-              .slice(0, 4);
-
-            hasLoadedCloudPinRef.current = true;
-            cloudPinRef.current = normalizedCloudPin;
-
-            if (normalizedCloudPin && normalizedCloudPin !== latestPinRef.current) {
-              applyingCloudPinRef.current = true;
-              setPin(normalizedCloudPin);
-            } else if (!normalizedCloudPin && latestPinRef.current) {
-              void saveUserPin(user.uid, latestPinRef.current).catch((error) => {
-                if (!isActive) {
-                  return;
-                }
-                setPinSyncState('error');
-                setErrorMessage(error.message);
-              });
-            }
-
-            setPinSyncState('synced');
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-            setPinSyncState('error');
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-        setPinSyncState('error');
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [accessState, user?.uid]);
-
-  useEffect(() => {
-    if (applyingCloudPinRef.current) {
-      applyingCloudPinRef.current = false;
-      return;
-    }
-
-    if (accessState !== 'allowed' || !user?.uid) {
-      return;
-    }
-
-    if (!hasLoadedCloudPinRef.current) {
-      return;
-    }
-
-    if (pin === cloudPinRef.current) {
-      return;
-    }
-
-    let isActive = true;
-
-    setPinSyncState('syncing');
-    void loadPinStoreModule()
-      .then(({ saveUserPin }) => saveUserPin(user.uid, pin))
-      .then(() => {
-        if (!isActive) {
-          return;
-        }
-        cloudPinRef.current = pin;
-        setPinSyncState('synced');
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-        setPinSyncState('error');
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [accessState, pin, user?.uid]);
-
-  useEffect(() => {
-    if (!hasFirebaseConfig) {
-      setAccessState('firebase_missing');
-      setAccessGateMessage('');
-      setCheckingAccess(false);
-      return () => {};
-    }
-
-    let isMounted = true;
-    let unsubscribe = () => {};
-
-    const handleCurrentUser = (currentUser) => {
-      const checkToken = allowlistCheckTokenRef.current + 1;
-      allowlistCheckTokenRef.current = checkToken;
-
-      setErrorMessage('');
-      setUser(currentUser);
-
-      if (!currentUser) {
-        setAccessGateMessage('');
-        setAccessPollingState(false);
-        applyAccessResult({ state: 'signed_out', message: '' });
-        setCheckingAccess(false);
-        return;
-      }
-
-      applyAccessResult({ state: 'checking', message: '' });
-      setCheckingAccess(true);
-      void loadAccessModule()
-        .then(({ resolveAccessState }) => resolveAccessState(currentUser))
-        .then((accessResult) => {
-          if (allowlistCheckTokenRef.current !== checkToken) {
-            return;
-          }
-          applyAccessResult(accessResult);
-        })
-        .catch((error) => {
-          if (allowlistCheckTokenRef.current !== checkToken) {
-            return;
-          }
-          applyAccessResult({
-            state: 'denied',
-            message: 'Falha ao validar acesso. Tenta novamente.'
-          });
-          setErrorMessage(error.message);
-        })
-        .finally(() => {
-          if (allowlistCheckTokenRef.current === checkToken) {
-            setCheckingAccess(false);
-          }
-        });
-    };
-
-    const initializeAuthSubscription = async () => {
-      try {
-        await configureAuthPersistence();
-      } catch {
-        // Keep auth flow moving even if persistence setup fails.
-      }
-
-      try {
-        await waitForAuthStateReady();
-      } catch {
-        // Fallback to subscription callback if auth-ready promise fails.
-      }
-
-      if (!isMounted) {
-        return;
-      }
-
-      unsubscribe = subscribeToAuthChanges(handleCurrentUser);
-    };
-
-    void initializeAuthSubscription();
-
-    return () => {
-      isMounted = false;
-      allowlistCheckTokenRef.current += 1;
-      unsubscribe();
-    };
-  }, [applyAccessResult, setAccessPollingState]);
-
-  const handleManualAccessRetry = useCallback(async () => {
-    if (!user?.uid || accessState === 'signed_out' || accessState === 'firebase_missing') {
-      return;
-    }
-
-    setErrorMessage('');
-    setAccessPollingState(true);
-
-    try {
-      const { resolveAccessState, pollApprovalState } = await loadAccessModule();
-      const result =
-        accessState === 'pending'
-          ? await pollApprovalState(user)
-          : await resolveAccessState(user);
-      applyAccessResult(result);
-    } catch (error) {
-      applyAccessResult({
-        state: accessState === 'pending' ? 'pending' : 'denied',
-        message: 'Falha ao verificar acesso. Tenta novamente.'
-      });
-      setErrorMessage(error.message);
-    } finally {
-      setAccessPollingState(false);
-    }
-  }, [accessState, applyAccessResult, setAccessPollingState, user]);
-
-  useEffect(() => {
-    if (accessState !== 'pending' || !user?.uid) {
-      return () => {};
-    }
-
-    let isActive = true;
-
-    const poll = async () => {
-      if (!isActive) {
-        return;
-      }
-
-      if (accessPollInFlightRef.current) {
-        return;
-      }
-
-      setAccessPollingState(true);
-      try {
-        const { pollApprovalState } = await loadAccessModule();
-        const result = await pollApprovalState(user);
-        if (!isActive) {
-          return;
-        }
-        applyAccessResult(result);
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-        setErrorMessage(error.message);
-      } finally {
-        if (isActive) {
-          setAccessPollingState(false);
-        }
-      }
-    };
-
-    void poll();
-
-    const intervalId = window.setInterval(() => {
-      void poll();
-    }, ACCESS_POLL_INTERVAL_MS);
-
-    return () => {
-      isActive = false;
-      window.clearInterval(intervalId);
-    };
-  }, [accessState, applyAccessResult, setAccessPollingState, user]);
-
-  const canReadServiceData = accessState === 'allowed';
-  const canCallApi = canReadServiceData && Boolean(pin);
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
   const lockedListMessage = useMemo(() => {
     if (checkingAccess) {
@@ -831,6 +283,8 @@ function App() {
 
     return hasManualOverride && /^([01]\d|2[0-3]):([0-5]\d)$/.test(selectedTimeOverrideOriginalTime);
   }, [selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
+  const hasMenuTimeOverrideInput = String(timeOverrideValue ?? '').trim().length > 0;
+  const isMenuTimeOverrideValid = isValidTimeInput(timeOverrideValue);
 
   useEffect(() => {
     setTimeOverrideItemId('');
@@ -848,375 +302,11 @@ function App() {
     []
   );
 
-  const refreshServiceDataFromApi = useCallback(
-    async ({ date, forceRefresh, source, hasRenderableData }) => {
-      if (!canReadServiceData) {
-        return false;
-      }
-
-      if (!canCallApi) {
-        const pinError = 'Introduz o PIN da API para atualizar os serviços.';
-        if (source === 'manual') {
-          setErrorMessage(pinError);
-        } else if (hasRenderableData) {
-          setStaleWarning('Dados desatualizados (mais de 2 horas). Introduz o PIN para atualizar.');
-        } else {
-          setErrorMessage(pinError);
-        }
-        return false;
-      }
-
-      if (refreshInFlightRef.current) {
-        return false;
-      }
-
-      refreshInFlightRef.current = true;
-      setLoadingServices(true);
-      setRefreshSource(source);
-
-      if (source === 'manual') {
-        setErrorMessage('');
-      }
-
-      try {
-        const { refreshServiceDayViaApi } = await loadApiModule();
-        await refreshServiceDayViaApi({
-          date,
-          pin,
-          forceRefresh
-        });
-
-        if (source === 'manual') {
-          setStaleWarning('');
-        }
-
-        return true;
-      } catch (error) {
-        if (source === 'manual') {
-          setErrorMessage(error.message);
-        } else if (hasRenderableData) {
-          setStaleWarning('Dados desatualizados. Falha na atualização automática. Usa Atualizar para tentar novamente.');
-        } else {
-          setErrorMessage(error.message);
-        }
-        return false;
-      } finally {
-        refreshInFlightRef.current = false;
-        setLoadingServices(false);
-        setRefreshSource('idle');
-      }
-    },
-    [canCallApi, canReadServiceData, pin]
-  );
-
-  useEffect(() => {
-    autoRefreshAttemptRef.current = new Set();
-    setStaleWarning('');
-
-    if (!canReadServiceData) {
-      setServiceData({ pickups: [], returns: [] });
-      setLastLoadAt(null);
-      setLoadingDateData(false);
-      setHasDayResponse(false);
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setLoadingDateData(true);
-    setHasDayResponse(false);
-
-    void loadScrapedDataModule()
-      .then(({ isScrapedDocStale, subscribeToScrapedDay }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToScrapedDay(
-          selectedDate,
-          (payload) => {
-            if (!isActive) {
-              return;
-            }
-
-            setServiceData({ pickups: payload.pickups, returns: payload.returns });
-            setLastLoadAt(payload.cachedAt ?? null);
-            setHasDayResponse(true);
-            setLoadingDateData(false);
-
-            const isStale = isScrapedDocStale(payload.cachedAt);
-            if (!isStale) {
-              setStaleWarning('');
-              return;
-            }
-
-            const staleKey = `${selectedDate}:${getCacheVersionKey(payload.cachedAt)}`;
-            if (autoRefreshAttemptRef.current.has(staleKey)) {
-              return;
-            }
-
-            autoRefreshAttemptRef.current.add(staleKey);
-            void refreshServiceDataFromApi({
-              date: selectedDate,
-              forceRefresh: false,
-              source: 'auto',
-              hasRenderableData: true
-            });
-          },
-          () => {
-            if (!isActive) {
-              return;
-            }
-
-            setServiceData({ pickups: [], returns: [] });
-            setLastLoadAt(null);
-
-            const missingKey = `${selectedDate}:missing`;
-            if (autoRefreshAttemptRef.current.has(missingKey)) {
-              return;
-            }
-
-            autoRefreshAttemptRef.current.add(missingKey);
-            void refreshServiceDataFromApi({
-              date: selectedDate,
-              forceRefresh: false,
-              source: 'auto',
-              hasRenderableData: false
-            }).then((success) => {
-              if (!isActive) {
-                return;
-              }
-
-              if (!success) {
-                setLoadingDateData(false);
-              }
-            });
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-            setLoadingDateData(false);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-        setLoadingDateData(false);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, refreshServiceDataFromApi, selectedDate]);
-
   useEffect(() => {
     if (!canReadServiceData) {
-      setStatusMap({});
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setStatusMap({});
-
-    void loadStatusStoreModule()
-      .then(({ subscribeToDateStatus }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateStatus(
-          selectedDate,
-          (changes) => {
-            if (!isActive) {
-              return;
-            }
-
-            setStatusMap((previousMap) => applyStatusChanges(previousMap, changes));
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
-  useEffect(() => {
-    if (!canReadServiceData) {
-      setTimeOverrideMap({});
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setTimeOverrideMap({});
-
-    void loadTimeOverrideStoreModule()
-      .then(({ subscribeToDateTimeOverrides }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateTimeOverrides(
-          selectedDate,
-          (changes) => {
-            if (!isActive) {
-              return;
-            }
-
-            setTimeOverrideMap((previousMap) => applyTimeOverrideChanges(previousMap, changes));
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
-  useEffect(() => {
-    if (!canReadServiceData) {
-      setReadyMap({});
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setReadyMap({});
-
-    void loadReadyStoreModule()
-      .then(({ subscribeToDateReady }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateReady(
-          selectedDate,
-          (changes) => {
-            if (!isActive) {
-              return;
-            }
-
-            setReadyMap((previousMap) => applyReadyChanges(previousMap, changes));
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-
-            setErrorMessage(error.message);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
-  useEffect(() => {
-    if (!canReadServiceData) {
-      setActivityEntries([]);
-      setLoadingActivity(false);
       setActivityPopupOpen(false);
-      return () => {};
     }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setLoadingActivity(true);
-    setActivityEntries([]);
-
-    void loadActivityStoreModule()
-      .then(({ subscribeToDateActivity }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateActivity(
-          selectedDate,
-          (entries) => {
-            if (!isActive) {
-              return;
-            }
-            setActivityEntries(entries);
-            setLoadingActivity(false);
-          },
-          (error) => {
-            if (!isActive) {
-              return;
-            }
-            setErrorMessage(error.message);
-            setLoadingActivity(false);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(error.message);
-        setLoadingActivity(false);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
+  }, [canReadServiceData]);
 
   useEffect(() => {
     if (manualCompletedCandidates.length === 0) {
@@ -1256,22 +346,15 @@ function App() {
 
   const handleSignOut = async () => {
     setErrorMessage('');
-    await signOutUser();
-    setAccessGateMessage('');
-    setAccessPollingState(false);
-    setServiceData({ pickups: [], returns: [] });
-    setStatusMap({});
-    setTimeOverrideMap({});
-    setReadyMap({});
-    setActivityEntries([]);
-    setActivityPopupOpen(false);
-    setLoadingActivity(false);
-    setTimeOverrideItemId('');
-    setTimeOverrideValue('');
-    setLastLoadAt(null);
-    setHasDayResponse(false);
-    setStaleWarning('');
-    setLoadingDateData(false);
+    try {
+      await signOutUser();
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setActivityPopupOpen(false);
+      setTimeOverrideItemId('');
+      setTimeOverrideValue('');
+    }
   };
 
   const handleToggleDone = useCallback(
@@ -1430,7 +513,7 @@ function App() {
   );
 
   const handleSaveTimeOverride = useCallback(async () => {
-    if (!selectedTimeOverrideItem) {
+    if (!selectedTimeOverrideItem || !isValidTimeInput(timeOverrideValue)) {
       return;
     }
     await handleSaveItemTimeOverride(selectedTimeOverrideItem, timeOverrideValue);
@@ -1443,15 +526,6 @@ function App() {
 
     await handleSaveItemTimeOverride(selectedTimeOverrideItem, selectedTimeOverrideOriginalTime);
   }, [canResetSelectedTimeOverride, handleSaveItemTimeOverride, selectedTimeOverrideItem, selectedTimeOverrideOriginalTime]);
-
-  const handleManualRefresh = useCallback(() => {
-    void refreshServiceDataFromApi({
-      date: selectedDate,
-      forceRefresh: true,
-      source: 'manual',
-      hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0
-    });
-  }, [refreshServiceDataFromApi, selectedDate, serviceData.pickups.length, serviceData.returns.length]);
 
   const handleOpenActivityPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
@@ -1503,17 +577,17 @@ function App() {
   }
 
   if (showSignedOutLanding) {
-    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage} />;
+    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage || accessErrorMessage} />;
   }
 
   if (showAccessGateScreen) {
     return (
       <AccessGateScreen
         state={accessState}
-        message={accessGateMessage || errorMessage}
+        message={accessGateMessage || accessErrorMessage || errorMessage}
         checking={checkingAccess}
         polling={accessPollInFlight}
-        onRetry={handleManualAccessRetry}
+        onRetry={retryAccessCheck}
         onSignOut={handleSignOut}
       />
     );
@@ -1521,155 +595,52 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header app-header-compact">
-        <div className="title-block">
-          <p className="eyebrow">JustDrive</p>
-          <h1>Lista de Serviço</h1>
-        </div>
+      <AppHeaderMenu
+        menuPanelRef={menuPanelRef}
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        user={user}
+        accessState={accessState}
+        checkingAccess={checkingAccess}
+        pin={pin}
+        pinSyncState={pinSyncState}
+        onPinChange={setPin}
+        onSignIn={handleSignIn}
+        onSignOut={handleSignOut}
+        manualCompletedCandidates={manualCompletedCandidates}
+        manualCompletedItemId={manualCompletedItemId}
+        onManualCompletedItemIdChange={setManualCompletedItemId}
+        onAddToCompleted={handleAddToCompleted}
+        updatingItemId={updatingItemId}
+        allServiceItems={allServiceItems}
+        timeOverrideItemId={timeOverrideItemId}
+        onTimeOverrideSelectionChange={handleTimeOverrideSelectionChange}
+        timeOverrideValue={timeOverrideValue}
+        onTimeOverrideValueChange={setTimeOverrideValue}
+        hasMenuTimeOverrideInput={hasMenuTimeOverrideInput}
+        isMenuTimeOverrideValid={isMenuTimeOverrideValid}
+        selectedTimeOverrideItem={selectedTimeOverrideItem}
+        onSaveTimeOverride={handleSaveTimeOverride}
+        canResetSelectedTimeOverride={canResetSelectedTimeOverride}
+        onResetTimeOverride={handleResetTimeOverride}
+        selectedDate={selectedDate}
+        onOpenActivityPopup={handleOpenActivityPopup}
+        activityEntriesCount={activityEntries.length}
+        loadingActivity={loadingActivity}
+        statusLine={statusLine}
+      />
 
-        <details ref={menuPanelRef} className="menu-panel">
-          <summary className="ghost-btn menu-summary">Menu</summary>
-          <div className="menu-content">
-            <div className="menu-head">
-              <div className="menu-head-copy">
-                <p className="menu-title">Operação diária</p>
-                <p className="subtle-text">Definições rápidas para a operação de hoje.</p>
-              </div>
-              <button
-                type="button"
-                className="theme-icon-btn"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-                title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-              >
-                {theme === 'dark' ? <SunMedium className="theme-icon" aria-hidden="true" /> : <MoonStar className="theme-icon" aria-hidden="true" />}
-              </button>
-            </div>
-
-            <div className="menu-sections">
-              <details className="menu-section" open>
-                <summary className="menu-section-summary">Conta e PIN</summary>
-                <div className="menu-section-body">
-                  <AuthPanel
-                    user={user}
-                    accessState={accessState}
-                    checkingAccess={checkingAccess}
-                    pin={pin}
-                    pinSyncState={pinSyncState}
-                    onPinChange={setPin}
-                    onSignIn={handleSignIn}
-                    onSignOut={handleSignOut}
-                  />
-                </div>
-              </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Completados</summary>
-                <div className="menu-section-body">
-                  <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
-                  <div className="manual-completed-controls">
-                    <select
-                      className="manual-completed-select"
-                      value={manualCompletedItemId}
-                      onChange={(event) => setManualCompletedItemId(event.target.value)}
-                      disabled={manualCompletedCandidates.length === 0 || updatingItemId !== ''}
-                    >
-                      {manualCompletedCandidates.length === 0 ? <option value="">Sem concluídos recentes</option> : null}
-                      {manualCompletedCandidates.map((item) => (
-                        <option key={item.itemId} value={item.itemId}>
-                          {getMenuItemLabel(item)}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      className="ghost-btn compact-btn"
-                      onClick={handleAddToCompleted}
-                      disabled={!manualCompletedItemId || updatingItemId !== ''}
-                    >
-                      Adicionar
-                    </button>
-                  </div>
-                </div>
-              </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Alterar Hora</summary>
-                <div className="menu-section-body">
-                  <p className="subtle-text">Define uma hora manual.</p>
-                  <div className="menu-time-controls">
-                    <select
-                      className="manual-completed-select"
-                      value={timeOverrideItemId}
-                      onChange={(event) => handleTimeOverrideSelectionChange(event.target.value)}
-                      disabled={allServiceItems.length === 0 || updatingItemId !== ''}
-                    >
-                      {allServiceItems.length === 0 ? <option value="">Sem serviços disponíveis</option> : null}
-                      {allServiceItems.map((item) => (
-                        <option key={item.itemId} value={item.itemId}>
-                          {getMenuItemLabel(item)}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="menu-time-row">
-                      <input
-                        type="text"
-                        inputMode="text"
-                        placeholder="HH:mm"
-                        pattern="^([01]\\d|2[0-3]):([0-5]\\d)$"
-                        maxLength={5}
-                        className="menu-time-input"
-                        value={timeOverrideValue}
-                        onChange={(event) => setTimeOverrideValue(event.target.value)}
-                        disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
-                        aria-label="Hora manual no formato 24 horas"
-                      />
-                      <button
-                        type="button"
-                        className="ghost-btn compact-btn"
-                        onClick={handleSaveTimeOverride}
-                        disabled={!selectedTimeOverrideItem || !timeOverrideValue || updatingItemId !== ''}
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-btn compact-btn"
-                        onClick={handleResetTimeOverride}
-                        disabled={!canResetSelectedTimeOverride || updatingItemId !== ''}
-                      >
-                        Reset
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </details>
-
-              <details className="menu-section">
-                <summary className="menu-section-summary">Atividade do Dia</summary>
-                <div className="menu-section-body">
-                  <p className="subtle-text">Histórico de hora, pronto/não pronto e concluídos em {selectedDate}.</p>
-                  <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={handleOpenActivityPopup}>
-                    Ver atividade ({activityEntries.length})
-                  </button>
-                  {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
-                </div>
-              </details>
-            </div>
-            <p className="menu-sync-footnote">{statusLine}</p>
-          </div>
-        </details>
-      </header>
-
-      <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={handleManualRefresh} loading={loadingServices} />
+      <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} />
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
+      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage ? (
+        <p className="error-banner">
+          {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage}
+        </p>
+      ) : null}
 
       {paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
@@ -1694,87 +665,13 @@ function App() {
       )}
 
       {activityPopupOpen ? (
-        <div
-          className="activity-popup-backdrop"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              handleCloseActivityPopup();
-            }
-          }}
-        >
-          <section className="activity-popup" role="dialog" aria-modal="true" aria-label="Atividade do dia">
-            <header className="activity-popup-header">
-              <div>
-                <p className="activity-popup-kicker">Atividade do Dia</p>
-                <h3>{selectedDate}</h3>
-              </div>
-              <button type="button" className="activity-popup-close" onClick={handleCloseActivityPopup} aria-label="Fechar atividade">
-                ✕
-              </button>
-            </header>
-
-            {loadingActivity ? (
-              <p className="helper-text">A carregar atividade...</p>
-            ) : activityEntries.length === 0 ? (
-              <p className="helper-text">Sem atividade registada para este dia.</p>
-            ) : (
-              <ul className="activity-popup-list">
-                {activityEntries.map((entry) => {
-                  const actionTime = toDateValue(entry.createdAt);
-                  const actionTimeLabel = actionTime ? activityTimeFormatter.format(actionTime) : '--/-- --:--';
-                  const updatedBy = entry.updatedByName || entry.updatedByEmail || 'Equipa';
-                  const serviceLabel = entry.serviceType === 'return' ? 'Recolha' : 'Entrega';
-                  const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
-                  const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
-                  const isTimeChange = entry.actionType === 'time_change';
-                  const isReadyToggle = entry.actionType === 'ready_toggle';
-                  const actionLabel = isTimeChange
-                    ? 'alterou hora'
-                    : isReadyToggle
-                      ? entry.ready
-                        ? 'viatura pronta'
-                        : 'viatura não pronta'
-                      : entry.done
-                        ? 'fez'
-                        : 'desfez';
-                  const oldTimeLabel = entry.oldTime || '--:--';
-                  const newTimeLabel = entry.newTime || entry.itemTime || '--:--';
-                  const plateLabel = entry.plate || 'Sem matrícula';
-                  const actionClass = isTimeChange
-                    ? 'is-time'
-                    : isReadyToggle
-                      ? entry.ready
-                        ? 'is-ready-on'
-                        : 'is-ready-off'
-                      : entry.done
-                        ? 'is-done'
-                        : 'is-undone';
-
-                  return (
-                    <li key={`popup-activity-${entry.id}`} className="activity-popup-item">
-                      <p className="activity-popup-main">
-                        <strong>{updatedBy}</strong> <span className={`menu-activity-action ${actionClass}`}>{actionLabel}</span> {serviceLabel}
-                      </p>
-                      {isTimeChange ? (
-                        <p className="activity-popup-meta">
-                          {itemLabel} · {reservationLabel} · {oldTimeLabel} → {newTimeLabel} · {actionTimeLabel}
-                        </p>
-                      ) : isReadyToggle ? (
-                        <p className="activity-popup-meta">
-                          {itemLabel} · {reservationLabel} · {plateLabel} · {actionTimeLabel}
-                        </p>
-                      ) : (
-                        <p className="activity-popup-meta">
-                          {itemLabel} · {reservationLabel} · {entry.itemTime || '--:--'} · {actionTimeLabel}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-        </div>
+        <ActivityPopup
+          selectedDate={selectedDate}
+          loadingActivity={loadingActivity}
+          activityEntries={activityEntries}
+          activityTimeFormatter={activityTimeFormatter}
+          onClose={handleCloseActivityPopup}
+        />
       ) : null}
     </div>
   );

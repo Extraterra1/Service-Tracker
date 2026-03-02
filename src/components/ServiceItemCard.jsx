@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import ReactCountryFlag from 'react-country-flag';
 import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode } from '../lib/phone';
+import { toTimestampMs } from '../lib/timestamp';
 import { Clock3, Plane, Repeat2 } from 'lucide-react';
 
 function normalizePlate(value) {
@@ -10,24 +11,6 @@ function normalizePlate(value) {
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '');
-}
-
-function toTimestampMs(timestampLike) {
-  if (!timestampLike) {
-    return 0;
-  }
-
-  if (typeof timestampLike.toDate === 'function') {
-    return timestampLike.toDate().getTime();
-  }
-
-  if (typeof timestampLike.seconds === 'number') {
-    return timestampLike.seconds * 1000;
-  }
-
-  const parsed = new Date(timestampLike);
-  const value = parsed.getTime();
-  return Number.isNaN(value) ? 0 : value;
 }
 
 function getSharedMarkerColor(markers, plateValue) {
@@ -127,7 +110,7 @@ function ServiceItemCard({
   }, [timeMenuOpen]);
 
   const handleSaveTime = async () => {
-    if (!onSaveTimeOverride || !editTimeValue) {
+    if (!onSaveTimeOverride || !editTimeValue || !isValidTimeInput(editTimeValue)) {
       return;
     }
 
@@ -196,7 +179,13 @@ function ServiceItemCard({
                   disabled={controlsDisabled}
                   aria-label="Hora manual no formato 24 horas"
                 />
-                <button type="button" className="item-time-menu-save" onClick={handleSaveTime} disabled={controlsDisabled || !editTimeValue}>
+                {!isValidTimeInput(editTimeValue) && editTimeValue ? <p className="helper-text">Formato inválido. Usa HH:mm.</p> : null}
+                <button
+                  type="button"
+                  className="item-time-menu-save"
+                  onClick={handleSaveTime}
+                  disabled={controlsDisabled || !editTimeValue || !isValidTimeInput(editTimeValue)}
+                >
                   Guardar
                 </button>
                 <button type="button" className="item-time-menu-reset" onClick={handleResetTime} disabled={controlsDisabled || !canResetTime}>

@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react'
 import ServiceItemCard from './ServiceItemCard'
+import { toTimestampMs } from '../lib/timestamp'
 
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000
 
@@ -22,24 +23,6 @@ function toSortMinutes(item) {
   }
 
   return hours * 60 + minutes
-}
-
-function toMillis(timestampLike) {
-  if (!timestampLike) {
-    return null
-  }
-
-  if (typeof timestampLike.toDate === 'function') {
-    return timestampLike.toDate().getTime()
-  }
-
-  if (typeof timestampLike.seconds === 'number') {
-    return timestampLike.seconds * 1000
-  }
-
-  const parsed = new Date(timestampLike)
-  const value = parsed.getTime()
-  return Number.isNaN(value) ? null : value
 }
 
 function ServicePane({
@@ -96,7 +79,7 @@ function ServicePane({
         return
       }
 
-      const updatedAtMs = toMillis(status?.updatedAt)
+      const updatedAtMs = toTimestampMs(status?.updatedAt, null)
       const isOlderThanOneHour = updatedAtMs !== null && resolvedNowMs - updatedAtMs > COMPLETED_HIDE_AFTER_MS
 
       if (isOlderThanOneHour) {
