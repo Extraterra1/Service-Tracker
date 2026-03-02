@@ -1123,6 +1123,74 @@ h1 {
   color: var(--item-primary);
 }
 
+.leaderboard-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.36rem;
+}
+
+.leaderboard-skeleton-card {
+  pointer-events: none;
+}
+
+.leaderboard-skeleton-row {
+  pointer-events: none;
+}
+
+.leaderboard-skeleton-shimmer,
+.leaderboard-skeleton-line {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--stroke), transparent 44%) 0%, rgba(255, 255, 255, 0.78) 50%, color-mix(in oklab, var(--stroke), transparent 44%) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s linear infinite;
+}
+
+.leaderboard-skeleton-line {
+  display: block;
+  border-radius: 999px;
+}
+
+.leaderboard-skeleton-position {
+  width: 42%;
+  height: 0.52rem;
+}
+
+.leaderboard-skeleton-avatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+}
+
+.leaderboard-skeleton-name {
+  width: 78%;
+  height: 0.62rem;
+}
+
+.leaderboard-skeleton-score {
+  width: 54%;
+  height: 0.55rem;
+}
+
+.leaderboard-skeleton-rank {
+  width: 1.18rem;
+  height: 0.5rem;
+}
+
+.leaderboard-skeleton-avatar-small {
+  width: 1.52rem;
+  height: 1.52rem;
+}
+
+.leaderboard-skeleton-list-name {
+  width: 70%;
+  height: 0.62rem;
+}
+
+.leaderboard-skeleton-list-score {
+  width: 1.1rem;
+  height: 0.58rem;
+  justify-self: end;
+}
+
 .plate-popup-backdrop {
   position: fixed;
   inset: 0;

@@ -60,6 +60,34 @@ function LeaderboardPodiumCard({ entry, position }) {
   );
 }
 
+function LeaderboardSkeleton() {
+  return (
+    <div className="leaderboard-skeleton" aria-hidden="true">
+      <section className="leaderboard-podium leaderboard-podium-skeleton">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <article key={`leaderboard-skeleton-podium-${index}`} className="leaderboard-podium-card leaderboard-skeleton-card">
+            <span className="leaderboard-skeleton-line leaderboard-skeleton-position" />
+            <span className="leaderboard-skeleton-avatar leaderboard-skeleton-shimmer" />
+            <span className="leaderboard-skeleton-line leaderboard-skeleton-name" />
+            <span className="leaderboard-skeleton-line leaderboard-skeleton-score" />
+          </article>
+        ))}
+      </section>
+
+      <ul className="leaderboard-list leaderboard-list-skeleton">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <li key={`leaderboard-skeleton-row-${index}`} className="leaderboard-list-item leaderboard-skeleton-row">
+            <span className="leaderboard-skeleton-line leaderboard-skeleton-rank" />
+            <span className="leaderboard-skeleton-avatar leaderboard-skeleton-avatar-small leaderboard-skeleton-shimmer" />
+            <span className="leaderboard-skeleton-line leaderboard-skeleton-list-name" />
+            <span className="leaderboard-skeleton-line leaderboard-skeleton-list-score" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function LeaderboardPopup({
   period = 'weekly',
   data = null,
@@ -139,7 +167,10 @@ function LeaderboardPopup({
         {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
 
         {loading ? (
-          <p className="helper-text">A calcular leaderboard...</p>
+          <>
+            <p className="helper-text">A calcular leaderboard...</p>
+            <LeaderboardSkeleton />
+          </>
         ) : rows.length === 0 ? (
           <p className="helper-text">Sem ações para este período.</p>
         ) : (
