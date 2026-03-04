@@ -5,6 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode } from '../lib/phone';
 import { toTimestampMs } from '../lib/timestamp';
 import { Clock3, Plane, Repeat2 } from 'lucide-react';
+import { WebHaptics } from 'web-haptics';
 
 function normalizePlate(value) {
   return String(value ?? '')
@@ -35,6 +36,16 @@ const doneCardVariants = {
   }
 };
 const MotionArticle = motion.article;
+let itemDoneHaptics = null;
+
+function triggerItemDoneHaptic() {
+  try {
+    itemDoneHaptics ??= new WebHaptics();
+    return itemDoneHaptics.trigger('success');
+  } catch {
+    return Promise.resolve();
+  }
+}
 
 function ServiceItemCard({
   item,
@@ -215,7 +226,18 @@ function ServiceItemCard({
           </div>
 
           <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
-            <input type="checkbox" checked={done} disabled={controlsDisabled} onChange={(event) => onToggleDone(item, event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={done}
+              disabled={controlsDisabled}
+              onChange={(event) => {
+                const nextDone = event.target.checked;
+                if (nextDone) {
+                  void triggerItemDoneHaptic();
+                }
+                onToggleDone(item, nextDone);
+              }}
+            />
             <span>Feito</span>
           </label>
         </div>
