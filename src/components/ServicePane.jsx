@@ -1,8 +1,9 @@
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import ServiceItemCard from './ServiceItemCard'
 import { toTimestampMs } from '../lib/timestamp'
 
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000
+const COMPLETED_ACCORDION_ANIMATION_MS = 380
 
 function toSortMinutes(item) {
   const value = String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim()
@@ -42,6 +43,9 @@ function ServicePane({
   canShowEmptyState = true,
   lockedMessage = '',
 }) {
+  const [isCompletedOpen, setIsCompletedOpen] = useState(false)
+  const [isCompletedClosing, setIsCompletedClosing] = useState(false)
+  const closeTimerRef = useRef(null)
   const resolvedNowMs = Number.isFinite(nowMs) ? nowMs : 0
 
   const { activeItems, completedItems } = useMemo(() => {
@@ -94,6 +98,48 @@ function ServicePane({
 
   const hasAnyItems = activeItems.length > 0 || completedItems.length > 0
   const showLockedState = !loading && Boolean(lockedMessage)
+  const shouldRenderCompletedAccordion = !loading && !showLockedState && completedItems.length > 0
+
+  useEffect(() => {
+    if (shouldRenderCompletedAccordion || isCompletedClosing) {
+      return
+    }
+
+    setIsCompletedOpen(false)
+  }, [isCompletedClosing, shouldRenderCompletedAccordion])
+
+  useEffect(() => () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  const handleCompletedAccordionToggle = (event) => {
+    event.preventDefault()
+
+    if (isCompletedClosing) {
+      return
+    }
+
+    if (isCompletedOpen) {
+      setIsCompletedClosing(true)
+
+      closeTimerRef.current = window.setTimeout(() => {
+        setIsCompletedOpen(false)
+        setIsCompletedClosing(false)
+        closeTimerRef.current = null
+      }, COMPLETED_ACCORDION_ANIMATION_MS)
+
+      return
+    }
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+
+    setIsCompletedOpen(true)
+  }
 
   return (
     <section className="service-pane" aria-label={title} aria-busy={loading ? 'true' : 'false'}>
@@ -123,9 +169,9 @@ function ServicePane({
           </div>
         ) : null}
 
-        {!loading && !showLockedState && completedItems.length > 0 ? (
-          <details className="completed-accordion">
-            <summary>Completados ({completedItems.length})</summary>
+        {shouldRenderCompletedAccordion ? (
+          <details className={`completed-accordion ${isCompletedClosing ? 'is-closing' : ''}`} open={isCompletedOpen || isCompletedClosing}>
+            <summary onClick={handleCompletedAccordionToggle}>Completados ({completedItems.length})</summary>
             <div className="completed-list">
               {completedItems.map((item) => (
                 <ServiceItemCard
