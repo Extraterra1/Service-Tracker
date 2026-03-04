@@ -442,6 +442,10 @@ h1 {
   overflow: hidden;
 }
 
+.menu-section.is-closing > :not(summary) {
+  display: block;
+}
+
 .menu-section-summary {
   width: 100%;
   justify-content: space-between;
@@ -468,9 +472,49 @@ h1 {
   transform: rotate(180deg);
 }
 
+.menu-section.is-closing .menu-section-summary::after {
+  transform: rotate(0deg);
+}
+
 .menu-section-body {
-  border-top: 1px dashed var(--stroke);
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  overflow: hidden;
+  border-top: 0 dashed var(--stroke);
+  padding: 0 0.5rem;
+  transition:
+    max-height 220ms ease,
+    opacity 170ms ease,
+    transform 220ms ease,
+    padding 220ms ease,
+    border-top-width 220ms ease;
+}
+
+.menu-section[open] .menu-section-body {
+  max-height: 26rem;
+  opacity: 1;
+  transform: translateY(0);
+  border-top-width: 1px;
   padding: 0.45rem 0.5rem;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu-section.is-closing .menu-section-body {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  border-top-width: 0;
+  padding: 0 0.5rem;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 340ms, 260ms, 340ms, 340ms, 340ms;
+  transition-delay: 0ms, 80ms, 0ms, 0ms, 0ms;
+}
+
+.menu-section:not([open]) .menu-section-body {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 340ms, 260ms, 340ms, 340ms, 340ms;
+  transition-delay: 0ms, 80ms, 0ms, 0ms, 0ms;
 }
 
 .menu-section-body .status-line-menu {
@@ -1516,6 +1560,10 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .menu-section-body {
+    transition: none;
+  }
+
   .completed-accordion[open] .completed-list,
   .completed-accordion.is-closing .completed-list {
     animation: none;

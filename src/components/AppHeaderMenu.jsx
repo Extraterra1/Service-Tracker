@@ -1,5 +1,38 @@
+import { useEffect, useRef, useState } from 'react';
 import { MoonStar, SunMedium } from 'lucide-react';
 import AuthPanel from './AuthPanel';
+
+const MENU_SECTION_CLOSE_ANIMATION_MS = 360;
+const MENU_SECTION_KEYS = {
+  account: 'account',
+  completed: 'completed',
+  timeOverride: 'timeOverride',
+  activity: 'activity',
+  leaderboard: 'leaderboard',
+};
+
+function createMenuSectionState() {
+  return {
+    [MENU_SECTION_KEYS.account]: false,
+    [MENU_SECTION_KEYS.completed]: false,
+    [MENU_SECTION_KEYS.timeOverride]: false,
+    [MENU_SECTION_KEYS.activity]: false,
+    [MENU_SECTION_KEYS.leaderboard]: false,
+  };
+}
+
+function updateMenuSectionState(setter, key, value) {
+  setter((previous) => {
+    if (previous[key] === value) {
+      return previous;
+    }
+
+    return {
+      ...previous,
+      [key]: value,
+    };
+  });
+}
 
 function getMenuItemLabel(item) {
   const serviceLabel = item.serviceType === 'return' ? 'Recolha' : 'Entrega';
@@ -44,6 +77,53 @@ function AppHeaderMenu({
   leaderboardLoading,
   statusLine
 }) {
+  const [openSections, setOpenSections] = useState(() => createMenuSectionState());
+  const [closingSections, setClosingSections] = useState(() => createMenuSectionState());
+  const closingTimersRef = useRef({});
+
+  useEffect(() => () => {
+    Object.values(closingTimersRef.current).forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+  }, []);
+
+  const handleSectionSummaryClick = (sectionKey) => (event) => {
+    event.preventDefault();
+
+    const isOpen = openSections[sectionKey] === true;
+    const isClosing = closingSections[sectionKey] === true;
+    const existingTimer = closingTimersRef.current[sectionKey];
+
+    if (isClosing) {
+      if (existingTimer !== undefined) {
+        window.clearTimeout(existingTimer);
+        delete closingTimersRef.current[sectionKey];
+      }
+
+      updateMenuSectionState(setOpenSections, sectionKey, true);
+      updateMenuSectionState(setClosingSections, sectionKey, false);
+      return;
+    }
+
+    if (isOpen) {
+      updateMenuSectionState(setClosingSections, sectionKey, true);
+
+      closingTimersRef.current[sectionKey] = window.setTimeout(() => {
+        updateMenuSectionState(setOpenSections, sectionKey, false);
+        updateMenuSectionState(setClosingSections, sectionKey, false);
+        delete closingTimersRef.current[sectionKey];
+      }, MENU_SECTION_CLOSE_ANIMATION_MS);
+      return;
+    }
+
+    if (existingTimer !== undefined) {
+      window.clearTimeout(existingTimer);
+      delete closingTimersRef.current[sectionKey];
+    }
+
+    updateMenuSectionState(setOpenSections, sectionKey, true);
+  };
+
   return (
     <header className="app-header app-header-compact">
       <div className="title-block">
@@ -71,8 +151,11 @@ function AppHeaderMenu({
           </div>
 
           <div className="menu-sections">
-            <details className="menu-section">
-              <summary className="menu-section-summary">Conta e PIN</summary>
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.account] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.account] || closingSections[MENU_SECTION_KEYS.account]}
+            >
+              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.account)}>Conta e PIN</summary>
               <div className="menu-section-body">
                 <AuthPanel
                   user={user}
@@ -87,8 +170,11 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <details className="menu-section">
-              <summary className="menu-section-summary">Completados</summary>
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.completed] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.completed] || closingSections[MENU_SECTION_KEYS.completed]}
+            >
+              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.completed)}>Completados</summary>
               <div className="menu-section-body">
                 <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
                 <div className="manual-completed-controls">
@@ -113,8 +199,11 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <details className="menu-section">
-              <summary className="menu-section-summary">Alterar Hora</summary>
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.timeOverride] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.timeOverride] || closingSections[MENU_SECTION_KEYS.timeOverride]}
+            >
+              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.timeOverride)}>Alterar Hora</summary>
               <div className="menu-section-body">
                 <p className="subtle-text">Define uma hora manual.</p>
                 <div className="menu-time-controls">
@@ -167,8 +256,11 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <details className="menu-section">
-              <summary className="menu-section-summary">Atividade do Dia</summary>
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.activity] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.activity] || closingSections[MENU_SECTION_KEYS.activity]}
+            >
+              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.activity)}>Atividade do Dia</summary>
               <div className="menu-section-body">
                 <p className="subtle-text">Histórico de hora, pronto/não pronto e concluídos em {selectedDate}.</p>
                 <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={onOpenActivityPopup}>
@@ -178,8 +270,11 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <details className="menu-section">
-              <summary className="menu-section-summary">Leaderboard</summary>
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.leaderboard] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.leaderboard] || closingSections[MENU_SECTION_KEYS.leaderboard]}
+            >
+              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.leaderboard)}>Leaderboard</summary>
               <div className="menu-section-body">
                 <p className="subtle-text">Ranking de ações da equipa (semana, mês e all time).</p>
                 <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={onOpenLeaderboardPopup}>
