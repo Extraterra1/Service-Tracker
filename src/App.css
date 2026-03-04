@@ -1404,10 +1404,6 @@ h1 {
   background: var(--pane-bg);
 }
 
-.service-pane:has(.service-item.has-time-menu) {
-  z-index: 30;
-}
-
 .pane-header {
   margin: 0;
   padding: 0.46rem 0.52rem;
@@ -1583,16 +1579,12 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.18rem;
-  content-visibility: auto;
-  contain-intrinsic-size: 168px;
 }
 
 .service-item.has-time-menu {
   z-index: 24;
   isolation: isolate;
   overflow: visible;
-  content-visibility: visible;
-  contain-intrinsic-size: auto;
 }
 
 .service-item-skeleton {
