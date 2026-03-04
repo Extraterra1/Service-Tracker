@@ -1689,8 +1689,8 @@ h1 {
   justify-content: center;
   flex: 0 0 auto;
   flex-shrink: 0;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.82rem;
+  height: 1.82rem;
   overflow: visible;
   pointer-events: none;
 }
@@ -1699,25 +1699,48 @@ h1 {
   width: 100%;
   height: 100%;
   padding: 0;
-  border-radius: 6px;
-  border: 1px solid var(--stroke);
-  background: var(--ghost-bg);
-  color: var(--ghost-text);
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--stroke), transparent 18%);
+  background: color-mix(in oklab, var(--ghost-bg), var(--accent) 7%);
+  color: color-mix(in oklab, var(--item-check), var(--ghost-text) 42%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   pointer-events: auto;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.item-time-menu-trigger:hover {
+  border-color: color-mix(in oklab, var(--accent), transparent 34%);
+}
+
+.item-time-menu-trigger:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 12%);
+  outline-offset: 2px;
+}
+
+.item-time-menu-trigger.is-active {
+  border-color: color-mix(in oklab, var(--accent), transparent 18%);
+  background: color-mix(in oklab, var(--accent), transparent 86%);
+  color: color-mix(in oklab, var(--accent), var(--item-service) 28%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 10px color-mix(in oklab, var(--accent), transparent 84%);
 }
 
 .item-time-menu-trigger:disabled {
-  opacity: 0.7;
-  cursor: progress;
+  opacity: 0.72;
+  cursor: default;
 }
 
 .item-time-menu-icon {
-  width: 0.95rem;
-  height: 0.95rem;
+  width: 0.88rem;
+  height: 0.88rem;
   stroke-width: 2.6;
 }
 
@@ -2387,6 +2410,16 @@ h1 {
   .item-check-control {
     width: 0.82rem;
     height: 0.82rem;
+  }
+
+  .item-time-menu-wrap {
+    width: 1.68rem;
+    height: 1.68rem;
+  }
+
+  .item-time-menu-icon {
+    width: 0.8rem;
+    height: 0.8rem;
   }
 
   .item-name {

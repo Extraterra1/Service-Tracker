@@ -184,7 +184,7 @@ function ServiceItemCard({
           <div ref={timeMenuWrapRef} className="item-time-menu-wrap">
             <button
               type="button"
-              className="item-time-menu-trigger"
+              className={`item-time-menu-trigger ${timeMenuOpen ? 'is-active' : ''}`}
               onClick={handleToggleTimeMenu}
               disabled={controlsDisabled}
               aria-label="Editar hora"
