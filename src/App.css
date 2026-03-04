@@ -1809,18 +1809,103 @@ h1 {
 
 .item-check {
   display: inline-flex;
-  gap: 0.24rem;
   align-items: center;
+  gap: 0.3rem;
   position: relative;
   z-index: 3;
   pointer-events: auto;
   color: var(--item-check);
   font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--stroke), transparent 18%);
+  background: color-mix(in oklab, var(--ghost-bg), var(--accent) 7%);
+  padding: 0.12rem 0.34rem 0.12rem 0.14rem;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.item-check:hover {
+  border-color: color-mix(in oklab, var(--accent), transparent 34%);
 }
 
 .item-check input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
   margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.item-check-control {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--stroke), transparent 8%);
+  background: var(--item-bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.item-check-control::after {
+  content: '';
+  width: 0.24rem;
+  height: 0.46rem;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition:
+    border-color 0.14s ease,
+    transform 0.16s ease;
+}
+
+.item-check-label {
+  line-height: 1;
+}
+
+.item-check.is-checked {
+  color: color-mix(in oklab, var(--accent), var(--item-service) 28%);
+  border-color: color-mix(in oklab, var(--accent), transparent 20%);
+  background: color-mix(in oklab, var(--accent), transparent 86%);
+}
+
+.item-check.is-checked .item-check-control {
+  border-color: color-mix(in oklab, var(--accent), transparent 18%);
+  background: color-mix(in oklab, var(--accent), white 8%);
+}
+
+.item-check.is-checked .item-check-control::after {
+  border-right-color: #fff;
+  border-bottom-color: #fff;
+  transform: rotate(45deg) translate(0, -1px);
+}
+
+.item-check input:focus-visible + .item-check-control {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 12%);
+  outline-offset: 2px;
+}
+
+.item-check input:disabled + .item-check-control,
+.item-check input:disabled ~ .item-check-label {
+  opacity: 0.8;
+}
+
+.item-check:has(input:disabled) {
+  cursor: default;
+  opacity: 0.78;
 }
 
 .item-name,
@@ -2295,7 +2380,13 @@ h1 {
   }
 
   .item-check {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem 0.1rem 0.12rem;
+  }
+
+  .item-check-control {
+    width: 0.82rem;
+    height: 0.82rem;
   }
 
   .item-name {

@@ -234,7 +234,7 @@ function ServiceItemCard({
             ) : null}
           </div>
 
-          <label className="item-check" aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
+          <label className={`item-check ${done ? 'is-checked' : ''}`} aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
             <input
               type="checkbox"
               checked={done}
@@ -249,7 +249,8 @@ function ServiceItemCard({
                 onToggleDone(item, nextDone);
               }}
             />
-            <span>Feito</span>
+            <span className="item-check-control" aria-hidden="true" />
+            <span className="item-check-label">Feito</span>
           </label>
         </div>
       </div>
