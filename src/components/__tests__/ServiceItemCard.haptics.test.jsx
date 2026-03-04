@@ -64,13 +64,13 @@ describe('ServiceItemCard haptics', () => {
     expect(triggerMock).toHaveBeenCalledWith('success');
   });
 
-  it('does not trigger haptic when unmarking done item', async () => {
+  it('triggers nudge haptic when unmarking done item', async () => {
     const user = userEvent.setup();
     const { item, onToggleDone } = renderCard({ done: true });
 
     await user.click(screen.getByRole('checkbox', { name: /marcar cliente teste como concluído/i }));
 
     expect(onToggleDone).toHaveBeenCalledWith(item, false);
-    expect(triggerMock).not.toHaveBeenCalled();
+    expect(triggerMock).toHaveBeenCalledWith('nudge');
   });
 });

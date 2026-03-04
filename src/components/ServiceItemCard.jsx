@@ -47,6 +47,15 @@ function triggerItemDoneHaptic() {
   }
 }
 
+function triggerItemUndoneHaptic() {
+  try {
+    itemDoneHaptics ??= new WebHaptics();
+    return itemDoneHaptics.trigger('nudge');
+  } catch {
+    return Promise.resolve();
+  }
+}
+
 function ServiceItemCard({
   item,
   status,
@@ -234,6 +243,8 @@ function ServiceItemCard({
                 const nextDone = event.target.checked;
                 if (nextDone) {
                   void triggerItemDoneHaptic();
+                } else {
+                  void triggerItemUndoneHaptic();
                 }
                 onToggleDone(item, nextDone);
               }}
