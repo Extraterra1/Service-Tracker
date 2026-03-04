@@ -92,7 +92,6 @@ function LeaderboardPopup({
   errorMessage = '',
   onClose,
   onPeriodChange,
-  onRefresh,
 }) {
   const rows = Array.isArray(data?.rows) ? data.rows : [];
   const topOne = rows[0] ?? null;
@@ -148,10 +147,6 @@ function LeaderboardPopup({
               </button>
             ))}
           </div>
-
-          <button type="button" className="ghost-btn compact-btn" onClick={onRefresh} disabled={loading}>
-            {loading ? 'A carregar...' : 'Atualizar'}
-          </button>
         </div>
 
         <p className="leaderboard-meta">

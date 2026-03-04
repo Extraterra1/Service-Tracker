@@ -26,7 +26,6 @@ function renderPopup(overrides = {}) {
     errorMessage: '',
     onClose: vi.fn(),
     onPeriodChange: vi.fn(),
-    onRefresh: vi.fn(),
     ...overrides,
   };
 
@@ -58,15 +57,6 @@ describe('LeaderboardPopup', () => {
     await user.click(screen.getByRole('tab', { name: 'Mês' }));
 
     expect(onPeriodChange).toHaveBeenCalledWith('monthly');
-  });
-
-  it('triggers manual refresh callback', async () => {
-    const user = userEvent.setup();
-    const { onRefresh } = renderPopup();
-
-    await user.click(screen.getByRole('button', { name: 'Atualizar' }));
-
-    expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('renders empty and error states', () => {

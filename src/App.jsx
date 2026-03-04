@@ -583,7 +583,7 @@ function App() {
   }, []);
 
   const loadLeaderboard = useCallback(
-    async (period, forceRefresh = false) => {
+    async (period) => {
       if (accessState !== 'allowed') {
         return;
       }
@@ -596,7 +596,6 @@ function App() {
         const response = await fetchLeaderboard({
           period,
           now: new Date(),
-          forceRefresh,
         });
         setLeaderboardData(response);
         setLeaderboardLastLoadedAt(new Date());
@@ -612,7 +611,7 @@ function App() {
   const handleOpenLeaderboardPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
     setLeaderboardPopupOpen(true);
-    void loadLeaderboard(leaderboardPeriod, false);
+    void loadLeaderboard(leaderboardPeriod);
   }, [leaderboardPeriod, loadLeaderboard]);
 
   const handleCloseLeaderboardPopup = useCallback(() => {
@@ -626,14 +625,10 @@ function App() {
       }
 
       setLeaderboardPeriod(nextPeriod);
-      void loadLeaderboard(nextPeriod, false);
+      void loadLeaderboard(nextPeriod);
     },
     [leaderboardPeriod, loadLeaderboard]
   );
-
-  const handleRefreshLeaderboard = useCallback(() => {
-    void loadLeaderboard(leaderboardPeriod, true);
-  }, [leaderboardPeriod, loadLeaderboard]);
 
   const statusLine = useMemo(() => {
     if (loadingServices && refreshSource === 'manual') {
@@ -774,7 +769,6 @@ function App() {
           errorMessage={leaderboardError}
           onClose={handleCloseLeaderboardPopup}
           onPeriodChange={handleLeaderboardPeriodChange}
-          onRefresh={handleRefreshLeaderboard}
         />
       ) : null}
       <Analytics />

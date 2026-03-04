@@ -352,7 +352,7 @@ function getLeaderboardQuery(periodRange) {
   );
 }
 
-export async function fetchLeaderboard({ period = 'weekly', now = new Date(), forceRefresh = false } = {}) {
+export async function fetchLeaderboard({ period = 'weekly', now = new Date() } = {}) {
   if (!db) {
     return {
       period: normalizePeriod(period),
@@ -362,7 +362,6 @@ export async function fetchLeaderboard({ period = 'weekly', now = new Date(), fo
       fetchedAt: new Date(),
       capped: false,
       range: getLeaderboardRange(period, now),
-      forced: forceRefresh === true,
     };
   }
 
@@ -382,7 +381,6 @@ export async function fetchLeaderboard({ period = 'weekly', now = new Date(), fo
     fetchedAt: new Date(),
     capped: range.period === 'all_time' && snapshot.size >= ALL_TIME_LIMIT,
     range,
-    forced: forceRefresh === true,
   };
 }
 
