@@ -171,6 +171,64 @@ function toChunkedArray(values, chunkSize) {
   return result;
 }
 
+function getEntryId(value) {
+  return String(value ?? '').trim();
+}
+
+function getSortableActionEntries(entries) {
+  return entries
+    .map((entry) => {
+      const createdAt = toDateValue(entry?.createdAt);
+      if (!createdAt) {
+        return null;
+      }
+
+      return {
+        ...entry,
+        createdAt,
+        __entryId: getEntryId(entry?.__entryId),
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => {
+      const leftTime = left.createdAt.getTime();
+      const rightTime = right.createdAt.getTime();
+      if (leftTime !== rightTime) {
+        return leftTime - rightTime;
+      }
+
+      return left.__entryId.localeCompare(right.__entryId);
+    });
+}
+
+function getScoredPoints(entry, countedStatusCompletions) {
+  if (entry.actionType === 'status_toggle') {
+    if (entry.done !== true) {
+      return 0;
+    }
+
+    const date = String(entry.date ?? '').trim();
+    const itemId = String(entry.itemId ?? '').trim();
+    if (!date || !itemId) {
+      return 0;
+    }
+
+    const completionKey = `${date}|${itemId}`;
+    if (countedStatusCompletions.has(completionKey)) {
+      return 0;
+    }
+
+    countedStatusCompletions.add(completionKey);
+    return 1;
+  }
+
+  if (entry.actionType === 'ready_toggle' || entry.actionType === 'time_change') {
+    return 1;
+  }
+
+  return 0;
+}
+
 export function getLeaderboardRange(periodInput, nowInput = new Date(), timeZone = DEFAULT_TIME_ZONE) {
   const period = normalizePeriod(periodInput);
   const now = nowInput instanceof Date ? nowInput : new Date(nowInput);
@@ -234,10 +292,12 @@ export function applySharedRanks(rows) {
 export function buildLeaderboardRows(entries) {
   const map = new Map();
   let totalActions = 0;
+  const countedStatusCompletions = new Set();
+  const sortableEntries = getSortableActionEntries(entries);
 
-  entries.forEach((entry) => {
-    const createdAt = toDateValue(entry.createdAt);
-    if (!createdAt) {
+  sortableEntries.forEach((entry) => {
+    const points = getScoredPoints(entry, countedStatusCompletions);
+    if (points <= 0) {
       return;
     }
 
@@ -249,22 +309,22 @@ export function buildLeaderboardRows(entries) {
       uid,
       email,
       displayName: fallbackDisplayName(entry.updatedByName, email, uid),
-      firstActionAt: createdAt,
-      lastActionAt: createdAt,
+      firstActionAt: entry.createdAt,
+      lastActionAt: entry.createdAt,
       score: 0,
       photoURL: '',
     };
 
-    identity.score += 1;
-    if (createdAt.getTime() < identity.firstActionAt.getTime()) {
-      identity.firstActionAt = createdAt;
+    identity.score += points;
+    if (entry.createdAt.getTime() < identity.firstActionAt.getTime()) {
+      identity.firstActionAt = entry.createdAt;
     }
-    if (createdAt.getTime() > identity.lastActionAt.getTime()) {
-      identity.lastActionAt = createdAt;
+    if (entry.createdAt.getTime() > identity.lastActionAt.getTime()) {
+      identity.lastActionAt = entry.createdAt;
     }
 
     map.set(key, identity);
-    totalActions += 1;
+    totalActions += points;
   });
 
   const sortedRows = Array.from(map.values()).sort((left, right) => {
@@ -368,7 +428,10 @@ export async function fetchLeaderboard({ period = 'weekly', now = new Date() } =
   const range = getLeaderboardRange(period, now);
   const leaderboardQuery = getLeaderboardQuery(range);
   const snapshot = await getDocs(leaderboardQuery);
-  const entries = snapshot.docs.map((docSnap) => docSnap.data() ?? {});
+  const entries = snapshot.docs.map((docSnap) => ({
+    ...(docSnap.data() ?? {}),
+    __entryId: docSnap.id,
+  }));
   const { rows: rawRows, totalActions } = buildLeaderboardRows(entries);
   const profileMap = await fetchStaffProfilesByUids(rawRows.map((row) => row.uid).filter(Boolean));
   const rows = applySharedRanks(mergeProfiles(rawRows, profileMap));
