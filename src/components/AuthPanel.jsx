@@ -1,13 +1,4 @@
-function AuthPanel({
-  user,
-  accessState,
-  checkingAccess,
-  pin,
-  pinSyncState,
-  onPinChange,
-  onSignIn,
-  onSignOut,
-}) {
+function AuthPanel({ user, accessState, checkingAccess, pin, pinSyncState, onPinChange, onSignIn, onSignOut }) {
   if (!user) {
     return (
       <section className="auth-panel">
@@ -16,7 +7,7 @@ function AuthPanel({
         </button>
         <p className="helper-text">Acesso restrito a equipa autorizada.</p>
       </section>
-    )
+    );
   }
 
   return (
@@ -46,12 +37,10 @@ function AuthPanel({
 
       {checkingAccess ? <p className="helper-text">A validar acesso...</p> : null}
       {pinSyncState === 'syncing' ? <p className="helper-text">A sincronizar PIN da conta...</p> : null}
-      {pinSyncState === 'synced' && pin ? (
-        <p className="helper-text">PIN sincronizado com a conta Google.</p>
-      ) : null}
+      {pinSyncState === 'synced' && pin ? <p className="helper-text">PIN sincronizado com a conta Google.</p> : null}
       {accessState === 'denied' ? <p className="error-banner">Conta sem acesso. Adicione na allowlist.</p> : null}
     </section>
-  )
+  );
 }
 
-export default AuthPanel
+export default AuthPanel;
