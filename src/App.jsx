@@ -157,7 +157,8 @@ function App() {
   } = useServiceDayData({
     canReadServiceData,
     selectedDate,
-    pin
+    pin,
+    userUid: user?.uid ?? ''
   });
   const {
     statusMap,

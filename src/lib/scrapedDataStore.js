@@ -2,6 +2,8 @@ import { doc, onSnapshot } from 'firebase/firestore'
 import { normalizeServiceDay } from './api'
 import { db } from './firebaseDb'
 
+export const SCRAPED_DOC_MAX_AGE_MS = 30 * 60 * 1000
+
 function toDateValue(timestampLike) {
   if (!timestampLike) {
     return null
@@ -23,7 +25,7 @@ function toDateValue(timestampLike) {
   return parsed
 }
 
-export function isScrapedDocStale(cachedAt, now = new Date(), maxAgeMs = 2 * 60 * 60 * 1000) {
+export function isScrapedDocStale(cachedAt, now = new Date(), maxAgeMs = SCRAPED_DOC_MAX_AGE_MS) {
   const cacheDate = toDateValue(cachedAt)
   if (!cacheDate) {
     return true

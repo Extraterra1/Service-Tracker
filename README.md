@@ -5,7 +5,9 @@ Mobile-first PWA for daily rental-car workflow.
 ## Features
 
 - Side-by-side **Entregas** and **Recolhas** columns, including on mobile.
-- Manual API refresh only (no polling / no automatic refresh timer).
+- Auto-refresh when Firestore cache is missing or older than 30 minutes.
+- Shared auto-refresh lock to avoid duplicate API calls from multiple online users.
+- Manual force refresh button (**Atualizar lista**) remains available.
 - Team-shared realtime checklist state via Firestore listeners.
 - Google Sign-In and allowlist gate (`staff_allowlist` collection).
 - Telegram-based access approval queue (`access_requests` + Cloud Functions webhook).
@@ -142,6 +144,20 @@ Required Firestore rule behavior for this collection:
 
 Client reads own document only. Writes are denied for clients.
 
+### `service_refresh_locks/{date}` (client-coordinated auto-refresh lease)
+
+```json
+{
+  "date": "2026-03-05",
+  "ownerUid": "firebaseUid",
+  "cacheVersion": "1741168800000",
+  "leaseUntil": "timestamp",
+  "updatedAt": "timestamp"
+}
+```
+
+Used to coordinate stale-cache auto-refresh across concurrent clients so only one auto-refresh call is made per lease window.
+
 ## API contract used by this app
 
 `GET /getjson?date=YYYY-MM-DD[&forceRefresh=true]`
@@ -163,9 +179,9 @@ Response shape used:
 
 ## Manual refresh behavior
 
-- App fetches API data on:
-  - first load (after auth + PIN),
-  - date change,
-  - explicit tap on **Atualizar lista**.
-- App never does timer-based auto-refresh.
+- App subscribes to Firestore `scraped-data/{date}`.
+- If cache is missing or older than 30 minutes, app attempts auto-refresh.
+- Auto-refresh is deduped across clients with `service_refresh_locks/{date}`.
+- Manual tap on **Atualizar lista** still performs forced API refresh (`forceRefresh=true`).
+- App does not use periodic timer polling.
 - Realtime is only for checklist status updates (Firestore snapshots).
