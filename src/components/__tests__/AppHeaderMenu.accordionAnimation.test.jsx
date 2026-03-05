@@ -61,4 +61,33 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(completedSection).toHaveClass('is-closing');
     expect(completedSection).toHaveAttribute('open');
   });
+
+  it('uses a native time picker in manual override section', async () => {
+    const user = userEvent.setup();
+    const serviceItem = {
+      itemId: 'item-1',
+      serviceType: 'pickup',
+      name: 'Cliente Teste',
+      time: '09:30',
+      overrideTime: ''
+    };
+
+    render(
+      <AppHeaderMenu
+        {...createProps({
+          allServiceItems: [serviceItem],
+          timeOverrideItemId: serviceItem.itemId,
+          selectedTimeOverrideItem: serviceItem,
+          timeOverrideValue: '09:30',
+          hasMenuTimeOverrideInput: true,
+          isMenuTimeOverrideValid: true
+        })}
+      />
+    );
+
+    await user.click(screen.getByText('Alterar Hora'));
+
+    const timeInput = screen.getByLabelText('Hora manual no formato 24 horas');
+    expect(timeInput).toHaveAttribute('type', 'time');
+  });
 });

@@ -45,18 +45,26 @@ function renderCard({
 }
 
 describe('ServiceItemCard time validation', () => {
-  it('disables save button when time format is invalid', async () => {
+  it('uses a native time picker in the clock menu', async () => {
     const user = userEvent.setup();
     renderCard();
 
     await user.click(screen.getByRole('button', { name: 'Editar hora' }));
 
-    const input = screen.getByRole('textbox', { name: 'Hora manual no formato 24 horas' });
+    const input = screen.getByLabelText('Hora manual no formato 24 horas');
+    expect(input).toHaveAttribute('type', 'time');
+  });
+
+  it('disables save button when time value is empty', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole('button', { name: 'Editar hora' }));
+
+    const input = screen.getByLabelText('Hora manual no formato 24 horas');
     await user.clear(input);
-    await user.type(input, '25:00');
 
     expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled();
-    expect(screen.getByText('Formato inválido. Usa HH:mm.')).toBeInTheDocument();
   });
 
   it('submits when a valid HH:mm value is entered', async () => {
@@ -65,7 +73,7 @@ describe('ServiceItemCard time validation', () => {
 
     await user.click(screen.getByRole('button', { name: 'Editar hora' }));
 
-    const input = screen.getByRole('textbox', { name: 'Hora manual no formato 24 horas' });
+    const input = screen.getByLabelText('Hora manual no formato 24 horas');
     await user.clear(input);
     await user.type(input, '10:30');
 

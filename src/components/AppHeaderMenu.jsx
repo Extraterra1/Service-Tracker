@@ -232,11 +232,8 @@ function AppHeaderMenu({
 
                   <div className="menu-time-row">
                     <input
-                      type="text"
-                      inputMode="text"
-                      placeholder="HH:mm"
-                      pattern="^([01]\\d|2[0-3]):([0-5]\\d)$"
-                      maxLength={5}
+                      type="time"
+                      step={60}
                       className="menu-time-input"
                       value={timeOverrideValue}
                       onChange={(event) => onTimeOverrideValueChange(event.target.value)}

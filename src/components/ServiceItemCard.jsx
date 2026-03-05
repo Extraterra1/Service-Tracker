@@ -196,11 +196,8 @@ function ServiceItemCard({
             {timeMenuOpen ? (
               <div className="item-time-menu">
                 <input
-                  type="text"
-                  inputMode="text"
-                  placeholder="HH:mm"
-                  pattern="^([01]\\d|2[0-3]):([0-5]\\d)$"
-                  maxLength={5}
+                  type="time"
+                  step={60}
                   value={editTimeValue}
                   onChange={(event) => setEditTimeValue(event.target.value)}
                   disabled={controlsDisabled}
