@@ -39,6 +39,14 @@ describe('LeaderboardPopup', () => {
     expect(screen.getByText('A calcular leaderboard...')).toBeInTheDocument();
   });
 
+  it('keeps current rows visible while loading a new period and shows loading overlay', () => {
+    renderPopup({ loading: true });
+
+    expect(screen.getByText('Carlos')).toBeInTheDocument();
+    expect(screen.getByText('A calcular leaderboard...')).toBeInTheDocument();
+    expect(document.querySelector('.leaderboard-loading-overlay')).toBeInTheDocument();
+  });
+
   it('renders podium and remaining ranked list', () => {
     renderPopup();
 

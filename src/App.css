@@ -1092,12 +1092,53 @@ h1 {
   padding-bottom: 20px;
 }
 
+.leaderboard-content-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
 .leaderboard-popup-body {
   display: flex;
   flex-direction: column;
   min-height: 0;
   flex: 1;
   background: #ffffff;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.leaderboard-content-shell.is-loading .leaderboard-popup-body {
+  opacity: 0.52;
+  transform: translateY(2px);
+  filter: saturate(0.92);
+}
+
+.leaderboard-loading-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  animation: leaderboard-overlay-fade-in 180ms ease forwards;
+}
+
+.leaderboard-loading-overlay .leaderboard-skeleton {
+  background: transparent;
+}
+
+@keyframes leaderboard-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .leaderboard-podium-card {

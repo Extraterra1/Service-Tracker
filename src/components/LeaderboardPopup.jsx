@@ -236,6 +236,9 @@ function LeaderboardPopup({
   const topTwo = rows[1] ?? null;
   const topThree = rows[2] ?? null;
   const remainder = rows.slice(3);
+  const hasRows = rows.length > 0;
+  const isLoadingWithRows = loading && hasRows;
+  const isInitialLoading = loading && !hasRows;
   const totalActions = Number(data?.totalActions ?? 0);
   const participants = Number(data?.participants ?? rows.length);
   const lastLoadedLabel = lastLoadedAt
@@ -297,32 +300,42 @@ function LeaderboardPopup({
           {errorMessage ? <p className="error-banner leaderboard-error-banner">{errorMessage}</p> : null}
         </div>
 
-        {loading ? (
+        {isInitialLoading ? (
           <>
             <p className="helper-text leaderboard-helper-text">A calcular leaderboard...</p>
             <LeaderboardSkeleton />
           </>
-        ) : rows.length === 0 ? (
+        ) : !hasRows ? (
           <p className="helper-text leaderboard-helper-text leaderboard-helper-empty">Sem ações para este período.</p>
         ) : (
-          <div className={`leaderboard-popup-body ${remainder.length > 0 ? 'has-list' : 'no-list'}`}>
-            <section className="leaderboard-podium-stage" aria-label="Top 3">
-              <div className="leaderboard-podium-track">
-                <LeaderboardPodiumCard entry={topTwo} position={2} />
-                <LeaderboardPodiumCard entry={topOne} position={1} />
-                <LeaderboardPodiumCard entry={topThree} position={3} />
+          <>
+            {isLoadingWithRows ? <p className="helper-text leaderboard-helper-text">A calcular leaderboard...</p> : null}
+            <div className={`leaderboard-content-shell ${isLoadingWithRows ? 'is-loading' : ''}`}>
+              <div className={`leaderboard-popup-body ${remainder.length > 0 ? 'has-list' : 'no-list'}`}>
+                <section className="leaderboard-podium-stage" aria-label="Top 3">
+                  <div className="leaderboard-podium-track">
+                    <LeaderboardPodiumCard entry={topTwo} position={2} />
+                    <LeaderboardPodiumCard entry={topOne} position={1} />
+                    <LeaderboardPodiumCard entry={topThree} position={3} />
+                  </div>
+                </section>
+                {remainder.length > 0 ? (
+                  <div className="leaderboard-list-wrap">
+                    <ul className="leaderboard-list" aria-label="Ranking completo">
+                      {remainder.map((entry) => (
+                        <LeaderboardListRow key={`leaderboard-row-${entry.key}`} entry={entry} />
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
-            </section>
-            {remainder.length > 0 ? (
-              <div className="leaderboard-list-wrap">
-                <ul className="leaderboard-list" aria-label="Ranking completo">
-                  {remainder.map((entry) => (
-                    <LeaderboardListRow key={`leaderboard-row-${entry.key}`} entry={entry} />
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
+              {isLoadingWithRows ? (
+                <div className="leaderboard-loading-overlay" aria-hidden="true">
+                  <LeaderboardSkeleton />
+                </div>
+              ) : null}
+            </div>
+          </>
         )}
       </section>
     </div>

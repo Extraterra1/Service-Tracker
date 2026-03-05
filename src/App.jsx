@@ -21,6 +21,7 @@ const ServiceWorkspace = lazy(() => import('./features/service-workspace/Service
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
+const LEADERBOARD_MIN_LOADING_MS = 250;
 
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
@@ -589,6 +590,7 @@ function App() {
         return;
       }
 
+      const startedAt = Date.now();
       setLeaderboardLoading(true);
       setLeaderboardError('');
 
@@ -603,6 +605,13 @@ function App() {
       } catch (error) {
         setLeaderboardError(error.message);
       } finally {
+        const elapsedMs = Date.now() - startedAt;
+        const remainingDelayMs = LEADERBOARD_MIN_LOADING_MS - elapsedMs;
+        if (remainingDelayMs > 0) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, remainingDelayMs);
+          });
+        }
         setLeaderboardLoading(false);
       }
     },
