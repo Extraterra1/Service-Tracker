@@ -177,6 +177,24 @@ service cloud.firestore {
         );
     }
 
+    function isValidRefreshLockPayload(date) {
+      return request.resource.data.keys().hasOnly([
+          'date',
+          'ownerUid',
+          'cacheVersion',
+          'leaseUntil',
+          'updatedAt'
+        ])
+        && request.resource.data.date == date
+        && isValidDateString(request.resource.data.date)
+        && request.resource.data.ownerUid is string
+        && request.resource.data.ownerUid.size() > 0
+        && request.resource.data.cacheVersion is string
+        && request.resource.data.cacheVersion.size() > 0
+        && request.resource.data.leaseUntil is timestamp
+        && request.resource.data.updatedAt is timestamp;
+    }
+
     match /staff_allowlist/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow write: if false;
@@ -246,6 +264,12 @@ service cloud.firestore {
     match /scraped-data/{date} {
       allow read: if isActiveStaff();
       allow write: if false;
+    }
+
+    match /service_refresh_locks/{date} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff() && isValidRefreshLockPayload(date);
+      allow delete: if false;
     }
 
     match /service_activity/{date}/entries/{entryId} {

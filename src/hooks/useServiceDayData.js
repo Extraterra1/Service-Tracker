@@ -3,6 +3,7 @@ import { toDateValue } from '../lib/timestamp';
 
 let apiModulePromise;
 let scrapedDataModulePromise;
+let refreshLockModulePromise;
 
 function loadApiModule() {
   apiModulePromise ??= import('../lib/api');
@@ -14,12 +15,17 @@ function loadScrapedDataModule() {
   return scrapedDataModulePromise;
 }
 
+function loadRefreshLockModule() {
+  refreshLockModulePromise ??= import('../lib/serviceRefreshLockStore');
+  return refreshLockModulePromise;
+}
+
 function getCacheVersionKey(cachedAt) {
   const cacheDate = toDateValue(cachedAt);
   return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
 }
 
-export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
+export function useServiceDayData({ canReadServiceData, selectedDate, pin, userUid }) {
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [loadingServices, setLoadingServices] = useState(false);
   const [loadingDateData, setLoadingDateData] = useState(true);
@@ -35,7 +41,7 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
   const canCallApi = canReadServiceData && Boolean(pin);
 
   const refreshServiceDataFromApi = useCallback(
-    async ({ date, forceRefresh, source, hasRenderableData }) => {
+    async ({ date, forceRefresh, source, hasRenderableData, cacheVersion }) => {
       if (!canReadServiceData) {
         return false;
       }
@@ -45,7 +51,7 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
         if (source === 'manual') {
           setError(pinError);
         } else if (hasRenderableData) {
-          setStaleWarning('Dados desatualizados (mais de 2 horas). Introduz o PIN para atualizar.');
+          setStaleWarning('Dados desatualizados (mais de 30 minutos). Introduz o PIN para atualizar.');
         } else {
           setError(pinError);
         }
@@ -54,6 +60,23 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
 
       if (refreshInFlightRef.current) {
         return false;
+      }
+
+      if (source === 'auto') {
+        try {
+          const { tryAcquireAutoRefreshLease } = await loadRefreshLockModule();
+          const leaseResult = await tryAcquireAutoRefreshLease({
+            date,
+            userUid,
+            cacheVersion
+          });
+
+          if (!leaseResult?.acquired) {
+            return false;
+          }
+        } catch {
+          // If lock resolution fails unexpectedly, continue with refresh to avoid stale data.
+        }
       }
 
       refreshInFlightRef.current = true;
@@ -92,7 +115,7 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
         setRefreshSource('idle');
       }
     },
-    [canCallApi, canReadServiceData, pin]
+    [canCallApi, canReadServiceData, pin, userUid]
   );
 
   useEffect(() => {
@@ -148,7 +171,8 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
               date: selectedDate,
               forceRefresh: false,
               source: 'auto',
-              hasRenderableData: true
+              hasRenderableData: true,
+              cacheVersion: getCacheVersionKey(payload.cachedAt)
             });
           },
           () => {
@@ -169,7 +193,8 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin }) {
               date: selectedDate,
               forceRefresh: false,
               source: 'auto',
-              hasRenderableData: false
+              hasRenderableData: false,
+              cacheVersion: 'missing-cachedAt'
             }).then((success) => {
               if (!isActive) {
                 return;
