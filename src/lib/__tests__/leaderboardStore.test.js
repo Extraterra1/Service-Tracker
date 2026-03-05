@@ -9,19 +9,171 @@ function formatInMadeira(date, options) {
 }
 
 describe('leaderboardStore', () => {
-  it('counts all action types as one point each', () => {
-    const createdAt = new Date('2026-03-02T09:00:00.000Z');
+  it('scores only the first status completion per date+item and ignores undo toggles', () => {
     const entries = [
-      { actionType: 'status_toggle', updatedByUid: 'uid-1', updatedByName: 'Carlos', createdAt },
-      { actionType: 'time_change', updatedByUid: 'uid-1', updatedByName: 'Carlos', createdAt },
-      { actionType: 'ready_toggle', updatedByUid: 'uid-1', updatedByName: 'Carlos', createdAt },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:00:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+      },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:01:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: false,
+      },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:02:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+      },
+      {
+        actionType: 'time_change',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:03:00.000Z'),
+      },
     ];
 
     const result = buildLeaderboardRows(entries);
 
-    expect(result.totalActions).toBe(3);
+    expect(result.totalActions).toBe(2);
     expect(result.rows).toHaveLength(1);
-    expect(result.rows[0].score).toBe(3);
+    expect(result.rows[0].score).toBe(2);
+  });
+
+  it('deduplicates completion scoring globally across users for the same date+item', () => {
+    const result = buildLeaderboardRows([
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:00:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+        __entryId: 'entry-a',
+      },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-2',
+        updatedByName: 'Ana',
+        createdAt: new Date('2026-03-02T09:01:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+        __entryId: 'entry-b',
+      },
+    ]);
+
+    expect(result.totalActions).toBe(1);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].uid).toBe('uid-1');
+    expect(result.rows[0].score).toBe(1);
+  });
+
+  it('allows one completion point per date even when itemId repeats across dates', () => {
+    const result = buildLeaderboardRows([
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:00:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+      },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-03T09:00:00.000Z'),
+        date: '2026-03-03',
+        itemId: 'item-1',
+        done: true,
+      },
+    ]);
+
+    expect(result.totalActions).toBe(2);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].score).toBe(2);
+  });
+
+  it('counts ready/time actions and ignores unknown actions', () => {
+    const result = buildLeaderboardRows([
+      {
+        actionType: 'ready_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:00:00.000Z'),
+      },
+      {
+        actionType: 'time_change',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:01:00.000Z'),
+      },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:02:00.000Z'),
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: false,
+      },
+      {
+        actionType: 'unknown_action',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-02T09:03:00.000Z'),
+      },
+    ]);
+
+    expect(result.totalActions).toBe(2);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].score).toBe(2);
+  });
+
+  it('uses __entryId to break ties for same-timestamp status completions', () => {
+    const createdAt = new Date('2026-03-02T09:00:00.000Z');
+    const result = buildLeaderboardRows([
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt,
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+        __entryId: 'entry-b',
+      },
+      {
+        actionType: 'status_toggle',
+        updatedByUid: 'uid-2',
+        updatedByName: 'Ana',
+        createdAt,
+        date: '2026-03-02',
+        itemId: 'item-1',
+        done: true,
+        __entryId: 'entry-a',
+      },
+    ]);
+
+    expect(result.totalActions).toBe(1);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].uid).toBe('uid-2');
   });
 
   it('weekly range starts on Monday 00:00 in Madeira timezone', () => {
@@ -62,6 +214,7 @@ describe('leaderboardStore', () => {
   it('falls back to activity identity when profile data is unavailable', () => {
     const result = buildLeaderboardRows([
       {
+        actionType: 'ready_toggle',
         updatedByUid: '',
         updatedByName: '',
         updatedByEmail: 'team.member@example.com',
