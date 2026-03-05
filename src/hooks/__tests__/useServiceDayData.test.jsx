@@ -1,5 +1,5 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const refreshServiceDayViaApiMock = vi.fn()
 const isScrapedDocStaleMock = vi.fn()
@@ -42,6 +42,10 @@ describe('useServiceDayData', () => {
     tryAcquireAutoRefreshLeaseMock.mockReset()
   })
 
+  afterEach(() => {
+    cleanup()
+  })
+
   it('auto-refreshes stale data only when lease lock is acquired', async () => {
     isScrapedDocStaleMock.mockReturnValue(true)
     mockExistingDaySnapshot()
@@ -61,14 +65,16 @@ describe('useServiceDayData', () => {
       expect(tryAcquireAutoRefreshLeaseMock).toHaveBeenCalledTimes(1)
     })
 
-    expect(refreshServiceDayViaApiMock).toHaveBeenCalledTimes(1)
-    expect(refreshServiceDayViaApiMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        date: '2026-03-05',
-        pin: '1234',
-        forceRefresh: false,
-      }),
-    )
+    await waitFor(() => {
+      expect(refreshServiceDayViaApiMock).toHaveBeenCalledTimes(1)
+      expect(refreshServiceDayViaApiMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: '2026-03-05',
+          pin: '1234',
+          forceRefresh: true,
+        }),
+      )
+    })
   })
 
   it('skips auto-refresh API call when lease lock is held by another user', async () => {

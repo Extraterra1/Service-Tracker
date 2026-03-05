@@ -169,7 +169,7 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin, userU
             autoRefreshAttemptRef.current.add(staleKey);
             void refreshServiceDataFromApi({
               date: selectedDate,
-              forceRefresh: false,
+              forceRefresh: true,
               source: 'auto',
               hasRenderableData: true,
               cacheVersion: getCacheVersionKey(payload.cachedAt)
@@ -191,7 +191,7 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin, userU
             autoRefreshAttemptRef.current.add(missingKey);
             void refreshServiceDataFromApi({
               date: selectedDate,
-              forceRefresh: false,
+              forceRefresh: true,
               source: 'auto',
               hasRenderableData: false,
               cacheVersion: 'missing-cachedAt'
