@@ -267,7 +267,7 @@ function AppHeaderMenu({
               open={openSections[MENU_SECTION_KEYS.activity] || closingSections[MENU_SECTION_KEYS.activity]}
             >
               <summary
-                className="menu-section-summary"
+                className="menu-section-summary menu-section-summary--action"
                 onClick={(event) => {
                   event.preventDefault();
                   onOpenActivityPopup();
@@ -282,7 +282,7 @@ function AppHeaderMenu({
               open={openSections[MENU_SECTION_KEYS.leaderboard] || closingSections[MENU_SECTION_KEYS.leaderboard]}
             >
               <summary
-                className="menu-section-summary"
+                className="menu-section-summary menu-section-summary--action"
                 onClick={(event) => {
                   event.preventDefault();
                   onOpenLeaderboardPopup();
