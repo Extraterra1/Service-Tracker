@@ -273,7 +273,17 @@ function AppHeaderMenu({
                   onOpenActivityPopup();
                 }}
               >
-                {loadingActivity ? 'A carregar atividade...' : `Atividade do Dia (${activityEntriesCount})`}
+                {loadingActivity ? (
+                  'A carregar atividade...'
+                ) : (
+                  <>
+                    <span>Atividade do Dia</span>
+                    <span className="menu-section-count-pill" title={`${activityEntriesCount} registos`}>
+                      <span className="menu-section-count-pulse" aria-hidden="true" />
+                      {activityEntriesCount}
+                    </span>
+                  </>
+                )}
               </summary>
             </details>
 
