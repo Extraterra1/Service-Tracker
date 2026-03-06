@@ -1,7 +1,12 @@
 function getIdentityLabel(entry) {
   const displayName = String(entry?.displayName ?? '').trim();
   if (displayName) {
-    return displayName;
+    return displayName
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => `${word[0].toUpperCase()}${word.slice(1)}`)
+      .join(' ');
   }
 
   const email = String(entry?.email ?? '').trim();

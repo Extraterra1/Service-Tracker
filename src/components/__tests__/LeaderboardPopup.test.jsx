@@ -58,6 +58,31 @@ describe('LeaderboardPopup', () => {
     expect(screen.getByText(/4 participantes · 36 ações/)).toBeInTheDocument();
   });
 
+  it('formats displayed names in title case', () => {
+    render(
+      <LeaderboardPopup
+        period="weekly"
+        data={{
+          rows: [
+            { key: 'u1', rank: 1, score: 12, displayName: 'maria silva', email: 'maria@example.com', photoURL: '' },
+            { key: 'u2', rank: 2, score: 10, displayName: 'joao sOuZa', email: 'joao@example.com', photoURL: '' },
+          ],
+          totalActions: 22,
+          participants: 2,
+          capped: false,
+        }}
+        lastLoadedAt={new Date('2026-03-02T15:00:00.000Z')}
+        loading={false}
+        errorMessage=""
+        onClose={vi.fn()}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+    expect(screen.getByText('Joao Sousa')).toBeInTheDocument();
+  });
+
   it('triggers period selection callback', async () => {
     const user = userEvent.setup();
     const { onPeriodChange } = renderPopup({ period: 'weekly' });
