@@ -455,10 +455,16 @@ h1 {
   color: var(--menu-title-color);
   font-size: 0.76rem;
   font-weight: 700;
+  transition: background-color 130ms ease;
 }
 
 .menu-section-summary::-webkit-details-marker {
   display: none;
+}
+
+.menu-section-summary:hover,
+.menu-section-summary:focus-visible {
+  background-color: color-mix(in oklab, var(--panel-bg-strong), var(--panel-bg) 18%);
 }
 
 .menu-section-summary::after {
