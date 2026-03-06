@@ -91,22 +91,22 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(timeInput).toHaveAttribute('type', 'time');
   });
 
-  it('opens the activity popup from direct action button', async () => {
+  it('opens activity popup when clicking activity section header', async () => {
     const user = userEvent.setup();
     const onOpenActivityPopup = vi.fn();
 
     render(<AppHeaderMenu {...createProps({ onOpenActivityPopup })} />);
-    await user.click(screen.getByRole('button', { name: /Atividade do Dia/ }));
+    await user.click(screen.getByText('Atividade do Dia'));
 
     expect(onOpenActivityPopup).toHaveBeenCalled();
   });
 
-  it('opens the leaderboard popup from direct action button', async () => {
+  it('opens leaderboard popup when clicking leaderboard section header', async () => {
     const user = userEvent.setup();
     const onOpenLeaderboardPopup = vi.fn();
 
     render(<AppHeaderMenu {...createProps({ onOpenLeaderboardPopup })} />);
-    await user.click(screen.getByRole('button', { name: 'Leaderboard' }));
+    await user.click(screen.getByText('Leaderboard'));
 
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
   });

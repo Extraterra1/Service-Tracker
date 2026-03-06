@@ -262,21 +262,35 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <button
-              type="button"
-              className="menu-section menu-section-summary menu-section-action-btn"
-              onClick={onOpenActivityPopup}
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.activity] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.activity] || closingSections[MENU_SECTION_KEYS.activity]}
             >
-              {loadingActivity ? 'A carregar atividade...' : `Atividade do Dia (${activityEntriesCount})`}
-            </button>
+              <summary
+                className="menu-section-summary"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onOpenActivityPopup();
+                }}
+              >
+                {loadingActivity ? 'A carregar atividade...' : `Atividade do Dia (${activityEntriesCount})`}
+              </summary>
+            </details>
 
-            <button
-              type="button"
-              className="menu-section menu-section-summary menu-section-action-btn"
-              onClick={onOpenLeaderboardPopup}
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.leaderboard] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.leaderboard] || closingSections[MENU_SECTION_KEYS.leaderboard]}
             >
-              {leaderboardLoading ? 'A carregar leaderboard...' : 'Leaderboard'}
-            </button>
+              <summary
+                className="menu-section-summary"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onOpenLeaderboardPopup();
+                }}
+              >
+                {leaderboardLoading ? 'A carregar leaderboard...' : 'Leaderboard'}
+              </summary>
+            </details>
           </div>
           <p className="menu-sync-footnote">{statusLine}</p>
         </div>
