@@ -107,6 +107,7 @@ export async function setItemDoneState({ date, item, done, user, forceCompletedN
     itemId: item.itemId,
     serviceType: item.serviceType ?? '',
     done,
+    plate: item.plate ?? '',
     createdAt: serverTimestamp(),
     updatedByUid: updaterUid,
     updatedByName: updaterName,

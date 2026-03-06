@@ -1,6 +1,6 @@
 import { toDateValue } from '../lib/timestamp';
 
-function ActivityPopup({ selectedDate, loadingActivity, activityEntries, activityTimeFormatter, onClose }) {
+function ActivityPopup({ selectedDate, loadingActivity, activityEntries, plateByItemId = {}, activityTimeFormatter, onClose }) {
   return (
     <div
       className="activity-popup-backdrop"
@@ -33,7 +33,6 @@ function ActivityPopup({ selectedDate, loadingActivity, activityEntries, activit
               const updatedBy = entry.updatedByName || entry.updatedByEmail || 'Equipa';
               const serviceLabel = entry.serviceType === 'return' ? 'Recolha' : 'Entrega';
               const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
-              const reservationLabel = entry.reservationId ? `#${entry.reservationId}` : `#${entry.itemId}`;
               const isTimeChange = entry.actionType === 'time_change';
               const isReadyToggle = entry.actionType === 'ready_toggle';
               const actionLabel = isTimeChange
@@ -47,7 +46,13 @@ function ActivityPopup({ selectedDate, loadingActivity, activityEntries, activit
                     : 'desfez';
               const oldTimeLabel = entry.oldTime || '--:--';
               const newTimeLabel = entry.newTime || entry.itemTime || '--:--';
-              const plateLabel = entry.plate || 'Sem matrícula';
+              const fallbackPlate = plateByItemId[entry.itemId] || '';
+              const plateLabel = entry.plate || fallbackPlate || 'Sem matrícula';
+              const metaLabel = isTimeChange
+                ? [itemLabel, plateLabel, `${oldTimeLabel} → ${newTimeLabel}`, actionTimeLabel].join(' · ')
+                : isReadyToggle
+                  ? [itemLabel, plateLabel, actionTimeLabel].join(' · ')
+                  : [itemLabel, plateLabel, entry.itemTime || '--:--', actionTimeLabel].join(' · ');
               const actionClass = isTimeChange
                 ? 'is-time'
                 : isReadyToggle
@@ -63,19 +68,7 @@ function ActivityPopup({ selectedDate, loadingActivity, activityEntries, activit
                   <p className="activity-popup-main">
                     <strong>{updatedBy}</strong> <span className={`menu-activity-action ${actionClass}`}>{actionLabel}</span> {serviceLabel}
                   </p>
-                  {isTimeChange ? (
-                    <p className="activity-popup-meta">
-                      {itemLabel} · {reservationLabel} · {oldTimeLabel} → {newTimeLabel} · {actionTimeLabel}
-                    </p>
-                  ) : isReadyToggle ? (
-                    <p className="activity-popup-meta">
-                      {itemLabel} · {reservationLabel} · {plateLabel} · {actionTimeLabel}
-                    </p>
-                  ) : (
-                    <p className="activity-popup-meta">
-                      {itemLabel} · {reservationLabel} · {entry.itemTime || '--:--'} · {actionTimeLabel}
-                    </p>
-                  )}
+                  <p className="activity-popup-meta">{metaLabel}</p>
                 </li>
               );
             })}

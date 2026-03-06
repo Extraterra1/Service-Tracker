@@ -289,6 +289,20 @@ function App() {
     () => [...serviceDataWithOverrides.pickups, ...serviceDataWithOverrides.returns],
     [serviceDataWithOverrides.pickups, serviceDataWithOverrides.returns]
   );
+  const activityPlateByItemId = useMemo(
+    () =>
+      allServiceItems.reduce((lookup, item) => {
+        const itemId = String(item?.itemId ?? '').trim();
+        const plate = String(item?.plate ?? '').trim();
+        if (!itemId || !plate || lookup[itemId]) {
+          return lookup;
+        }
+
+        lookup[itemId] = plate;
+        return lookup;
+      }, {}),
+    [allServiceItems]
+  );
 
   const manualCompletedCandidates = useMemo(() => {
     const nowMs = Date.now();
@@ -765,6 +779,7 @@ function App() {
           selectedDate={selectedDate}
           loadingActivity={loadingActivity}
           activityEntries={activityEntries}
+          plateByItemId={activityPlateByItemId}
           activityTimeFormatter={activityTimeFormatter}
           onClose={handleCloseActivityPopup}
         />

@@ -126,6 +126,7 @@ export async function setItemTimeOverride({ date, item, newTime, user }) {
     itemId: item.itemId,
     serviceType: item.serviceType ?? '',
     done: false,
+    plate: item.plate ?? '',
     createdAt: serverTimestamp(),
     updatedByUid: updaterUid,
     updatedByName: updaterName,
