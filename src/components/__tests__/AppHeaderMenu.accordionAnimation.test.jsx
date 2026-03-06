@@ -90,4 +90,24 @@ describe('AppHeaderMenu accordion animations', () => {
     const timeInput = screen.getByLabelText('Hora manual no formato 24 horas');
     expect(timeInput).toHaveAttribute('type', 'time');
   });
+
+  it('opens the activity popup from direct action button', async () => {
+    const user = userEvent.setup();
+    const onOpenActivityPopup = vi.fn();
+
+    render(<AppHeaderMenu {...createProps({ onOpenActivityPopup })} />);
+    await user.click(screen.getByRole('button', { name: /Atividade do Dia/ }));
+
+    expect(onOpenActivityPopup).toHaveBeenCalled();
+  });
+
+  it('opens the leaderboard popup from direct action button', async () => {
+    const user = userEvent.setup();
+    const onOpenLeaderboardPopup = vi.fn();
+
+    render(<AppHeaderMenu {...createProps({ onOpenLeaderboardPopup })} />);
+    await user.click(screen.getByRole('button', { name: 'Leaderboard' }));
+
+    expect(onOpenLeaderboardPopup).toHaveBeenCalled();
+  });
 });

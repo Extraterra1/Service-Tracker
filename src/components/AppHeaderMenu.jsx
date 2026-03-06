@@ -262,36 +262,21 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <details
-              className={`menu-section ${closingSections[MENU_SECTION_KEYS.activity] ? 'is-closing' : ''}`}
-              open={openSections[MENU_SECTION_KEYS.activity] || closingSections[MENU_SECTION_KEYS.activity]}
+            <button
+              type="button"
+              className="menu-section menu-section-summary menu-section-action-btn"
+              onClick={onOpenActivityPopup}
             >
-              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.activity)}>
-                Atividade do Dia
-              </summary>
-              <div className="menu-section-body">
-                <p className="subtle-text">Histórico de hora, pronto/não pronto e concluídos em {selectedDate}.</p>
-                <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={onOpenActivityPopup}>
-                  Ver atividade ({activityEntriesCount})
-                </button>
-                {loadingActivity ? <p className="helper-text">A carregar atividade...</p> : null}
-              </div>
-            </details>
+              {loadingActivity ? 'A carregar atividade...' : `Atividade do Dia (${activityEntriesCount})`}
+            </button>
 
-            <details
-              className={`menu-section ${closingSections[MENU_SECTION_KEYS.leaderboard] ? 'is-closing' : ''}`}
-              open={openSections[MENU_SECTION_KEYS.leaderboard] || closingSections[MENU_SECTION_KEYS.leaderboard]}
+            <button
+              type="button"
+              className="menu-section menu-section-summary menu-section-action-btn"
+              onClick={onOpenLeaderboardPopup}
             >
-              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.leaderboard)}>
-                Leaderboard
-              </summary>
-              <div className="menu-section-body">
-                <p className="subtle-text">Ranking de ações da equipa (semana, mês e all time).</p>
-                <button type="button" className="ghost-btn compact-btn menu-activity-open-btn" onClick={onOpenLeaderboardPopup}>
-                  {leaderboardLoading ? 'A carregar...' : 'Ver leaderboard'}
-                </button>
-              </div>
-            </details>
+              {leaderboardLoading ? 'A carregar leaderboard...' : 'Leaderboard'}
+            </button>
           </div>
           <p className="menu-sync-footnote">{statusLine}</p>
         </div>
