@@ -1,29 +1,29 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
-import ServiceItemCard from './ServiceItemCard'
-import { toTimestampMs } from '../lib/timestamp'
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import ServiceItemCard from './ServiceItemCard';
+import { toTimestampMs } from '../lib/timestamp';
 
-const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000
-const COMPLETED_ACCORDION_ANIMATION_MS = 380
+const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
+const COMPLETED_ACCORDION_ANIMATION_MS = 380;
 
 function toSortMinutes(item) {
-  const value = String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim()
+  const value = String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim();
   if (!value) {
-    return null
+    return null;
   }
 
-  const match = value.match(/^(\d{1,2}):(\d{2})$/)
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
   if (!match) {
-    return null
+    return null;
   }
 
-  const hours = Number(match[1])
-  const minutes = Number(match[2])
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
 
   if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    return null
+    return null;
   }
 
-  return hours * 60 + minutes
+  return hours * 60 + minutes;
 }
 
 function ServicePane({
@@ -41,12 +41,12 @@ function ServicePane({
   disabled,
   loading = false,
   canShowEmptyState = true,
-  lockedMessage = '',
+  lockedMessage = ''
 }) {
-  const [isCompletedOpen, setIsCompletedOpen] = useState(false)
-  const [isCompletedClosing, setIsCompletedClosing] = useState(false)
-  const closeTimerRef = useRef(null)
-  const resolvedNowMs = Number.isFinite(nowMs) ? nowMs : 0
+  const [isCompletedOpen, setIsCompletedOpen] = useState(false);
+  const [isCompletedClosing, setIsCompletedClosing] = useState(false);
+  const closeTimerRef = useRef(null);
+  const resolvedNowMs = Number.isFinite(nowMs) ? nowMs : 0;
 
   const { activeItems, completedItems } = useMemo(() => {
     const sortedItems = items
@@ -56,90 +56,93 @@ function ServicePane({
         sortMinutes: toSortMinutes(item)
       }))
       .sort((a, b) => {
-        const aHasTime = a.sortMinutes !== null
-        const bHasTime = b.sortMinutes !== null
+        const aHasTime = a.sortMinutes !== null;
+        const bHasTime = b.sortMinutes !== null;
 
         if (aHasTime && bHasTime && a.sortMinutes !== b.sortMinutes) {
-          return a.sortMinutes - b.sortMinutes
+          return a.sortMinutes - b.sortMinutes;
         }
 
         if (aHasTime !== bHasTime) {
-          return aHasTime ? -1 : 1
+          return aHasTime ? -1 : 1;
         }
 
-        return a.index - b.index
+        return a.index - b.index;
       })
-      .map((entry) => entry.item)
+      .map((entry) => entry.item);
 
-    const active = []
-    const completed = []
+    const active = [];
+    const completed = [];
 
     sortedItems.forEach((item) => {
-      const status = statusMap[item.itemId]
-      const isDone = status?.done === true
+      const status = statusMap[item.itemId];
+      const isDone = status?.done === true;
 
       if (!isDone) {
-        active.push(item)
-        return
+        active.push(item);
+        return;
       }
 
-      const updatedAtMs = toTimestampMs(status?.updatedAt, null)
-      const isOlderThanOneHour = updatedAtMs !== null && resolvedNowMs - updatedAtMs > COMPLETED_HIDE_AFTER_MS
+      const updatedAtMs = toTimestampMs(status?.updatedAt, null);
+      const isOlderThanOneHour = updatedAtMs !== null && resolvedNowMs - updatedAtMs > COMPLETED_HIDE_AFTER_MS;
 
       if (isOlderThanOneHour) {
-        completed.push(item)
+        completed.push(item);
       } else {
-        active.push(item)
+        active.push(item);
       }
-    })
+    });
 
-    return { activeItems: active, completedItems: completed }
-  }, [items, resolvedNowMs, statusMap])
+    return { activeItems: active, completedItems: completed };
+  }, [items, resolvedNowMs, statusMap]);
 
-  const hasAnyItems = activeItems.length > 0 || completedItems.length > 0
-  const showLockedState = !loading && Boolean(lockedMessage)
-  const shouldRenderCompletedAccordion = !loading && !showLockedState && completedItems.length > 0
+  const hasAnyItems = activeItems.length > 0 || completedItems.length > 0;
+  const showLockedState = !loading && Boolean(lockedMessage);
+  const shouldRenderCompletedAccordion = !loading && !showLockedState && completedItems.length > 0;
 
   useEffect(() => {
     if (shouldRenderCompletedAccordion || isCompletedClosing) {
-      return
+      return;
     }
 
-    setIsCompletedOpen(false)
-  }, [isCompletedClosing, shouldRenderCompletedAccordion])
+    setIsCompletedOpen(false);
+  }, [isCompletedClosing, shouldRenderCompletedAccordion]);
 
-  useEffect(() => () => {
-    if (closeTimerRef.current !== null) {
-      window.clearTimeout(closeTimerRef.current)
-    }
-  }, [])
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    },
+    []
+  );
 
   const handleCompletedAccordionToggle = (event) => {
-    event.preventDefault()
+    event.preventDefault();
 
     if (isCompletedClosing) {
-      return
+      return;
     }
 
     if (isCompletedOpen) {
-      setIsCompletedClosing(true)
+      setIsCompletedClosing(true);
 
       closeTimerRef.current = window.setTimeout(() => {
-        setIsCompletedOpen(false)
-        setIsCompletedClosing(false)
-        closeTimerRef.current = null
-      }, COMPLETED_ACCORDION_ANIMATION_MS)
+        setIsCompletedOpen(false);
+        setIsCompletedClosing(false);
+        closeTimerRef.current = null;
+      }, COMPLETED_ACCORDION_ANIMATION_MS);
 
-      return
+      return;
     }
 
     if (closeTimerRef.current !== null) {
-      window.clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = null
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
     }
 
-    setIsCompletedOpen(true)
-  }
+    setIsCompletedOpen(true);
+  };
 
   return (
     <section className="service-pane" aria-label={title} aria-busy={loading ? 'true' : 'false'}>
@@ -171,7 +174,7 @@ function ServicePane({
 
         {shouldRenderCompletedAccordion ? (
           <details className={`completed-accordion ${isCompletedClosing ? 'is-closing' : ''}`} open={isCompletedOpen || isCompletedClosing}>
-            <summary onClick={handleCompletedAccordionToggle}>Completados ({completedItems.length})</summary>
+            <summary onClick={handleCompletedAccordionToggle}>Finalizados ({completedItems.length})</summary>
             <div className="completed-list">
               {completedItems.map((item) => (
                 <ServiceItemCard
@@ -194,7 +197,9 @@ function ServicePane({
 
         {!loading && !showLockedState && canShowEmptyState && !hasAnyItems ? <p className="empty-state">Sem serviços para esta data.</p> : null}
 
-        {!loading && !showLockedState && hasAnyItems && activeItems.length === 0 ? <p className="empty-state">Sem serviços ativos. Consulta "Completados".</p> : null}
+        {!loading && !showLockedState && hasAnyItems && activeItems.length === 0 ? (
+          <p className="empty-state">Sem serviços ativos. Consulta "Finalizados".</p>
+        ) : null}
 
         {!loading &&
           !showLockedState &&
@@ -215,7 +220,7 @@ function ServicePane({
           ))}
       </div>
     </section>
-  )
+  );
 }
 
-export default memo(ServicePane)
+export default memo(ServicePane);

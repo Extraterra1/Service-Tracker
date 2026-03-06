@@ -180,10 +180,10 @@ function AppHeaderMenu({
               open={openSections[MENU_SECTION_KEYS.completed] || closingSections[MENU_SECTION_KEYS.completed]}
             >
               <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.completed)}>
-                Completados
+                Finalizados
               </summary>
               <div className="menu-section-body">
-                <p className="subtle-text">Move um serviço concluído para a secção "Completados" sem esperar 1 hora.</p>
+                <p className="subtle-text">Move um serviço concluído para a secção "Finalizados" sem esperar 1 hora.</p>
                 <div className="manual-completed-controls">
                   <select
                     className="manual-completed-select"

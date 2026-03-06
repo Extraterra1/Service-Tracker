@@ -40,7 +40,7 @@ function createProps(overrides = {}) {
     onOpenLeaderboardPopup: vi.fn(),
     leaderboardLoading: false,
     statusLine: 'ok',
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -49,7 +49,7 @@ describe('AppHeaderMenu accordion animations', () => {
     const user = userEvent.setup();
     render(<AppHeaderMenu {...createProps()} />);
 
-    const completedSummary = screen.getByText('Completados');
+    const completedSummary = screen.getByText('Finalizados');
     await user.click(completedSummary);
 
     const completedSection = completedSummary.closest('details');
