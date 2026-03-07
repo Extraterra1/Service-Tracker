@@ -14,6 +14,7 @@ function createProps(overrides = {}) {
     checkingAccess: false,
     pin: '',
     pinSyncState: 'idle',
+    onOpenAccountSection: vi.fn(),
     onPinChange: vi.fn(),
     onSignIn: vi.fn(),
     onSignOut: vi.fn(),
@@ -35,8 +36,6 @@ function createProps(overrides = {}) {
     onResetTimeOverride: vi.fn(),
     selectedDate: '2026-03-04',
     onOpenActivityPopup: vi.fn(),
-    activityEntriesCount: 0,
-    loadingActivity: false,
     onOpenLeaderboardPopup: vi.fn(),
     leaderboardLoading: false,
     statusLine: 'ok',
@@ -91,6 +90,16 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(timeInput).toHaveAttribute('type', 'time');
   });
 
+  it('refreshes pin sync when opening the account section', async () => {
+    const user = userEvent.setup();
+    const onOpenAccountSection = vi.fn();
+
+    render(<AppHeaderMenu {...createProps({ onOpenAccountSection })} />);
+    await user.click(screen.getByText('Conta e PIN'));
+
+    expect(onOpenAccountSection).toHaveBeenCalledTimes(1);
+  });
+
   it('opens activity popup when clicking activity section header', async () => {
     const user = userEvent.setup();
     const onOpenActivityPopup = vi.fn();
@@ -99,6 +108,13 @@ describe('AppHeaderMenu accordion animations', () => {
     await user.click(screen.getByText('Atividade do Dia'));
 
     expect(onOpenActivityPopup).toHaveBeenCalled();
+  });
+
+  it('renders activity action without a live count badge', () => {
+    const { container } = render(<AppHeaderMenu {...createProps()} />);
+
+    expect(screen.getByText('Atividade do Dia')).toBeInTheDocument();
+    expect(container.querySelector('.menu-section-count-pill')).toBeNull();
   });
 
   it('opens leaderboard popup when clicking leaderboard section header', async () => {

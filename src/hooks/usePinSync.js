@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+const PIN_SAVE_DEBOUNCE_MS = 400;
 
 let pinStoreModulePromise;
 
@@ -7,97 +9,164 @@ function loadPinStoreModule() {
   return pinStoreModulePromise;
 }
 
+function normalizePin(value) {
+  return String(value ?? '')
+    .replace(/[^0-9]/g, '')
+    .slice(0, 4);
+}
+
 export function usePinSync({ accessState, user, pin, setPin }) {
   const [pinSyncState, setPinSyncState] = useState('idle');
   const [error, setError] = useState('');
 
   const cloudPinRef = useRef('');
-  const latestPinRef = useRef(pin);
+  const latestPinRef = useRef(normalizePin(pin));
   const hasLoadedCloudPinRef = useRef(false);
   const applyingCloudPinRef = useRef(false);
+  const writeTimerRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
-    latestPinRef.current = pin;
+    latestPinRef.current = normalizePin(pin);
   }, [pin]);
+
+  const clearPendingWrite = useCallback(() => {
+    if (writeTimerRef.current !== null) {
+      window.clearTimeout(writeTimerRef.current);
+      writeTimerRef.current = null;
+    }
+  }, []);
+
+  const persistPin = useCallback(async (uid, nextPin, requestId) => {
+    const { saveUserPin } = await loadPinStoreModule();
+    await saveUserPin(uid, nextPin);
+
+    if (requestIdRef.current !== requestId) {
+      return false;
+    }
+
+    cloudPinRef.current = nextPin;
+    return true;
+  }, []);
+
+  const flushPendingWrite = useCallback(async () => {
+    if (writeTimerRef.current === null) {
+      return false;
+    }
+
+    clearPendingWrite();
+
+    if (accessState !== 'allowed' || !user?.uid || !hasLoadedCloudPinRef.current) {
+      return false;
+    }
+
+    const nextPin = normalizePin(latestPinRef.current);
+    if (nextPin === cloudPinRef.current) {
+      return false;
+    }
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
+    setPinSyncState('syncing');
+    setError('');
+
+    try {
+      const didPersist = await persistPin(user.uid, nextPin, requestId);
+      if (!didPersist) {
+        return true;
+      }
+
+      setPinSyncState('synced');
+    } catch (nextError) {
+      if (requestIdRef.current !== requestId) {
+        return true;
+      }
+
+      setPinSyncState('error');
+      setError(nextError.message);
+    }
+
+    return true;
+  }, [accessState, clearPendingWrite, persistPin, user?.uid]);
+
+  const resync = useCallback(async () => {
+    if (accessState !== 'allowed' || !user?.uid) {
+      clearPendingWrite();
+      hasLoadedCloudPinRef.current = false;
+      cloudPinRef.current = '';
+      setPinSyncState('idle');
+      setError('');
+      return;
+    }
+
+    const flushedWrite = await flushPendingWrite();
+    if (flushedWrite) {
+      return;
+    }
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
+    setPinSyncState('syncing');
+    setError('');
+
+    try {
+      const { readUserPin, saveUserPin } = await loadPinStoreModule();
+      const cloudPin = normalizePin(await readUserPin(user.uid));
+
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+
+      hasLoadedCloudPinRef.current = true;
+      cloudPinRef.current = cloudPin;
+
+      const localPin = normalizePin(latestPinRef.current);
+
+      if (cloudPin && cloudPin !== localPin) {
+        applyingCloudPinRef.current = true;
+        setPin(cloudPin);
+      } else if (!cloudPin && localPin) {
+        await saveUserPin(user.uid, localPin);
+
+        if (requestIdRef.current !== requestId) {
+          return;
+        }
+
+        cloudPinRef.current = localPin;
+      }
+
+      setPinSyncState('synced');
+    } catch (nextError) {
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+
+      setPinSyncState('error');
+      setError(nextError.message);
+    }
+  }, [accessState, clearPendingWrite, flushPendingWrite, setPin, user?.uid]);
 
   useEffect(() => {
     cloudPinRef.current = '';
     hasLoadedCloudPinRef.current = false;
-
-    let isActive = true;
-    let unsubscribe = () => {};
+    applyingCloudPinRef.current = false;
 
     if (accessState !== 'allowed' || !user?.uid) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      clearPendingWrite();
       setPinSyncState('idle');
       setError('');
       return () => {};
     }
 
-    Promise.resolve().then(() => {
-      if (isActive) {
-        setPinSyncState('syncing');
-      }
-    });
-
-    void loadPinStoreModule()
-      .then(({ saveUserPin, subscribeToUserPin }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToUserPin(
-          user.uid,
-          (cloudPin) => {
-            if (!isActive) {
-              return;
-            }
-
-            const normalizedCloudPin = String(cloudPin ?? '')
-              .replace(/[^0-9]/g, '')
-              .slice(0, 4);
-
-            hasLoadedCloudPinRef.current = true;
-            cloudPinRef.current = normalizedCloudPin;
-
-            if (normalizedCloudPin && normalizedCloudPin !== latestPinRef.current) {
-              applyingCloudPinRef.current = true;
-              setPin(normalizedCloudPin);
-            } else if (!normalizedCloudPin && latestPinRef.current) {
-              void saveUserPin(user.uid, latestPinRef.current).catch((nextError) => {
-                if (!isActive) {
-                  return;
-                }
-                setPinSyncState('error');
-                setError(nextError.message);
-              });
-            }
-
-            setError('');
-            setPinSyncState('synced');
-          },
-          (nextError) => {
-            if (!isActive) {
-              return;
-            }
-            setPinSyncState('error');
-            setError(nextError.message);
-          }
-        );
-      })
-      .catch((nextError) => {
-        if (!isActive) {
-          return;
-        }
-        setPinSyncState('error');
-        setError(nextError.message);
-      });
+    void resync();
 
     return () => {
-      isActive = false;
-      unsubscribe();
+      requestIdRef.current += 1;
+      clearPendingWrite();
     };
-  }, [accessState, setPin, user?.uid]);
+  }, [accessState, clearPendingWrite, resync, user?.uid]);
 
   useEffect(() => {
     if (applyingCloudPinRef.current) {
@@ -113,39 +182,53 @@ export function usePinSync({ accessState, user, pin, setPin }) {
       return;
     }
 
-    if (pin === cloudPinRef.current) {
+    const normalizedPin = normalizePin(pin);
+    if (normalizedPin === cloudPinRef.current) {
       return;
     }
 
-    let isActive = true;
+    const timerId = window.setTimeout(() => {
+      writeTimerRef.current = null;
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPinSyncState('syncing');
-    void loadPinStoreModule()
-      .then(({ saveUserPin }) => saveUserPin(user.uid, pin))
-      .then(() => {
-        if (!isActive) {
-          return;
-        }
-        cloudPinRef.current = pin;
-        setError('');
-        setPinSyncState('synced');
-      })
-      .catch((nextError) => {
-        if (!isActive) {
-          return;
-        }
-        setPinSyncState('error');
-        setError(nextError.message);
-      });
+      setPinSyncState('syncing');
+      setError('');
+
+      void persistPin(user.uid, normalizedPin, requestId)
+        .then((didPersist) => {
+          if (!didPersist || requestIdRef.current !== requestId) {
+            return;
+          }
+
+          setPinSyncState('synced');
+        })
+        .catch((nextError) => {
+          if (requestIdRef.current !== requestId) {
+            return;
+          }
+
+          setPinSyncState('error');
+          setError(nextError.message);
+        });
+    }, PIN_SAVE_DEBOUNCE_MS);
+
+    writeTimerRef.current = timerId;
 
     return () => {
-      isActive = false;
+      if (writeTimerRef.current === timerId) {
+        window.clearTimeout(timerId);
+        writeTimerRef.current = null;
+        return;
+      }
+
+      window.clearTimeout(timerId);
     };
-  }, [accessState, pin, user?.uid]);
+  }, [accessState, pin, persistPin, user?.uid]);
 
   return {
     pinSyncState,
-    error
+    error,
+    resync
   };
 }

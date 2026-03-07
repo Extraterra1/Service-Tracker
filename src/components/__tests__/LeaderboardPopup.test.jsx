@@ -80,7 +80,7 @@ describe('LeaderboardPopup', () => {
     );
 
     expect(screen.getByText('Maria Silva')).toBeInTheDocument();
-    expect(screen.getByText('Joao Sousa')).toBeInTheDocument();
+    expect(screen.getByText('Joao Souza')).toBeInTheDocument();
   });
 
   it('triggers period selection callback', async () => {

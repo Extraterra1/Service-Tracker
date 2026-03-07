@@ -2,18 +2,12 @@ import { useEffect, useState } from 'react';
 import { applyReadyChanges, applyStatusChanges, applyTimeOverrideChanges } from '../lib/dateCollectionsMaps';
 
 let statusStoreModulePromise;
-let activityStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('../lib/statusStore');
   return statusStoreModulePromise;
-}
-
-function loadActivityStoreModule() {
-  activityStoreModulePromise ??= import('../lib/activityStore');
-  return activityStoreModulePromise;
 }
 
 function loadTimeOverrideStoreModule() {
@@ -30,13 +24,10 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
   const [readyMap, setReadyMap] = useState({});
-  const [activityEntries, setActivityEntries] = useState([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
   const [errors, setErrors] = useState({
     status: '',
     timeOverride: '',
-    ready: '',
-    activity: ''
+    ready: ''
   });
 
   const setStreamError = (key, message) => {
@@ -212,68 +203,10 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     };
   }, [canReadServiceData, selectedDate]);
 
-  useEffect(() => {
-    if (!canReadServiceData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActivityEntries([]);
-      setLoadingActivity(false);
-      setStreamError('activity', '');
-      return () => {};
-    }
-
-    let isActive = true;
-    let unsubscribe = () => {};
-
-    setLoadingActivity(true);
-    setActivityEntries([]);
-    setStreamError('activity', '');
-
-    void loadActivityStoreModule()
-      .then(({ subscribeToDateActivity }) => {
-        if (!isActive) {
-          return;
-        }
-
-        unsubscribe = subscribeToDateActivity(
-          selectedDate,
-          (entries) => {
-            if (!isActive) {
-              return;
-            }
-            setStreamError('activity', '');
-            setActivityEntries(entries);
-            setLoadingActivity(false);
-          },
-          (nextError) => {
-            if (!isActive) {
-              return;
-            }
-            setStreamError('activity', nextError.message);
-            setLoadingActivity(false);
-          }
-        );
-      })
-      .catch((nextError) => {
-        if (!isActive) {
-          return;
-        }
-
-        setStreamError('activity', nextError.message);
-        setLoadingActivity(false);
-      });
-
-    return () => {
-      isActive = false;
-      unsubscribe();
-    };
-  }, [canReadServiceData, selectedDate]);
-
   return {
     statusMap,
     timeOverrideMap,
     readyMap,
-    activityEntries,
-    loadingActivity,
-    error: errors.status || errors.timeOverride || errors.ready || errors.activity
+    error: errors.status || errors.timeOverride || errors.ready
   };
 }

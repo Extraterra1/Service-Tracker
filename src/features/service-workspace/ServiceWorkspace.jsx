@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import ServicePane from '../../components/ServicePane';
 
 function normalizePlate(value) {
@@ -47,18 +47,7 @@ function ServiceWorkspace({
   canShowEmptyState = true,
   lockedMessage = ''
 }) {
-  const [nowMs, setNowMs] = useState(() => Date.now());
   const [plateInfoPopup, setPlateInfoPopup] = useState(null);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, 60 * 1000);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, []);
 
   const sharedPlateMarkers = useMemo(() => {
     const pickupByPlate = new Map();
@@ -142,7 +131,6 @@ function ServiceWorkspace({
           items={serviceData.pickups}
           statusMap={statusMap}
           readyMap={readyMap}
-          nowMs={nowMs}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
@@ -160,7 +148,6 @@ function ServiceWorkspace({
           items={serviceData.returns}
           statusMap={statusMap}
           readyMap={readyMap}
-          nowMs={nowMs}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
