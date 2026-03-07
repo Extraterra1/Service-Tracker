@@ -13,6 +13,7 @@ import { getTodayDate } from './lib/date';
 import { useAccessGate } from './hooks/useAccessGate';
 import { useActivityEntries } from './hooks/useActivityEntries';
 import { useDateCollections } from './hooks/useDateCollections';
+import { useLeaderboardData } from './hooks/useLeaderboardData';
 import { usePinSync } from './hooks/usePinSync';
 import { useServiceDayData } from './hooks/useServiceDayData';
 import { toDateValue } from './lib/timestamp';
@@ -22,13 +23,11 @@ const ServiceWorkspace = lazy(() => import('./features/service-workspace/Service
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
-const LEADERBOARD_MIN_LOADING_MS = 250;
 
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
 let staffProfileStoreModulePromise;
-let leaderboardStoreModulePromise;
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('./lib/statusStore');
@@ -48,11 +47,6 @@ function loadReadyStoreModule() {
 function loadStaffProfileStoreModule() {
   staffProfileStoreModulePromise ??= import('./lib/staffProfileStore');
   return staffProfileStoreModulePromise;
-}
-
-function loadLeaderboardStoreModule() {
-  leaderboardStoreModulePromise ??= import('./lib/leaderboardStore');
-  return leaderboardStoreModulePromise;
 }
 
 function getStoredPin() {
@@ -136,10 +130,6 @@ function App() {
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
   const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
-  const [leaderboardData, setLeaderboardData] = useState(null);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [leaderboardError, setLeaderboardError] = useState('');
-  const [leaderboardLastLoadedAt, setLeaderboardLastLoadedAt] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const {
     user,
@@ -194,6 +184,16 @@ function App() {
   } = useActivityEntries({
     enabled: activityPopupOpen && canReadServiceData,
     selectedDate
+  });
+  const {
+    data: leaderboardData,
+    loading: leaderboardLoading,
+    error: leaderboardError,
+    lastLoadedAt: leaderboardLastLoadedAt,
+    loadLeaderboard,
+    resetLeaderboard
+  } = useLeaderboardData({
+    accessState
   });
 
   const menuPanelRef = useRef(null);
@@ -390,11 +390,9 @@ function App() {
     if (!canReadServiceData) {
       setActivityPopupOpen(false);
       setLeaderboardPopupOpen(false);
-      setLeaderboardData(null);
-      setLeaderboardError('');
-      setLeaderboardLoading(false);
+      resetLeaderboard();
     }
-  }, [canReadServiceData]);
+  }, [canReadServiceData, resetLeaderboard]);
 
   useEffect(() => {
     if (manualCompletedCandidates.length === 0) {
@@ -623,40 +621,6 @@ function App() {
   const handleCloseActivityPopup = useCallback(() => {
     setActivityPopupOpen(false);
   }, []);
-
-  const loadLeaderboard = useCallback(
-    async (period) => {
-      if (accessState !== 'allowed') {
-        return;
-      }
-
-      const startedAt = Date.now();
-      setLeaderboardLoading(true);
-      setLeaderboardError('');
-
-      try {
-        const { fetchLeaderboard } = await loadLeaderboardStoreModule();
-        const response = await fetchLeaderboard({
-          period,
-          now: new Date(),
-        });
-        setLeaderboardData(response);
-        setLeaderboardLastLoadedAt(new Date());
-      } catch (error) {
-        setLeaderboardError(error.message);
-      } finally {
-        const elapsedMs = Date.now() - startedAt;
-        const remainingDelayMs = LEADERBOARD_MIN_LOADING_MS - elapsedMs;
-        if (remainingDelayMs > 0) {
-          await new Promise((resolve) => {
-            setTimeout(resolve, remainingDelayMs);
-          });
-        }
-        setLeaderboardLoading(false);
-      }
-    },
-    [accessState]
-  );
 
   const handleOpenLeaderboardPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
