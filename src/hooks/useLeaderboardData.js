@@ -28,7 +28,9 @@ export function useLeaderboardData({ accessState, minimumLoadingMs = DEFAULT_MIN
       const cachedEntry = cacheRef.current.get(period);
       const nowMs = Date.now();
       if (cachedEntry && nowMs - cachedEntry.loadedAtMs < LEADERBOARD_CACHE_TTL_MS) {
+        requestIdRef.current += 1;
         setData(cachedEntry.data);
+        setLoading(false);
         setLastLoadedAt(new Date(cachedEntry.loadedAtMs));
         setError('');
         return cachedEntry.data;

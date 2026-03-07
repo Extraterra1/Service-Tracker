@@ -102,6 +102,48 @@ describe('useLeaderboardData', () => {
     expect(result.current.data?.rows[0]?.displayName).toBe('Weekly');
   });
 
+  it('keeps the cached period selected when an older in-flight request resolves later', async () => {
+    let resolveMonthlyRequest;
+
+    fetchLeaderboardMock
+      .mockResolvedValueOnce(createLeaderboardResponse('Weekly'))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveMonthlyRequest = resolve;
+          })
+      );
+
+    const { result } = renderHook(() =>
+      useLeaderboardData({
+        accessState: 'allowed',
+        minimumLoadingMs: 0
+      })
+    );
+
+    await act(async () => {
+      await result.current.loadLeaderboard('weekly');
+    });
+
+    await act(async () => {
+      void result.current.loadLeaderboard('monthly');
+    });
+
+    await act(async () => {
+      await result.current.loadLeaderboard('weekly');
+    });
+
+    expect(result.current.data?.rows[0]?.displayName).toBe('Weekly');
+    expect(result.current.loading).toBe(false);
+
+    await act(async () => {
+      resolveMonthlyRequest(createLeaderboardResponse('Monthly'));
+      await Promise.resolve();
+    });
+
+    expect(result.current.data?.rows[0]?.displayName).toBe('Weekly');
+  });
+
   it('refetches after the cache TTL expires', async () => {
     fetchLeaderboardMock
       .mockResolvedValueOnce(createLeaderboardResponse('Weekly First'))
