@@ -70,11 +70,11 @@ function AppHeaderMenu({
   onSaveTimeOverride,
   canResetSelectedTimeOverride,
   onResetTimeOverride,
-  selectedDate,
   onOpenActivityPopup,
   onOpenLeaderboardPopup,
   leaderboardLoading,
-  statusLine
+  statusLine,
+  canMutateSelectedDate = true,
 }) {
   const [openSections, setOpenSections] = useState(() => createMenuSectionState());
   const [closingSections, setClosingSections] = useState(() => createMenuSectionState());
@@ -190,7 +190,7 @@ function AppHeaderMenu({
                     className="manual-completed-select"
                     value={manualCompletedItemId}
                     onChange={(event) => onManualCompletedItemIdChange(event.target.value)}
-                    disabled={manualCompletedCandidates.length === 0 || updatingItemId !== ''}
+                    disabled={!canMutateSelectedDate || manualCompletedCandidates.length === 0 || updatingItemId !== ''}
                   >
                     {manualCompletedCandidates.length === 0 ? <option value="">Sem concluídos recentes</option> : null}
                     {manualCompletedCandidates.map((item) => (
@@ -200,7 +200,12 @@ function AppHeaderMenu({
                     ))}
                   </select>
 
-                  <button type="button" className="ghost-btn compact-btn" onClick={onAddToCompleted} disabled={!manualCompletedItemId || updatingItemId !== ''}>
+                  <button
+                    type="button"
+                    className="ghost-btn compact-btn"
+                    onClick={onAddToCompleted}
+                    disabled={!canMutateSelectedDate || !manualCompletedItemId || updatingItemId !== ''}
+                  >
                     Adicionar
                   </button>
                 </div>
@@ -221,7 +226,7 @@ function AppHeaderMenu({
                     className="manual-completed-select"
                     value={timeOverrideItemId}
                     onChange={(event) => onTimeOverrideSelectionChange(event.target.value)}
-                    disabled={allServiceItems.length === 0 || updatingItemId !== ''}
+                    disabled={!canMutateSelectedDate || allServiceItems.length === 0 || updatingItemId !== ''}
                   >
                     {allServiceItems.length === 0 ? <option value="">Sem serviços disponíveis</option> : null}
                     {allServiceItems.map((item) => (
@@ -238,14 +243,14 @@ function AppHeaderMenu({
                       className="menu-time-input"
                       value={timeOverrideValue}
                       onChange={(event) => onTimeOverrideValueChange(event.target.value)}
-                      disabled={!selectedTimeOverrideItem || updatingItemId !== ''}
+                      disabled={!canMutateSelectedDate || !selectedTimeOverrideItem || updatingItemId !== ''}
                       aria-label="Hora manual no formato 24 horas"
                     />
                     <button
                       type="button"
                       className="ghost-btn compact-btn"
                       onClick={onSaveTimeOverride}
-                      disabled={!selectedTimeOverrideItem || !hasMenuTimeOverrideInput || !isMenuTimeOverrideValid || updatingItemId !== ''}
+                      disabled={!canMutateSelectedDate || !selectedTimeOverrideItem || !hasMenuTimeOverrideInput || !isMenuTimeOverrideValid || updatingItemId !== ''}
                     >
                       Guardar
                     </button>
@@ -253,11 +258,12 @@ function AppHeaderMenu({
                       type="button"
                       className="ghost-btn compact-btn"
                       onClick={onResetTimeOverride}
-                      disabled={!canResetSelectedTimeOverride || updatingItemId !== ''}
+                      disabled={!canMutateSelectedDate || !canResetSelectedTimeOverride || updatingItemId !== ''}
                     >
                       Reset
                     </button>
                   </div>
+                  {!canMutateSelectedDate ? <p className="helper-text">Só é possível alterar o dia atual.</p> : null}
                   {hasMenuTimeOverrideInput && !isMenuTimeOverrideValid ? <p className="helper-text">Formato inválido. Usa HH:mm.</p> : null}
                 </div>
               </div>

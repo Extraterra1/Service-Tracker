@@ -98,4 +98,30 @@ describe('ServiceItemCard time validation', () => {
 
     expect(screen.getByText(/Atualizado por Joao/)).toBeInTheDocument();
   });
+
+  it('disables mutable controls when the selected service date is read-only', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ServiceItemCard
+        item={createItem()}
+        status={{ done: false }}
+        readyState={{ ready: false }}
+        sharedPlateMarkers={{}}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        onSharedPlateTap={vi.fn()}
+        disabled
+        isUpdating={false}
+      />
+    );
+
+    expect(screen.getByRole('checkbox', { name: /marcar carlos como concluído/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Editar hora' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /marcar viatura aa-00-aa como pronta/i })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Editar hora' }));
+    expect(screen.queryByLabelText('Hora manual no formato 24 horas')).not.toBeInTheDocument();
+  });
 });

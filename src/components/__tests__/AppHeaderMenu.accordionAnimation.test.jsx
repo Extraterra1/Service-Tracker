@@ -39,6 +39,7 @@ function createProps(overrides = {}) {
     onOpenLeaderboardPopup: vi.fn(),
     leaderboardLoading: false,
     statusLine: 'ok',
+    canMutateSelectedDate: true,
     ...overrides
   };
 }
@@ -125,5 +126,42 @@ describe('AppHeaderMenu accordion animations', () => {
     await user.click(screen.getByText('Leaderboard'));
 
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
+  });
+
+  it('disables manual mutation controls when selected date is not current', async () => {
+    const user = userEvent.setup();
+    const serviceItem = {
+      itemId: 'item-1',
+      serviceType: 'pickup',
+      name: 'Cliente Teste',
+      time: '09:30',
+      overrideTime: ''
+    };
+
+    render(
+      <AppHeaderMenu
+        {...createProps({
+          canMutateSelectedDate: false,
+          manualCompletedCandidates: [serviceItem],
+          manualCompletedItemId: serviceItem.itemId,
+          allServiceItems: [serviceItem],
+          timeOverrideItemId: serviceItem.itemId,
+          selectedTimeOverrideItem: serviceItem,
+          timeOverrideValue: '09:30',
+          hasMenuTimeOverrideInput: true,
+          isMenuTimeOverrideValid: true
+        })}
+      />
+    );
+
+    await user.click(screen.getByText('Finalizados'));
+    expect(screen.getAllByRole('combobox')[0]).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
+
+    await user.click(screen.getByText('Alterar Hora'));
+    expect(screen.getAllByRole('combobox')[1]).toBeDisabled();
+    expect(screen.getByLabelText('Hora manual no formato 24 horas')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeDisabled();
   });
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const collectionMock = vi.fn()
 const docMock = vi.fn()
@@ -23,6 +23,9 @@ import { setItemTimeOverride } from '../timeOverrideStore'
 
 describe('timeOverrideStore', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'))
+
     collectionMock.mockReset()
     docMock.mockReset()
     serverTimestampMock.mockClear()
@@ -37,6 +40,10 @@ describe('timeOverrideStore', () => {
     docMock.mockImplementation((...args) => ({ __type: 'doc', args }))
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('writes the plate into time change activity entries', async () => {
     const batchSetMock = vi.fn()
     const batchCommitMock = vi.fn().mockResolvedValue(undefined)
@@ -46,7 +53,7 @@ describe('timeOverrideStore', () => {
     })
 
     await setItemTimeOverride({
-      date: '2026-03-06',
+      date: '2026-03-07',
       item: {
         itemId: 'item-1',
         id: 'reservation-1',
@@ -75,5 +82,29 @@ describe('timeOverrideStore', () => {
       newTime: '09:30',
     })
     expect(batchCommitMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects time overrides for non-current service dates before touching Firestore', async () => {
+    writeBatchMock.mockReturnValue({
+      set: vi.fn(),
+      commit: vi.fn().mockResolvedValue(undefined),
+    })
+
+    await expect(
+      setItemTimeOverride({
+        date: '2026-03-06',
+        item: {
+          itemId: 'item-1',
+          serviceType: 'pickup',
+          time: '09:00',
+        },
+        newTime: '09:30',
+        user: {
+          uid: 'user-1',
+        },
+      }),
+    ).rejects.toThrow('Só é possível alterar o dia atual.')
+
+    expect(writeBatchMock).not.toHaveBeenCalled()
   })
 })

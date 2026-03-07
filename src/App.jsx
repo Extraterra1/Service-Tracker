@@ -9,7 +9,7 @@ import DateNavigator from './components/DateNavigator';
 import LeaderboardPopup from './components/LeaderboardPopup';
 import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
-import { getTodayDate } from './lib/date';
+import { CURRENT_DAY_ONLY_MUTATION_ERROR, getTodayDate, isCurrentServiceDate } from './lib/date';
 import { useAccessGate } from './hooks/useAccessGate';
 import { useActivityEntries } from './hooks/useActivityEntries';
 import { useDateCollections } from './hooks/useDateCollections';
@@ -265,6 +265,8 @@ function App() {
   }, [canReadServiceData, user]);
 
   const paneLoading = checkingAccess || (canReadServiceData && loadingDateData);
+  const canMutateSelectedDate = isCurrentServiceDate(selectedDate);
+  const serviceWorkspaceReadOnly = accessState !== 'allowed' || !canMutateSelectedDate;
   const lockedListMessage = useMemo(() => {
     if (checkingAccess) {
       return '';
@@ -449,6 +451,11 @@ function App() {
         return;
       }
 
+      if (!canMutateSelectedDate) {
+        setErrorMessage(CURRENT_DAY_ONLY_MUTATION_ERROR);
+        return;
+      }
+
       if (updatingItemId) {
         return;
       }
@@ -470,7 +477,7 @@ function App() {
         setUpdatingItemId('');
       }
     },
-    [accessState, selectedDate, updatingItemId, user]
+    [accessState, canMutateSelectedDate, selectedDate, updatingItemId, user]
   );
 
   const handleToggleReady = useCallback(
@@ -480,6 +487,11 @@ function App() {
       }
 
       if (item?.serviceType !== 'pickup') {
+        return;
+      }
+
+      if (!canMutateSelectedDate) {
+        setErrorMessage(CURRENT_DAY_ONLY_MUTATION_ERROR);
         return;
       }
 
@@ -512,11 +524,16 @@ function App() {
         setUpdatingItemId('');
       }
     },
-    [accessState, readyMap, selectedDate, updatingItemId, user]
+    [accessState, canMutateSelectedDate, readyMap, selectedDate, updatingItemId, user]
   );
 
   const handleAddToCompleted = useCallback(async () => {
     if (accessState !== 'allowed') {
+      return;
+    }
+
+    if (!canMutateSelectedDate) {
+      setErrorMessage(CURRENT_DAY_ONLY_MUTATION_ERROR);
       return;
     }
 
@@ -546,7 +563,7 @@ function App() {
     } finally {
       setUpdatingItemId('');
     }
-  }, [accessState, manualCompletedCandidates, manualCompletedItemId, selectedDate, updatingItemId, user]);
+  }, [accessState, canMutateSelectedDate, manualCompletedCandidates, manualCompletedItemId, selectedDate, updatingItemId, user]);
 
   const handleTimeOverrideSelectionChange = useCallback(
     (nextItemId) => {
@@ -560,6 +577,11 @@ function App() {
   const handleSaveItemTimeOverride = useCallback(
     async (item, nextTimeValue) => {
       if (accessState !== 'allowed') {
+        return false;
+      }
+
+      if (!canMutateSelectedDate) {
+        setErrorMessage(CURRENT_DAY_ONLY_MUTATION_ERROR);
         return false;
       }
 
@@ -595,7 +617,7 @@ function App() {
         setUpdatingItemId('');
       }
     },
-    [accessState, selectedDate, timeOverrideItemId, updatingItemId, user]
+    [accessState, canMutateSelectedDate, selectedDate, timeOverrideItemId, updatingItemId, user]
   );
 
   const handleSaveTimeOverride = useCallback(async () => {
@@ -729,6 +751,7 @@ function App() {
         onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
         leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
+        canMutateSelectedDate={canMutateSelectedDate}
       />
 
       <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} />
@@ -755,7 +778,7 @@ function App() {
             onToggleReady={handleToggleReady}
             onSaveTimeOverride={handleSaveItemTimeOverride}
             updatingItemId={updatingItemId}
-            disabled={accessState !== 'allowed'}
+            disabled={serviceWorkspaceReadOnly}
             loading={paneLoading}
             canShowEmptyState={canReadServiceData && hasDayResponse}
             lockedMessage=""

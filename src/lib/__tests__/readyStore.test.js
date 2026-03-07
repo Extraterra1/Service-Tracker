@@ -10,9 +10,6 @@ vi.mock('firebase/firestore', () => ({
   doc: (...args) => docMock(...args),
   onSnapshot: vi.fn(),
   query: vi.fn(),
-  Timestamp: {
-    fromDate: vi.fn((date) => ({ __type: 'timestamp', date })),
-  },
   serverTimestamp: () => serverTimestampMock(),
   where: vi.fn(),
   writeBatch: (...args) => writeBatchMock(...args),
@@ -22,9 +19,9 @@ vi.mock('../firebaseDb', () => ({
   db: { __name: 'mock-db' },
 }))
 
-import { setItemDoneState } from '../statusStore'
+import { setItemReadyState } from '../readyStore'
 
-describe('statusStore', () => {
+describe('readyStore', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'))
@@ -47,58 +44,21 @@ describe('statusStore', () => {
     vi.useRealTimers()
   })
 
-  it('writes the plate into status activity entries', async () => {
-    const batchSetMock = vi.fn()
-    const batchCommitMock = vi.fn().mockResolvedValue(undefined)
-    writeBatchMock.mockReturnValue({
-      set: batchSetMock,
-      commit: batchCommitMock,
-    })
-
-    await setItemDoneState({
-      date: '2026-03-07',
-      item: {
-        itemId: 'item-1',
-        id: 'reservation-1',
-        name: 'Servico 1',
-        plate: 'AA-00-AA',
-        serviceType: 'delivery',
-        time: '09:00',
-      },
-      done: true,
-      user: {
-        uid: 'user-1',
-        email: 'maria@example.com',
-        displayName: 'Maria Silva',
-      },
-    })
-
-    expect(batchSetMock).toHaveBeenCalledTimes(2)
-
-    const [, activityPayload] = batchSetMock.mock.calls[1]
-    expect(activityPayload).toMatchObject({
-      actionType: 'status_toggle',
-      itemId: 'item-1',
-      reservationId: 'reservation-1',
-      plate: 'AA-00-AA',
-    })
-    expect(batchCommitMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('rejects writes for non-current service dates before touching Firestore', async () => {
+  it('rejects ready-state writes for non-current service dates before touching Firestore', async () => {
     writeBatchMock.mockReturnValue({
       set: vi.fn(),
       commit: vi.fn().mockResolvedValue(undefined),
     })
 
     await expect(
-      setItemDoneState({
+      setItemReadyState({
         date: '2026-03-06',
         item: {
           itemId: 'item-1',
           serviceType: 'pickup',
+          plate: 'AA-00-AA',
         },
-        done: true,
+        ready: true,
         user: {
           uid: 'user-1',
         },

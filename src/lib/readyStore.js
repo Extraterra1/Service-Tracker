@@ -8,6 +8,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebaseDb'
+import { CURRENT_DAY_ONLY_MUTATION_ERROR, isCurrentServiceDate } from './date'
 
 function getUpdaterFirstName(user) {
   const displayName = String(user?.displayName ?? '').trim()
@@ -69,6 +70,10 @@ export async function setItemReadyState({ date, item, ready, user }) {
 
   if (!date) {
     throw new Error('Date is required.')
+  }
+
+  if (!isCurrentServiceDate(date)) {
+    throw new Error(CURRENT_DAY_ONLY_MUTATION_ERROR)
   }
 
   if (!item?.itemId) {

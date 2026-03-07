@@ -9,6 +9,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { db } from './firebaseDb'
+import { CURRENT_DAY_ONLY_MUTATION_ERROR, isCurrentServiceDate } from './date'
 
 // Add a safety margin so the UI moves items immediately even if the local clock snapshot is up to ~1 minute stale.
 const FORCE_COMPLETED_OFFSET_MS = 65 * 60 * 1000
@@ -68,6 +69,10 @@ export function subscribeToDateStatus(date, callback, errorCallback) {
 export async function setItemDoneState({ date, item, done, user, forceCompletedNow = false }) {
   if (!db) {
     throw new Error('Firestore is not configured.')
+  }
+
+  if (!isCurrentServiceDate(date)) {
+    throw new Error(CURRENT_DAY_ONLY_MUTATION_ERROR)
   }
 
   if (!item?.itemId) {

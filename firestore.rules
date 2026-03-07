@@ -23,6 +23,35 @@ service cloud.firestore {
       return value is string && value.matches('^([01]\\d|2[0-3]):([0-5]\\d)$');
     }
 
+    function dateStringToTimestamp(value) {
+      return timestamp.date(
+        int(value[0:4]),
+        int(value[5:7]),
+        int(value[8:10])
+      );
+    }
+
+    function lastSundayOfMonth(year, month, lastDay) {
+      let lastDate = timestamp.date(year, month, lastDay);
+      return lastDay - (lastDate.dayOfWeek() % 7);
+    }
+
+    function madeiraisDst(value) {
+      let year = value.year();
+      let dstStart = timestamp.date(year, 3, lastSundayOfMonth(year, 3, 31)) + duration.value(1, 'h');
+      let dstEnd = timestamp.date(year, 10, lastSundayOfMonth(year, 10, 31)) + duration.value(1, 'h');
+      return value >= dstStart && value < dstEnd;
+    }
+
+    function currentMadeiraServiceDate() {
+      return (request.time + (madeiraisDst(request.time) ? duration.value(1, 'h') : duration.value(0, 'h'))).date();
+    }
+
+    function isCurrentServiceDate(value) {
+      return isValidDateString(value)
+        && dateStringToTimestamp(value) == currentMadeiraServiceDate();
+    }
+
     function isValidStatusPayload() {
       return request.resource.data.keys().hasOnly([
           'date',
@@ -35,6 +64,7 @@ service cloud.firestore {
           'updatedByEmail'
         ])
         && isValidDateString(request.resource.data.date)
+        && isCurrentServiceDate(request.resource.data.date)
         && request.resource.data.itemId is string
         && request.resource.data.itemId.size() > 0
         && isValidServiceType(request.resource.data.serviceType)
@@ -58,6 +88,7 @@ service cloud.firestore {
           'updatedByEmail'
         ])
         && isValidDateString(request.resource.data.date)
+        && isCurrentServiceDate(request.resource.data.date)
         && request.resource.data.itemId is string
         && request.resource.data.itemId.size() > 0
         && isValidServiceType(request.resource.data.serviceType)
@@ -82,6 +113,7 @@ service cloud.firestore {
           'updatedByEmail'
         ])
         && isValidDateString(request.resource.data.date)
+        && isCurrentServiceDate(request.resource.data.date)
         && request.resource.data.itemId is string
         && request.resource.data.itemId.size() > 0
         && request.resource.data.serviceType == 'pickup'
@@ -144,6 +176,7 @@ service cloud.firestore {
         && (request.resource.data.actionType == 'status_toggle' || request.resource.data.actionType == 'time_change' || request.resource.data.actionType == 'ready_toggle')
         && request.resource.data.date == date
         && isValidDateString(request.resource.data.date)
+        && isCurrentServiceDate(request.resource.data.date)
         && request.resource.data.itemId is string
         && request.resource.data.itemId.size() > 0
         && isValidServiceType(request.resource.data.serviceType)
