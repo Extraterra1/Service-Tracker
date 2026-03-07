@@ -35,8 +35,6 @@ function createProps(overrides = {}) {
     onResetTimeOverride: vi.fn(),
     selectedDate: '2026-03-04',
     onOpenActivityPopup: vi.fn(),
-    activityEntriesCount: 0,
-    loadingActivity: false,
     onOpenLeaderboardPopup: vi.fn(),
     leaderboardLoading: false,
     statusLine: 'ok',
@@ -99,6 +97,13 @@ describe('AppHeaderMenu accordion animations', () => {
     await user.click(screen.getByText('Atividade do Dia'));
 
     expect(onOpenActivityPopup).toHaveBeenCalled();
+  });
+
+  it('renders activity action without a live count badge', () => {
+    const { container } = render(<AppHeaderMenu {...createProps()} />);
+
+    expect(screen.getByText('Atividade do Dia')).toBeInTheDocument();
+    expect(container.querySelector('.menu-section-count-pill')).toBeNull();
   });
 
   it('opens leaderboard popup when clicking leaderboard section header', async () => {

@@ -11,6 +11,7 @@ import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { getTodayDate } from './lib/date';
 import { useAccessGate } from './hooks/useAccessGate';
+import { useActivityEntries } from './hooks/useActivityEntries';
 import { useDateCollections } from './hooks/useDateCollections';
 import { usePinSync } from './hooks/usePinSync';
 import { useServiceDayData } from './hooks/useServiceDayData';
@@ -128,6 +129,18 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
+  const [updatingItemId, setUpdatingItemId] = useState('');
+  const [manualCompletedItemId, setManualCompletedItemId] = useState('');
+  const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
+  const [timeOverrideValue, setTimeOverrideValue] = useState('');
+  const [activityPopupOpen, setActivityPopupOpen] = useState(false);
+  const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
+  const [leaderboardData, setLeaderboardData] = useState(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState('');
+  const [leaderboardLastLoadedAt, setLeaderboardLastLoadedAt] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const {
     user,
     authHint,
@@ -165,25 +178,19 @@ function App() {
     statusMap,
     timeOverrideMap,
     readyMap,
-    activityEntries,
-    loadingActivity,
     error: dateCollectionsErrorMessage
   } = useDateCollections({
     canReadServiceData,
     selectedDate
   });
-  const [updatingItemId, setUpdatingItemId] = useState('');
-  const [manualCompletedItemId, setManualCompletedItemId] = useState('');
-  const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
-  const [timeOverrideValue, setTimeOverrideValue] = useState('');
-  const [activityPopupOpen, setActivityPopupOpen] = useState(false);
-  const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
-  const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
-  const [leaderboardData, setLeaderboardData] = useState(null);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [leaderboardError, setLeaderboardError] = useState('');
-  const [leaderboardLastLoadedAt, setLeaderboardLastLoadedAt] = useState(null);
-  const [errorMessage, setErrorMessage] = useState('');
+  const {
+    activityEntries,
+    loadingActivity,
+    error: activityErrorMessage
+  } = useActivityEntries({
+    enabled: activityPopupOpen && canReadServiceData,
+    selectedDate
+  });
 
   const menuPanelRef = useRef(null);
   const lastSyncedProfileRef = useRef('');
@@ -733,8 +740,6 @@ function App() {
         onResetTimeOverride={handleResetTimeOverride}
         selectedDate={selectedDate}
         onOpenActivityPopup={handleOpenActivityPopup}
-        activityEntriesCount={activityEntries.length}
-        loadingActivity={loadingActivity}
         onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
         leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
@@ -746,9 +751,9 @@ function App() {
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage ? (
+      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage || activityErrorMessage ? (
         <p className="error-banner">
-          {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage}
+          {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage || activityErrorMessage}
         </p>
       ) : null}
 

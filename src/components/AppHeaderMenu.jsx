@@ -71,8 +71,6 @@ function AppHeaderMenu({
   onResetTimeOverride,
   selectedDate,
   onOpenActivityPopup,
-  activityEntriesCount,
-  loadingActivity,
   onOpenLeaderboardPopup,
   leaderboardLoading,
   statusLine
@@ -273,17 +271,7 @@ function AppHeaderMenu({
                   onOpenActivityPopup();
                 }}
               >
-                {loadingActivity ? (
-                  'A carregar atividade...'
-                ) : (
-                  <>
-                    <span>Atividade do Dia</span>
-                    <span className="menu-section-count-pill" title={`${activityEntriesCount} registos`}>
-                      <span className="menu-section-count-pulse" aria-hidden="true" />
-                      {activityEntriesCount}
-                    </span>
-                  </>
-                )}
+                Atividade do Dia
               </summary>
             </details>
 
