@@ -31,7 +31,6 @@ function ServicePane({
   items,
   statusMap,
   readyMap = {},
-  nowMs = 0,
   sharedPlateMarkers,
   onSharedPlateTap,
   onToggleDone,
@@ -45,10 +44,11 @@ function ServicePane({
 }) {
   const [isCompletedOpen, setIsCompletedOpen] = useState(false);
   const [isCompletedClosing, setIsCompletedClosing] = useState(false);
+  const [completedRolloverTick, setCompletedRolloverTick] = useState(0);
   const closeTimerRef = useRef(null);
-  const resolvedNowMs = Number.isFinite(nowMs) ? nowMs : 0;
+  const resolvedNowMs = Date.now();
 
-  const { activeItems, completedItems } = useMemo(() => {
+  const { activeItems, completedItems, nextCompletedRolloverAtMs } = useMemo(() => {
     const sortedItems = items
       .map((item, index) => ({
         item,
@@ -73,6 +73,7 @@ function ServicePane({
 
     const active = [];
     const completed = [];
+    let nextCompletedRolloverMs = null;
 
     sortedItems.forEach((item) => {
       const status = statusMap[item.itemId];
@@ -84,17 +85,28 @@ function ServicePane({
       }
 
       const updatedAtMs = toTimestampMs(status?.updatedAt, null);
-      const isOlderThanOneHour = updatedAtMs !== null && resolvedNowMs - updatedAtMs > COMPLETED_HIDE_AFTER_MS;
+      if (updatedAtMs === null) {
+        active.push(item);
+        return;
+      }
+
+      const completedAtMs = updatedAtMs + COMPLETED_HIDE_AFTER_MS;
+      const isOlderThanOneHour = resolvedNowMs >= completedAtMs;
 
       if (isOlderThanOneHour) {
         completed.push(item);
       } else {
         active.push(item);
+        nextCompletedRolloverMs = nextCompletedRolloverMs === null ? completedAtMs : Math.min(nextCompletedRolloverMs, completedAtMs);
       }
     });
 
-    return { activeItems: active, completedItems: completed };
-  }, [items, resolvedNowMs, statusMap]);
+    return {
+      activeItems: active,
+      completedItems: completed,
+      nextCompletedRolloverAtMs: nextCompletedRolloverMs
+    };
+  }, [completedRolloverTick, items, resolvedNowMs, statusMap]);
 
   const hasAnyItems = activeItems.length > 0 || completedItems.length > 0;
   const showLockedState = !loading && Boolean(lockedMessage);
@@ -116,6 +128,21 @@ function ServicePane({
     },
     []
   );
+
+  useEffect(() => {
+    if (nextCompletedRolloverAtMs === null) {
+      return () => {};
+    }
+
+    const delayMs = Math.max(0, nextCompletedRolloverAtMs - Date.now());
+    const timerId = window.setTimeout(() => {
+      setCompletedRolloverTick((previous) => previous + 1);
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [nextCompletedRolloverAtMs]);
 
   const handleCompletedAccordionToggle = (event) => {
     event.preventDefault();
