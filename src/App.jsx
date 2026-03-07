@@ -152,7 +152,11 @@ function App() {
     retryAccessCheck
   } = useAccessGate();
   const canReadServiceData = accessState === 'allowed';
-  const { pinSyncState, error: pinSyncErrorMessage } = usePinSync({
+  const {
+    pinSyncState,
+    error: pinSyncErrorMessage,
+    resync: resyncPin
+  } = usePinSync({
     accessState,
     user,
     pin,
@@ -225,6 +229,21 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!canReadServiceData) {
+      return () => {};
+    }
+
+    const handleWindowFocus = () => {
+      void resyncPin();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [canReadServiceData, resyncPin]);
 
   useEffect(() => {
     if (!canReadServiceData || !user?.uid) {
@@ -719,6 +738,9 @@ function App() {
         checkingAccess={checkingAccess}
         pin={pin}
         pinSyncState={pinSyncState}
+        onOpenAccountSection={() => {
+          void resyncPin();
+        }}
         onPinChange={setPin}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}

@@ -14,6 +14,7 @@ function createProps(overrides = {}) {
     checkingAccess: false,
     pin: '',
     pinSyncState: 'idle',
+    onOpenAccountSection: vi.fn(),
     onPinChange: vi.fn(),
     onSignIn: vi.fn(),
     onSignOut: vi.fn(),
@@ -87,6 +88,16 @@ describe('AppHeaderMenu accordion animations', () => {
 
     const timeInput = screen.getByLabelText('Hora manual no formato 24 horas');
     expect(timeInput).toHaveAttribute('type', 'time');
+  });
+
+  it('refreshes pin sync when opening the account section', async () => {
+    const user = userEvent.setup();
+    const onOpenAccountSection = vi.fn();
+
+    render(<AppHeaderMenu {...createProps({ onOpenAccountSection })} />);
+    await user.click(screen.getByText('Conta e PIN'));
+
+    expect(onOpenAccountSection).toHaveBeenCalledTimes(1);
   });
 
   it('opens activity popup when clicking activity section header', async () => {

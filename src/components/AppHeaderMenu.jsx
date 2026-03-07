@@ -50,6 +50,7 @@ function AppHeaderMenu({
   checkingAccess,
   pin,
   pinSyncState,
+  onOpenAccountSection,
   onPinChange,
   onSignIn,
   onSignOut,
@@ -88,7 +89,7 @@ function AppHeaderMenu({
     []
   );
 
-  const handleSectionSummaryClick = (sectionKey) => (event) => {
+  const handleSectionSummaryClick = (sectionKey, onOpen) => (event) => {
     event.preventDefault();
 
     const isOpen = openSections[sectionKey] === true;
@@ -103,6 +104,7 @@ function AppHeaderMenu({
 
       updateMenuSectionState(setOpenSections, sectionKey, true);
       updateMenuSectionState(setClosingSections, sectionKey, false);
+      onOpen?.();
       return;
     }
 
@@ -123,6 +125,7 @@ function AppHeaderMenu({
     }
 
     updateMenuSectionState(setOpenSections, sectionKey, true);
+    onOpen?.();
   };
 
   return (
@@ -156,7 +159,7 @@ function AppHeaderMenu({
               className={`menu-section ${closingSections[MENU_SECTION_KEYS.account] ? 'is-closing' : ''}`}
               open={openSections[MENU_SECTION_KEYS.account] || closingSections[MENU_SECTION_KEYS.account]}
             >
-              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.account)}>
+              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.account, onOpenAccountSection)}>
                 Conta e PIN
               </summary>
               <div className="menu-section-body">
