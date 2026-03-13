@@ -1,12 +1,6 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import ServicePane from '../../components/ServicePane';
-
-function normalizePlate(value) {
-  return String(value ?? '')
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '');
-}
+import { normalizePlate } from '../../lib/plates';
 
 function getPlateColor(index) {
   const hue = Math.round((index * 137.508) % 360);
