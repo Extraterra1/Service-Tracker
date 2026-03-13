@@ -3,16 +3,10 @@ import { motion } from 'motion/react';
 import ReactCountryFlag from 'react-country-flag';
 import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode } from '../lib/phone';
+import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
 import { Clock3, Plane, Repeat2 } from 'lucide-react';
 import { WebHaptics } from 'web-haptics';
-
-function normalizePlate(value) {
-  return String(value ?? '')
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '');
-}
 
 function getSharedMarkerColor(markers, plateValue) {
   const plateKey = normalizePlate(plateValue);

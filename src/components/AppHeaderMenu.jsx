@@ -8,6 +8,7 @@ const MENU_SECTION_KEYS = {
   completed: 'completed',
   timeOverride: 'timeOverride',
   activity: 'activity',
+  carHistory: 'carHistory',
   leaderboard: 'leaderboard'
 };
 
@@ -17,6 +18,7 @@ function createMenuSectionState() {
     [MENU_SECTION_KEYS.completed]: false,
     [MENU_SECTION_KEYS.timeOverride]: false,
     [MENU_SECTION_KEYS.activity]: false,
+    [MENU_SECTION_KEYS.carHistory]: false,
     [MENU_SECTION_KEYS.leaderboard]: false
   };
 }
@@ -71,6 +73,7 @@ function AppHeaderMenu({
   canResetSelectedTimeOverride,
   onResetTimeOverride,
   onOpenActivityPopup,
+  onOpenCarHistoryPopup,
   onOpenLeaderboardPopup,
   onCopySessionDiagnostics,
   diagnosticsStatusMessage = '',
@@ -289,6 +292,21 @@ function AppHeaderMenu({
                 }}
               >
                 Atividade do Dia
+              </summary>
+            </details>
+
+            <details
+              className={`menu-section ${closingSections[MENU_SECTION_KEYS.carHistory] ? 'is-closing' : ''}`}
+              open={openSections[MENU_SECTION_KEYS.carHistory] || closingSections[MENU_SECTION_KEYS.carHistory]}
+            >
+              <summary
+                className="menu-section-summary menu-section-summary--action"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onOpenCarHistoryPopup();
+                }}
+              >
+                Histórico de Viaturas
               </summary>
             </details>
 
