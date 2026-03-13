@@ -64,12 +64,32 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('RES-001')).toBeInTheDocument();
     expect(screen.getByText('09:30')).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Selecionar matrícula'), 'BB11BB');
+    await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
+    await user.click(screen.getByRole('option', { name: 'BB-11-BB' }));
 
     expect(screen.getByText('2026-03-08')).toBeInTheDocument();
     expect(screen.getByText('Recolha')).toBeInTheDocument();
     expect(screen.getByText('Joao')).toBeInTheDocument();
     expect(screen.getByText('RET-200')).toBeInTheDocument();
     expect(screen.getByText('08:15')).toBeInTheDocument();
+  });
+
+  it('supports fuzzy searching plates before selecting another history list', async () => {
+    const user = userEvent.setup();
+    render(<CarHistoryPopup {...createProps()} />);
+
+    const input = screen.getByRole('combobox', { name: 'Selecionar matrícula' });
+
+    await user.clear(input);
+    await user.type(input, 'b1b');
+
+    expect(screen.getByRole('option', { name: 'BB-11-BB' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'AA-00-AA' })).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(screen.getByRole('heading', { name: 'BB-11-BB' })).toBeInTheDocument();
+    expect(screen.getByText('2026-03-08')).toBeInTheDocument();
+    expect(screen.getByText('Recolha')).toBeInTheDocument();
   });
 });

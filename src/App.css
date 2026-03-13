@@ -1083,8 +1083,66 @@ h1 {
   color: var(--subtle-color);
 }
 
-.car-history-popup-select {
+.car-history-popup-picker {
+  position: relative;
   width: 100%;
+}
+
+.car-history-popup-search {
+  width: 100%;
+  height: 1.9rem;
+  border-radius: 7px;
+  border: 1px solid var(--stroke);
+  padding: 0 0.6rem;
+  color: var(--input-text);
+  background: var(--input-bg);
+  font-size: 0.73rem;
+}
+
+.car-history-popup-search:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 14%);
+  outline-offset: 2px;
+}
+
+.car-history-popup-options,
+.car-history-popup-search-empty {
+  position: absolute;
+  top: calc(100% + 0.28rem);
+  left: 0;
+  right: 0;
+  z-index: 2;
+  margin: 0;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--panel-bg-strong);
+  box-shadow: var(--shadow);
+}
+
+.car-history-popup-options {
+  max-height: min(34vh, 220px);
+  padding: 0.28rem;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.car-history-popup-option {
+  padding: 0.5rem 0.58rem;
+  border-radius: 8px;
+  color: var(--item-primary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.car-history-popup-option.is-highlighted,
+.car-history-popup-option:hover {
+  background: color-mix(in oklab, var(--ghost-bg), var(--accent) 7%);
+}
+
+.car-history-popup-search-empty {
+  padding: 0.58rem 0.64rem;
+  color: var(--text-muted);
+  font-size: 0.73rem;
 }
 
 .car-history-popup-list {
