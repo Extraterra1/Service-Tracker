@@ -35,6 +35,7 @@ function ServiceWorkspace({
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
+  onOpenCarHistoryFromModel,
   updatingItemId = '',
   disabled,
   loading = false,
@@ -130,6 +131,7 @@ function ServiceWorkspace({
           onToggleDone={onToggleDone}
           onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
+          onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
           updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
@@ -147,6 +149,7 @@ function ServiceWorkspace({
           onToggleDone={onToggleDone}
           onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
+          onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
           updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}

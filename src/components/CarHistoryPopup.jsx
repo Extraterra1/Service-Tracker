@@ -33,7 +33,7 @@ function isCompleteDateValue(value) {
   return DATE_VALUE_PATTERN.test(String(value ?? '').trim());
 }
 
-function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onClose }) {
+function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onClose, initialPlateKey = '' }) {
   const [selectedPlateKeyState, setSelectedPlateKeyState] = useState('');
   const [searchValueState, setSearchValueState] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -41,6 +41,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
   const [highlightedIndexState, setHighlightedIndexState] = useState(0);
   const [animatedPlateKeyState, setAnimatedPlateKeyState] = useState('');
   const [isPlateSwitchingState, setIsPlateSwitchingState] = useState(false);
+  const normalizedInitialPlateKeyRef = useRef('');
   const [draftRangeState, setDraftRangeState] = useState({
     sourceKey: '',
     rangeStart: '',
@@ -81,6 +82,35 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     draftRange.rangeStart <= draftRange.rangeEnd &&
     (draftRange.rangeStart !== rangeStart || draftRange.rangeEnd !== rangeEnd);
   const showRangeControls = Boolean(rangeStart || rangeEnd || plateOptions.length > 0 || error || loading);
+
+  useEffect(() => {
+    const nextPlateKey = normalizePlate(initialPlateKey);
+
+    if (!nextPlateKey) {
+      normalizedInitialPlateKeyRef.current = '';
+      setSelectedPlateKeyState('');
+      setSearchValueState('');
+      setIsPickerOpen(false);
+      setIsSearchPristine(true);
+      setHighlightedIndexState(0);
+      return;
+    }
+
+    if (nextPlateKey !== normalizedInitialPlateKeyRef.current) {
+      normalizedInitialPlateKeyRef.current = nextPlateKey;
+    }
+
+    const matchingOption = plateOptions.find((option) => option.value === nextPlateKey);
+    if (!matchingOption) {
+      return;
+    }
+
+    setSelectedPlateKeyState(nextPlateKey);
+    setSearchValueState(matchingOption.label);
+    setIsPickerOpen(false);
+    setIsSearchPristine(true);
+    setHighlightedIndexState(0);
+  }, [initialPlateKey, plateOptions]);
 
   useEffect(() => {
     if (!selectedPlateKey) {
@@ -145,6 +175,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     setIsPickerOpen(false);
     setIsSearchPristine(true);
     setHighlightedIndexState(0);
+    normalizedInitialPlateKeyRef.current = '';
   }
 
   function updateDraftRange(field, value) {
