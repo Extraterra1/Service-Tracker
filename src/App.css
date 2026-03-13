@@ -1303,11 +1303,18 @@ h1 {
 .car-history-popup-item {
   border: 1px solid var(--stroke);
   border-radius: 10px;
-  background: var(--panel-bg);
+  background: color-mix(in oklab, var(--panel-bg), var(--accent) 4%);
+  border-color: color-mix(in oklab, var(--accent), transparent 44%);
   padding: 0.58rem 0.64rem;
   display: flex;
   flex-direction: column;
   gap: 0.32rem;
+}
+
+.car-history-popup-item.is-today {
+  border-color: color-mix(in oklab, var(--accent), white 28%);
+  background: color-mix(in oklab, var(--panel-bg), var(--accent) 12%);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 84%);
 }
 
 .car-history-popup-row {
@@ -1336,6 +1343,13 @@ h1 {
   color: var(--item-primary);
 }
 
+.car-history-popup-pill-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.34rem;
+}
+
 .car-history-popup-time {
   justify-self: end;
 }
@@ -1359,6 +1373,20 @@ h1 {
 .car-history-popup-service.is-return {
   background: rgba(28, 127, 146, 0.15);
   color: #165f6d;
+}
+
+.car-history-popup-today-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.16rem 0.48rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border: 1px solid color-mix(in oklab, var(--accent), transparent 22%);
+  background: color-mix(in oklab, var(--accent), var(--panel-bg) 78%);
+  color: color-mix(in oklab, var(--accent), black 12%);
 }
 
 .car-history-popup-client {
