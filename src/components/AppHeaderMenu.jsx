@@ -72,6 +72,8 @@ function AppHeaderMenu({
   onResetTimeOverride,
   onOpenActivityPopup,
   onOpenLeaderboardPopup,
+  onCopySessionDiagnostics,
+  diagnosticsStatusMessage = '',
   leaderboardLoading,
   statusLine,
   canMutateSelectedDate = true,
@@ -173,6 +175,12 @@ function AppHeaderMenu({
                   onSignIn={onSignIn}
                   onSignOut={onSignOut}
                 />
+                <div className="menu-account-tools">
+                  <button type="button" className="menu-subtle-action" onClick={onCopySessionDiagnostics}>
+                    Copiar diagnóstico de sessão
+                  </button>
+                  {diagnosticsStatusMessage ? <p className="menu-diagnostics-status">{diagnosticsStatusMessage}</p> : null}
+                </div>
               </div>
             </details>
 

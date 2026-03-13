@@ -1,8 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
+
+const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+const buildTime = new Date().toISOString()
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? buildTime
 
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
+    'import.meta.env.VITE_APP_BUILD_ID': JSON.stringify(buildId),
+    'import.meta.env.VITE_APP_BUILD_TIME': JSON.stringify(buildTime),
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],

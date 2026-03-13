@@ -10,6 +10,13 @@ import LeaderboardPopup from './components/LeaderboardPopup';
 import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { CURRENT_DAY_ONLY_MUTATION_ERROR, getTodayDate, isCurrentServiceDate } from './lib/date';
+import {
+  collectServiceWorkerDiagnostics,
+  collectStorageDiagnostics,
+  copySessionDiagnosticsToClipboard,
+  getDisplayModeSnapshot,
+  sessionDiagnostics
+} from './lib/sessionDiagnostics';
 import { useAccessGate } from './hooks/useAccessGate';
 import { useActivityEntries } from './hooks/useActivityEntries';
 import { useDateCollections } from './hooks/useDateCollections';
@@ -23,6 +30,7 @@ const ServiceWorkspace = lazy(() => import('./features/service-workspace/Service
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
+const DIAGNOSTICS_STATUS_HIDE_AFTER_MS = 6 * 1000;
 
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
@@ -131,6 +139,7 @@ function App() {
   const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
   const [errorMessage, setErrorMessage] = useState('');
+  const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const {
     user,
     authHint,
@@ -198,6 +207,7 @@ function App() {
 
   const menuPanelRef = useRef(null);
   const lastSyncedProfileRef = useRef('');
+  const diagnosticsStatusTimeoutRef = useRef(0);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -215,6 +225,92 @@ function App() {
     return () => {
       document.removeEventListener('pointerdown', handleOutsidePointerDown);
     };
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (diagnosticsStatusTimeoutRef.current) {
+        window.clearTimeout(diagnosticsStatusTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const displayModeSnapshot = getDisplayModeSnapshot();
+    const previousStorageStatus = sessionDiagnostics.getReport().storage;
+
+    sessionDiagnostics.recordAppBoot({
+      ...displayModeSnapshot
+    });
+
+    const handlePageShow = (event) => {
+      sessionDiagnostics.recordEvent('page_show', {
+        persisted: Boolean(event.persisted)
+      });
+    };
+    const handlePageHide = (event) => {
+      sessionDiagnostics.recordEvent('page_hide', {
+        persisted: Boolean(event.persisted)
+      });
+    };
+    const handleVisibilityChange = () => {
+      sessionDiagnostics.recordEvent('visibility_change', {
+        visibilityState: String(document.visibilityState ?? 'unknown')
+      });
+    };
+    const handleOnline = () => {
+      sessionDiagnostics.recordEvent('network_online', {});
+    };
+    const handleOffline = () => {
+      sessionDiagnostics.recordEvent('network_offline', {});
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    void collectStorageDiagnostics({
+      isStandalone: displayModeSnapshot.isStandalone,
+      allowPersistAttempt: !previousStorageStatus?.persistAttempted
+    })
+      .then((storageStatus) => {
+        sessionDiagnostics.recordStorageStatus(storageStatus);
+      })
+      .catch((error) => {
+        sessionDiagnostics.recordError('storage_status_error', error);
+      });
+
+    void collectServiceWorkerDiagnostics()
+      .then((serviceWorkerStatus) => {
+        sessionDiagnostics.recordServiceWorkerStatus(serviceWorkerStatus);
+      })
+      .catch((error) => {
+        sessionDiagnostics.recordError('service_worker_status_error', error);
+      });
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const showDiagnosticsStatus = useCallback((message) => {
+    setDiagnosticsStatusMessage(message);
+
+    if (diagnosticsStatusTimeoutRef.current) {
+      window.clearTimeout(diagnosticsStatusTimeoutRef.current);
+    }
+
+    diagnosticsStatusTimeoutRef.current = window.setTimeout(() => {
+      setDiagnosticsStatusMessage('');
+      diagnosticsStatusTimeoutRef.current = 0;
+    }, DIAGNOSTICS_STATUS_HIDE_AFTER_MS);
   }, []);
 
   useEffect(() => {
@@ -434,9 +530,11 @@ function App() {
 
   const handleSignOut = async () => {
     setErrorMessage('');
+    sessionDiagnostics.markExplicitSignOutStart();
     try {
       await signOutUser();
     } catch (error) {
+      sessionDiagnostics.clearExplicitSignOutStart('sign_out_failed');
       setErrorMessage(error.message);
     } finally {
       setActivityPopupOpen(false);
@@ -444,6 +542,16 @@ function App() {
       setTimeOverrideValue('');
     }
   };
+
+  const handleCopySessionDiagnostics = useCallback(async () => {
+    try {
+      await copySessionDiagnosticsToClipboard();
+      showDiagnosticsStatus('Diagnóstico copiado. Envia este texto à equipa.');
+    } catch (error) {
+      sessionDiagnostics.recordError('diagnostics_copy_failed', error);
+      showDiagnosticsStatus('Não foi possível copiar o diagnóstico. Tenta novamente.');
+    }
+  }, [showDiagnosticsStatus]);
 
   const handleToggleDone = useCallback(
     async (item, done) => {
@@ -697,7 +805,13 @@ function App() {
   const showAccessGateScreen = !checkingAccess && (accessState === 'pending' || accessState === 'denied' || accessState === 'blocked');
 
   if (showSignedOutLanding) {
-    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage || accessErrorMessage} signInDisabled={checkingAccess} />;
+    return (
+      <SignedOutLanding
+        onSignIn={handleSignIn}
+        errorMessage={errorMessage || accessErrorMessage}
+        signInDisabled={checkingAccess}
+      />
+    );
   }
 
   if (showAccessGateScreen) {
@@ -749,6 +863,8 @@ function App() {
         selectedDate={selectedDate}
         onOpenActivityPopup={handleOpenActivityPopup}
         onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
+        onCopySessionDiagnostics={handleCopySessionDiagnostics}
+        diagnosticsStatusMessage={diagnosticsStatusMessage}
         leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}

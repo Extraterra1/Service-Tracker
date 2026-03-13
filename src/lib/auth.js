@@ -1,20 +1,11 @@
 import {
-  browserLocalPersistence,
   onAuthStateChanged,
-  setPersistence,
+  onIdTokenChanged,
   signInWithPopup,
   signOut,
 } from 'firebase/auth'
 import { auth, googleProvider } from './firebaseAuth'
 import { hasFirebaseConfig } from './firebaseApp'
-
-export async function configureAuthPersistence() {
-  if (!auth) {
-    return
-  }
-
-  await setPersistence(auth, browserLocalPersistence)
-}
 
 export function subscribeToAuthChanges(callback) {
   if (!auth) {
@@ -23,6 +14,15 @@ export function subscribeToAuthChanges(callback) {
   }
 
   return onAuthStateChanged(auth, callback)
+}
+
+export function subscribeToIdTokenChanges(callback) {
+  if (!auth) {
+    callback(null)
+    return () => {}
+  }
+
+  return onIdTokenChanged(auth, callback)
 }
 
 export async function waitForAuthStateReady() {

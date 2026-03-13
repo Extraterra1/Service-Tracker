@@ -294,12 +294,15 @@
 .landing-error {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--error-text);
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
   border-radius: 12px;
   padding: 0.75rem;
   text-align: center;
+}
+
+.landing-error {
+  color: var(--error-text);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
 }
 
 .app-header,
@@ -433,6 +436,40 @@ h1 {
   color: var(--text-muted);
   padding-top: 0.36rem;
   border-top: 1px dashed var(--stroke);
+}
+
+.menu-account-tools {
+  margin-top: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.menu-subtle-action {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--stroke), transparent 8%);
+  text-underline-offset: 0.18em;
+}
+
+.menu-subtle-action:hover,
+.menu-subtle-action:focus-visible {
+  color: var(--accent);
+}
+
+.menu-diagnostics-status {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: var(--text-muted);
 }
 
 .menu-section {

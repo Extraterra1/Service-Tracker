@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { configureAuthPersistence, subscribeToAuthChanges, waitForAuthStateReady } from '../lib/auth';
+import { subscribeToAuthChanges, subscribeToIdTokenChanges, waitForAuthStateReady } from '../lib/auth';
 import { hasFirebaseConfig } from '../lib/firebaseApp';
+import { sessionDiagnostics } from '../lib/sessionDiagnostics';
 
 const ACCESS_POLL_INTERVAL_MS = 20 * 1000;
 const AUTH_HINT_STORAGE_KEY = 'service_tracker_last_auth_hint';
@@ -76,9 +77,12 @@ export function useAccessGate() {
     }
 
     let isMounted = true;
-    let unsubscribe = () => {};
+    let unsubscribeAuth = () => {};
+    let unsubscribeIdToken = () => {};
 
     const handleCurrentUser = (currentUser) => {
+      sessionDiagnostics.recordAuthState(currentUser);
+
       const checkToken = allowlistCheckTokenRef.current + 1;
       allowlistCheckTokenRef.current = checkToken;
 
@@ -125,17 +129,31 @@ export function useAccessGate() {
     };
 
     const initializeAuthSubscription = async () => {
-      try {
-        await configureAuthPersistence();
-      } catch {
-        // Keep auth flow moving even if persistence setup fails.
-      }
-
       if (!isMounted) {
         return;
       }
 
-      unsubscribe = subscribeToAuthChanges(handleCurrentUser);
+      unsubscribeAuth = subscribeToAuthChanges(handleCurrentUser);
+      unsubscribeIdToken = subscribeToIdTokenChanges((currentUser) => {
+        sessionDiagnostics.recordIdTokenChange(currentUser);
+
+        if (!currentUser) {
+          return;
+        }
+
+        void currentUser
+          .getIdTokenResult()
+          .then((tokenResult) => {
+            sessionDiagnostics.recordIdTokenTiming({
+              authTime: tokenResult.authTime,
+              issuedAtTime: tokenResult.issuedAtTime,
+              expirationTime: tokenResult.expirationTime
+            });
+          })
+          .catch((nextError) => {
+            sessionDiagnostics.recordError('id_token_timing_error', nextError);
+          });
+      });
 
       try {
         await waitForAuthStateReady();
@@ -149,7 +167,8 @@ export function useAccessGate() {
     return () => {
       isMounted = false;
       allowlistCheckTokenRef.current += 1;
-      unsubscribe();
+      unsubscribeAuth();
+      unsubscribeIdToken();
     };
   }, [applyAccessResult, setAccessPollingState]);
 

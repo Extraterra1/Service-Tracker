@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import AppHeaderMenu from '../AppHeaderMenu';
@@ -37,6 +37,8 @@ function createProps(overrides = {}) {
     selectedDate: '2026-03-04',
     onOpenActivityPopup: vi.fn(),
     onOpenLeaderboardPopup: vi.fn(),
+    onCopySessionDiagnostics: vi.fn(),
+    diagnosticsStatusMessage: '',
     leaderboardLoading: false,
     statusLine: 'ok',
     canMutateSelectedDate: true,
@@ -126,6 +128,31 @@ describe('AppHeaderMenu accordion animations', () => {
     await user.click(screen.getByText('Leaderboard'));
 
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
+  });
+
+  it('exposes a menu action to copy session diagnostics', async () => {
+    const user = userEvent.setup();
+    const onCopySessionDiagnostics = vi.fn();
+
+    render(
+      <AppHeaderMenu
+        {...createProps({
+          onCopySessionDiagnostics,
+          diagnosticsStatusMessage: 'Diagnóstico pronto a enviar.'
+        })}
+      />
+    );
+
+    await user.click(screen.getByText('Conta e PIN'));
+
+    const accountSection = screen.getByText('Conta e PIN').closest('details');
+    expect(accountSection).not.toBeNull();
+
+    const diagnosticsButton = within(accountSection).getByRole('button', { name: 'Copiar diagnóstico de sessão' });
+    await user.click(diagnosticsButton);
+
+    expect(onCopySessionDiagnostics).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Diagnóstico pronto a enviar.')).toBeInTheDocument();
   });
 
   it('disables manual mutation controls when selected date is not current', async () => {
