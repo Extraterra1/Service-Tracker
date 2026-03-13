@@ -1264,12 +1264,40 @@ h1 {
   opacity: 0;
   transform: translateY(4px);
   animation: car-history-fade-in 200ms ease-out forwards;
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity 280ms cubic-bezier(0.4, 0, 0.2, 1), transform 280ms cubic-bezier(0.4, 0, 0.2, 1), filter 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  filter: blur(0);
 }
 
 .car-history-popup-list.is-fading {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(12px);
+  filter: blur(2px);
+}
+
+.car-history-popup-list .car-history-popup-item {
+  animation: car-history-list-item-in 280ms cubic-bezier(0.2, 1, 0.3, 1);
+  animation-fill-mode: both;
+  animation-delay: calc(var(--index) * 48ms);
+}
+
+.car-history-popup-list .car-history-popup-item:nth-child(1) {
+  --index: 1;
+}
+
+.car-history-popup-list .car-history-popup-item:nth-child(2) {
+  --index: 2;
+}
+
+.car-history-popup-list .car-history-popup-item:nth-child(3) {
+  --index: 3;
+}
+
+.car-history-popup-list .car-history-popup-item:nth-child(4) {
+  --index: 4;
+}
+
+.car-history-popup-list .car-history-popup-item:nth-child(n + 5) {
+  --index: 5;
 }
 
 .car-history-popup-item {
@@ -1372,6 +1400,18 @@ h1 {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes car-history-list-item-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
