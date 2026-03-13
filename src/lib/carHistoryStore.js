@@ -1,4 +1,4 @@
-import { collection, documentId, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, documentId, getDocs, query, where } from 'firebase/firestore';
 import { normalizeServiceDay } from './api';
 import { addDays, getTodayDate } from './date';
 import { db } from './firebaseDb';
@@ -110,8 +110,7 @@ export async function fetchCarHistory({ rangeStart, rangeEnd }) {
   const scrapedDaysQuery = query(
     collection(db, 'scraped-data'),
     where(documentId(), '>=', rangeStart),
-    where(documentId(), '<=', rangeEnd),
-    orderBy(documentId(), 'desc')
+    where(documentId(), '<=', rangeEnd)
   );
   const timeOverridesQuery = query(
     collection(db, 'service_time_overrides'),
@@ -122,10 +121,13 @@ export async function fetchCarHistory({ rangeStart, rangeEnd }) {
   const [scrapedDaysSnapshot, timeOverridesSnapshot] = await Promise.all([getDocs(scrapedDaysQuery), getDocs(timeOverridesQuery)]);
 
   return buildCarHistoryData({
-    scrapedDays: scrapedDaysSnapshot.docs.map((entry) => ({
-      date: entry.id,
-      ...(entry.data() ?? {})
-    })),
+    scrapedDays: scrapedDaysSnapshot.docs.map((entry) => {
+      const payload = entry.data() ?? {};
+      return {
+        ...payload,
+        date: String(payload.date ?? '').trim() || entry.id
+      };
+    }),
     timeOverrides: timeOverridesSnapshot.docs.map((entry) => entry.data() ?? {})
   });
 }
