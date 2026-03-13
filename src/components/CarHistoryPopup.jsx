@@ -315,6 +315,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                         <div className="car-history-popup-row car-history-popup-row-body">
                           <span className="car-history-popup-client">{entry.clientName}</span>
                           <span className="car-history-popup-reservation">{entry.reservationId}</span>
+                          <span className="car-history-popup-location">{entry.location}</span>
                         </div>
                       </li>
                     ))}

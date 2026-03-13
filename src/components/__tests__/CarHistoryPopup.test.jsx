@@ -17,9 +17,10 @@ function createProps(overrides = {}) {
           id: 'entry-1',
           date: '2026-03-10',
           serviceType: 'pickup',
-          clientName: 'Maria',
+          clientName: 'Maria Da Silva',
           reservationId: 'RES-001',
-          effectiveTime: '09:30'
+          effectiveTime: '09:30',
+          location: 'Hotel Pestana'
         }
       ],
       BB11BB: [
@@ -27,9 +28,10 @@ function createProps(overrides = {}) {
           id: 'entry-2',
           date: '2026-03-08',
           serviceType: 'return',
-          clientName: 'Joao',
+          clientName: 'Joao Sousa',
           reservationId: 'RET-200',
-          effectiveTime: '08:15'
+          effectiveTime: '08:15',
+          location: 'Aeroporto da Madeira'
         }
       ]
     },
@@ -76,9 +78,10 @@ describe('CarHistoryPopup', () => {
 
     expect(screen.getByText('2026-03-08')).toBeInTheDocument();
     expect(screen.getByText('Recolha')).toBeInTheDocument();
-    expect(screen.getByText('Joao')).toBeInTheDocument();
+    expect(screen.getByText('Joao Sousa')).toBeInTheDocument();
     expect(screen.getByText('RET-200')).toBeInTheDocument();
     expect(screen.getByText('08:15')).toBeInTheDocument();
+    expect(screen.getByText('Aeroporto da Madeira')).toBeInTheDocument();
   });
 
   it('supports fuzzy searching plates before selecting another history list', async () => {

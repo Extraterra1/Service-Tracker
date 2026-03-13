@@ -1288,6 +1288,9 @@ h1 {
 
 .car-history-popup-row-body {
   grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "client reservation"
+    "location location";
   color: var(--subtle-color);
   font-size: 0.8rem;
 }
@@ -1325,14 +1328,23 @@ h1 {
 }
 
 .car-history-popup-client {
+  grid-area: client;
   min-width: 0;
   color: var(--item-primary);
   font-weight: 400;
 }
 
 .car-history-popup-reservation {
+  grid-area: reservation;
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+.car-history-popup-location {
+  grid-area: location;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 @keyframes car-history-skeleton-shimmer {

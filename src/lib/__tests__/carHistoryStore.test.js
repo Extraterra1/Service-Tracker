@@ -21,7 +21,8 @@ describe('carHistoryStore', () => {
               id: '',
               name: '',
               plate: 'AA 00 AA',
-              time: ''
+              time: '',
+              location: ''
             }
           ]
         },
@@ -31,18 +32,20 @@ describe('carHistoryStore', () => {
             {
               itemId: 'pickup-1',
               id: 'RES-002',
-              name: 'Maria',
+              name: 'mArIa dA silVa',
               plate: 'aa-00-aa',
-              time: '09:00'
+              time: '09:00',
+              location: 'hotel pestana'
             }
           ],
           returns: [
             {
               itemId: 'return-2',
               id: 'RET-100',
-              name: 'Joao',
+              name: 'joao sOUsa',
               plate: 'BB-11-BB',
-              time: '08:00'
+              time: '08:00',
+              location: 'aeroporto da madeira'
             }
           ]
         }
@@ -69,9 +72,10 @@ describe('carHistoryStore', () => {
         serviceType: 'pickup',
         plateKey: 'AA00AA',
         displayPlate: 'AA-00-AA',
-        clientName: 'Maria',
+        clientName: 'Maria Da Silva',
         reservationId: 'RES-002',
-        effectiveTime: '09:30'
+        effectiveTime: '09:30',
+        location: 'hotel pestana'
       },
       {
         id: '2026-03-09_return-1',
@@ -82,8 +86,16 @@ describe('carHistoryStore', () => {
         displayPlate: 'AA 00 AA',
         clientName: 'Cliente sem nome',
         reservationId: 'Sem reserva',
-        effectiveTime: '--:--'
+        effectiveTime: '--:--',
+        location: 'Localização não indicada'
       }
+    ]);
+
+    expect(history.entriesByPlate.BB11BB).toEqual([
+      expect.objectContaining({
+        clientName: 'Joao Sousa',
+        location: 'aeroporto da madeira'
+      })
     ]);
   });
 });

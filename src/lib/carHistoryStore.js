@@ -16,6 +16,15 @@ function getDisplayPlate(value, fallback) {
   return plate || fallback;
 }
 
+function toTitleCase(value) {
+  const text = String(value ?? '').trim().toLocaleLowerCase('pt-PT');
+  if (!text) {
+    return '';
+  }
+
+  return text.replace(/(^|[\s'-])(\p{L})/gu, (match, prefix, character) => `${prefix}${character.toLocaleUpperCase('pt-PT')}`);
+}
+
 function buildTimeOverrideMap(timeOverrides) {
   return (Array.isArray(timeOverrides) ? timeOverrides : []).reduce((lookup, entry) => {
     const date = String(entry?.date ?? '').trim();
@@ -66,9 +75,10 @@ export function buildCarHistoryData({ scrapedDays, timeOverrides }) {
         serviceType: item?.serviceType ?? '',
         plateKey,
         displayPlate: getDisplayPlate(item?.plate, plateKey),
-        clientName: String(item?.name ?? '').trim() || 'Cliente sem nome',
+        clientName: toTitleCase(item?.name) || 'Cliente sem nome',
         reservationId: String(item?.id ?? '').trim() || 'Sem reserva',
-        effectiveTime: String(overrideTimeByItemKey.get(`${date}_${itemId}`) ?? item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim() || '--:--'
+        effectiveTime: String(overrideTimeByItemKey.get(`${date}_${itemId}`) ?? item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim() || '--:--',
+        location: String(item?.location ?? '').trim() || 'Localização não indicada'
       });
     });
   });
