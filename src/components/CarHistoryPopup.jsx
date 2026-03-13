@@ -303,8 +303,11 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
 
                 {selectedPlateKey ? (
                   <ul className="car-history-popup-list">
-                    {selectedEntries.map((entry) => (
-                      <li key={entry.id} className="car-history-popup-item">
+                {selectedEntries.map((entry) => (
+                      <li
+                        key={entry.id}
+                        className={`car-history-popup-item is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}
+                      >
                         <div className="car-history-popup-row car-history-popup-row-head">
                           <span className="car-history-popup-date">{entry.date}</span>
                           <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
