@@ -39,6 +39,8 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isSearchPristine, setIsSearchPristine] = useState(true);
   const [highlightedIndexState, setHighlightedIndexState] = useState(0);
+  const [animatedPlateKeyState, setAnimatedPlateKeyState] = useState('');
+  const [isPlateSwitchingState, setIsPlateSwitchingState] = useState(false);
   const [draftRangeState, setDraftRangeState] = useState({
     sourceKey: '',
     rangeStart: '',
@@ -62,7 +64,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     () => plateOptions.filter((option) => matchesPlateOption(option, effectiveSearchValue)),
     [effectiveSearchValue, plateOptions]
   );
-  const selectedEntries = selectedPlateKey ? entriesByPlate[selectedPlateKey] ?? [] : [];
+  const selectedEntries = animatedPlateKeyState ? entriesByPlate[animatedPlateKeyState] ?? [] : [];
   const draftRange =
     draftRangeState.sourceKey === appliedRangeKey
       ? draftRangeState
@@ -79,6 +81,33 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     draftRange.rangeStart <= draftRange.rangeEnd &&
     (draftRange.rangeStart !== rangeStart || draftRange.rangeEnd !== rangeEnd);
   const showRangeControls = Boolean(rangeStart || rangeEnd || plateOptions.length > 0 || error || loading);
+
+  useEffect(() => {
+    if (!selectedPlateKey) {
+      setAnimatedPlateKeyState('');
+      setIsPlateSwitchingState(false);
+      return;
+    }
+
+    if (!animatedPlateKeyState) {
+      setAnimatedPlateKeyState(selectedPlateKey);
+      return;
+    }
+
+    if (selectedPlateKey === animatedPlateKeyState) {
+      return;
+    }
+
+    setIsPlateSwitchingState(true);
+    const timeoutId = window.setTimeout(() => {
+      setAnimatedPlateKeyState(selectedPlateKey);
+      setIsPlateSwitchingState(false);
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [selectedPlateKey, animatedPlateKeyState]);
 
   useEffect(() => {
     if (!canAutoApplyDateRange) {
@@ -301,8 +330,8 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                   ) : null}
                 </div>
 
-                {selectedPlateKey ? (
-                  <ul className="car-history-popup-list">
+                {animatedPlateKeyState ? (
+                  <ul key={animatedPlateKeyState} className={`car-history-popup-list${isPlateSwitchingState ? ' is-fading' : ''}`}>
                     {selectedEntries.map((entry) => (
                       <li key={entry.id} className="car-history-popup-item">
                         <div className="car-history-popup-row car-history-popup-row-head">

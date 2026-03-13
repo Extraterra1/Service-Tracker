@@ -1264,6 +1264,12 @@ h1 {
   opacity: 0;
   transform: translateY(4px);
   animation: car-history-fade-in 200ms ease-out forwards;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.car-history-popup-list.is-fading {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 .car-history-popup-item {
