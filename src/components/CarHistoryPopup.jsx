@@ -39,7 +39,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
       return selectedPlateKeyState;
     }
 
-    return plateOptions[0]?.value ?? '';
+    return '';
   }, [plateOptions, selectedPlateKeyState]);
   const selectedPlateLabel = plateOptions.find((option) => option.value === selectedPlateKey)?.label ?? selectedPlateKey;
   const searchValue = isPickerOpen ? searchValueState : selectedPlateLabel;
@@ -178,6 +178,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                 aria-activedescendant={activeOption ? `${listboxId}-${activeOption.value}` : undefined}
                 autoComplete="off"
                 spellCheck="false"
+                placeholder="Pesquisar matrícula"
               />
 
               {isPickerOpen ? (
@@ -205,23 +206,27 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
               ) : null}
             </div>
 
-            <ul className="car-history-popup-list">
-              {selectedEntries.map((entry) => (
-                <li key={entry.id} className="car-history-popup-item">
-                  <div className="car-history-popup-row car-history-popup-row-head">
-                    <span className="car-history-popup-date">{entry.date}</span>
-                    <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
-                      {getServiceLabel(entry.serviceType)}
-                    </span>
-                    <span className="car-history-popup-time">{entry.effectiveTime}</span>
-                  </div>
-                  <div className="car-history-popup-row car-history-popup-row-body">
-                    <span className="car-history-popup-client">{entry.clientName}</span>
-                    <span className="car-history-popup-reservation">{entry.reservationId}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {selectedPlateKey ? (
+              <ul className="car-history-popup-list">
+                {selectedEntries.map((entry) => (
+                  <li key={entry.id} className="car-history-popup-item">
+                    <div className="car-history-popup-row car-history-popup-row-head">
+                      <span className="car-history-popup-date">{entry.date}</span>
+                      <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
+                        {getServiceLabel(entry.serviceType)}
+                      </span>
+                      <span className="car-history-popup-time">{entry.effectiveTime}</span>
+                    </div>
+                    <div className="car-history-popup-row car-history-popup-row-body">
+                      <span className="car-history-popup-client">{entry.clientName}</span>
+                      <span className="car-history-popup-reservation">{entry.reservationId}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="helper-text">Pesquisa uma matrícula para ver o histórico.</p>
+            )}
           </>
         )}
       </section>

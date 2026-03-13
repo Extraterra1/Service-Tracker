@@ -53,16 +53,14 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('Sem histórico de viaturas para esta janela.')).toBeInTheDocument();
   });
 
-  it('renders the first plate by default and updates rows when another plate is selected', async () => {
+  it('starts without a selected plate and only shows rows after a plate is chosen', async () => {
     const user = userEvent.setup();
     render(<CarHistoryPopup {...createProps()} />);
 
     expect(screen.getByText('Janela: 2026-02-26 a 2026-03-28')).toBeInTheDocument();
-    expect(screen.getByText('2026-03-10')).toBeInTheDocument();
-    expect(screen.getByText('Entrega')).toBeInTheDocument();
-    expect(screen.getByText('Maria')).toBeInTheDocument();
-    expect(screen.getByText('RES-001')).toBeInTheDocument();
-    expect(screen.getByText('09:30')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Selecionar matrícula' })).toBeInTheDocument();
+    expect(screen.getByText('Pesquisa uma matrícula para ver o histórico.')).toBeInTheDocument();
+    expect(screen.queryByText('2026-03-10')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
     await user.click(screen.getByRole('option', { name: 'BB-11-BB' }));
@@ -80,7 +78,6 @@ describe('CarHistoryPopup', () => {
 
     const input = screen.getByRole('combobox', { name: 'Selecionar matrícula' });
 
-    await user.clear(input);
     await user.type(input, 'b1b');
 
     expect(screen.getByRole('option', { name: 'BB-11-BB' })).toBeInTheDocument();
