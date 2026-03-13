@@ -36,6 +36,7 @@ function ServicePane({
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
+  onOpenCarHistoryFromModel,
   updatingItemId = '',
   disabled,
   loading = false,
@@ -214,6 +215,7 @@ function ServicePane({
                   onToggleDone={onToggleDone}
                   onToggleReady={onToggleReady}
                   onSaveTimeOverride={onSaveTimeOverride}
+                  onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
                   isUpdating={updatingItemId === item.itemId}
                   disabled={disabled}
                 />
@@ -241,6 +243,7 @@ function ServicePane({
               onToggleDone={onToggleDone}
               onToggleReady={onToggleReady}
               onSaveTimeOverride={onSaveTimeOverride}
+              onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
               isUpdating={updatingItemId === item.itemId}
               disabled={disabled}
             />

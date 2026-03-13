@@ -59,6 +59,7 @@ function ServiceItemCard({
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
+  onOpenCarHistoryFromModel,
   isUpdating = false,
   disabled,
 }) {
@@ -152,6 +153,14 @@ function ServiceItemCard({
       setEditTimeValue(originalEditorTime);
       setTimeMenuOpen(false);
     }
+  };
+
+  const handleOpenCarHistory = () => {
+    if (!onOpenCarHistoryFromModel || !item?.plate) {
+      return;
+    }
+
+    onOpenCarHistoryFromModel(item.plate);
   };
 
   return (
@@ -277,7 +286,19 @@ function ServiceItemCard({
 
       <div className="item-vehicle-row">
         <p className="item-carline">
-          {item.car || 'Sem viatura'}
+          {item.car ? (
+            <button
+              type="button"
+              className="item-carline-model"
+              onClick={handleOpenCarHistory}
+              aria-label={`Abrir histórico da viatura ${item.car}`}
+              title="Ver histórico da viatura"
+            >
+              {item.car}
+            </button>
+          ) : (
+            'Sem viatura'
+          )}
           {item.plate ? (
             <span className="item-plate-wrap">
               {canToggleReady ? (
@@ -341,7 +362,8 @@ function areSameItemProps(prevProps, nextProps) {
     prevProps.onToggleDone !== nextProps.onToggleDone ||
     prevProps.onSharedPlateTap !== nextProps.onSharedPlateTap ||
     prevProps.onToggleReady !== nextProps.onToggleReady ||
-    prevProps.onSaveTimeOverride !== nextProps.onSaveTimeOverride
+    prevProps.onSaveTimeOverride !== nextProps.onSaveTimeOverride ||
+    prevProps.onOpenCarHistoryFromModel !== nextProps.onOpenCarHistoryFromModel
   ) {
     return false;
   }

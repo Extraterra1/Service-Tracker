@@ -102,6 +102,14 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('Recolha')).toBeInTheDocument();
   });
 
+  it('preselects the plate from initialPlateKey when provided', async () => {
+    render(<CarHistoryPopup {...createProps({ initialPlateKey: 'AA00AA' })} />);
+
+    expect(screen.getByRole('heading', { name: 'AA-00-AA' })).toBeInTheDocument();
+    expect(screen.getByText('2026-03-10')).toBeInTheDocument();
+    expect(screen.queryByText('Pesquisa uma matrícula para ver o histórico.')).not.toBeInTheDocument();
+  });
+
   it('refetches automatically when the date window changes', async () => {
     vi.useFakeTimers();
     const onApplyDateRange = vi.fn();

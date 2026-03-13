@@ -18,6 +18,7 @@ import {
   getDisplayModeSnapshot,
   sessionDiagnostics
 } from './lib/sessionDiagnostics';
+import { normalizePlate } from './lib/plates';
 import { useAccessGate } from './hooks/useAccessGate';
 import { useActivityEntries } from './hooks/useActivityEntries';
 import { useCarHistory } from './hooks/useCarHistory';
@@ -141,6 +142,7 @@ function App() {
   const [carHistoryPopupOpen, setCarHistoryPopupOpen] = useState(false);
   const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
+  const [carHistoryInitialPlateKey, setCarHistoryInitialPlateKey] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const {
@@ -770,11 +772,21 @@ function App() {
     setActivityPopupOpen(false);
   }, []);
 
-  const handleOpenCarHistoryPopup = useCallback(() => {
+  const handleOpenCarHistoryPopup = useCallback((initialPlate = '') => {
+    const nextPlateKey = normalizePlate(initialPlate);
+
     menuPanelRef.current?.removeAttribute('open');
+    setCarHistoryInitialPlateKey(nextPlateKey);
     setCarHistoryPopupOpen(true);
     void loadCarHistory();
   }, [loadCarHistory]);
+
+  const handleOpenCarHistoryFromModel = useCallback(
+    (plate) => {
+      handleOpenCarHistoryPopup(plate);
+    },
+    [handleOpenCarHistoryPopup]
+  );
 
   const handleCloseCarHistoryPopup = useCallback(() => {
     setCarHistoryPopupOpen(false);
@@ -922,6 +934,7 @@ function App() {
             onToggleDone={handleToggleDone}
             onToggleReady={handleToggleReady}
             onSaveTimeOverride={handleSaveItemTimeOverride}
+            onOpenCarHistoryFromModel={handleOpenCarHistoryFromModel}
             updatingItemId={updatingItemId}
             disabled={serviceWorkspaceReadOnly}
             loading={paneLoading}
@@ -952,6 +965,7 @@ function App() {
           entriesByPlate={carHistoryEntriesByPlate}
           rangeStart={carHistoryRangeStart}
           rangeEnd={carHistoryRangeEnd}
+          initialPlateKey={carHistoryInitialPlateKey}
           onApplyDateRange={loadCarHistory}
           onClose={handleCloseCarHistoryPopup}
         />
