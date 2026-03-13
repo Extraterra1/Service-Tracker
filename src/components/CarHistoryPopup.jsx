@@ -1,7 +1,8 @@
-import { useDeferredValue, useId, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { normalizePlate } from '../lib/plates';
 
 const HISTORY_SKELETON_ROWS = [0, 1, 2];
+const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function getServiceLabel(serviceType) {
   return serviceType === 'return' ? 'Recolha' : 'Entrega';
@@ -26,6 +27,10 @@ function matchesPlateOption(option, query) {
   }
 
   return false;
+}
+
+function isCompleteDateValue(value) {
+  return DATE_VALUE_PATTERN.test(String(value ?? '').trim());
 }
 
 function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onClose }) {
@@ -68,13 +73,29 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
         };
   const highlightedIndex = filteredPlateOptions.length > 0 ? Math.min(highlightedIndexState, filteredPlateOptions.length - 1) : 0;
   const activeOption = isPickerOpen ? filteredPlateOptions[highlightedIndex] ?? filteredPlateOptions[0] : null;
-  const canApplyDateRange =
-    Boolean(draftRange.rangeStart) &&
-    Boolean(draftRange.rangeEnd) &&
+  const canAutoApplyDateRange =
+    isCompleteDateValue(draftRange.rangeStart) &&
+    isCompleteDateValue(draftRange.rangeEnd) &&
     draftRange.rangeStart <= draftRange.rangeEnd &&
-    (draftRange.rangeStart !== rangeStart || draftRange.rangeEnd !== rangeEnd) &&
-    !loading;
+    (draftRange.rangeStart !== rangeStart || draftRange.rangeEnd !== rangeEnd);
   const showRangeControls = Boolean(rangeStart || rangeEnd || plateOptions.length > 0 || error || loading);
+
+  useEffect(() => {
+    if (!canAutoApplyDateRange) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onApplyDateRange({
+        rangeStart: draftRange.rangeStart,
+        rangeEnd: draftRange.rangeEnd
+      });
+    }, 220);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [canAutoApplyDateRange, draftRange.rangeEnd, draftRange.rangeStart, onApplyDateRange]);
 
   function openPicker() {
     setIsPickerOpen(true);
@@ -128,22 +149,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
         {showRangeControls ? (
           <>
             <div className="car-history-popup-range">
-              <div className="car-history-popup-range-header">
-                <p className="car-history-popup-hint">Janela do histórico</p>
-                <button
-                  type="button"
-                  className="primary-btn compact-btn"
-                  onClick={() =>
-                    onApplyDateRange({
-                      rangeStart: draftRange.rangeStart,
-                      rangeEnd: draftRange.rangeEnd
-                    })
-                  }
-                  disabled={!canApplyDateRange}
-                >
-                  Atualizar janela
-                </button>
-              </div>
+              <p className="car-history-popup-hint car-history-popup-range-label">Janela do histórico</p>
               <div className="car-history-popup-range-controls">
                 <label className="field-inline field-inline-date" htmlFor="car-history-range-start">
                   <span>Data inicial</span>

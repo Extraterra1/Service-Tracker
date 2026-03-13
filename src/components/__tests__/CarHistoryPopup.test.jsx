@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import CarHistoryPopup from '../CarHistoryPopup';
 
 function createProps(overrides = {}) {
@@ -42,6 +42,10 @@ function createProps(overrides = {}) {
 }
 
 describe('CarHistoryPopup', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('shows a loading state', () => {
     render(<CarHistoryPopup {...createProps({ loading: true })} />);
 
@@ -95,8 +99,8 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('Recolha')).toBeInTheDocument();
   });
 
-  it('lets the user edit the date window and apply it', async () => {
-    const user = userEvent.setup();
+  it('refetches automatically when the date window changes', async () => {
+    vi.useFakeTimers();
     const onApplyDateRange = vi.fn();
 
     render(<CarHistoryPopup {...createProps({ onApplyDateRange })} />);
@@ -106,16 +110,16 @@ describe('CarHistoryPopup', () => {
 
     expect(startInput).toHaveValue('2026-02-26');
     expect(endInput).toHaveValue('2026-03-28');
+    expect(screen.queryByRole('button', { name: 'Atualizar janela' })).not.toBeInTheDocument();
 
-    await user.clear(startInput);
-    await user.type(startInput, '2026-03-01');
-    await user.clear(endInput);
-    await user.type(endInput, '2026-03-12');
-    await user.click(screen.getByRole('button', { name: 'Atualizar janela' }));
+    fireEvent.change(startInput, { target: { value: '2026-03-01' } });
+    fireEvent.change(endInput, { target: { value: '2026-03-12' } });
+    vi.advanceTimersByTime(260);
 
     expect(onApplyDateRange).toHaveBeenCalledWith({
       rangeStart: '2026-03-01',
       rangeEnd: '2026-03-12'
     });
+    expect(onApplyDateRange).toHaveBeenCalledTimes(1);
   });
 });
