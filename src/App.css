@@ -1383,9 +1383,9 @@ h1 {
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.03em;
-  border: 1px solid color-mix(in oklab, var(--accent), transparent 22%);
-  background: color-mix(in oklab, var(--accent), var(--panel-bg) 78%);
-  color: color-mix(in oklab, var(--accent), black 12%);
+  border: 1px solid color-mix(in oklab, var(--status-bg), white 8%);
+  background: color-mix(in oklab, var(--status-bg), var(--panel-bg) 84%);
+  color: color-mix(in oklab, var(--status-text), black 12%);
 }
 
 .car-history-popup-client {
