@@ -36,6 +36,7 @@ function createProps(overrides = {}) {
     onResetTimeOverride: vi.fn(),
     selectedDate: '2026-03-04',
     onOpenActivityPopup: vi.fn(),
+    onOpenCarHistoryPopup: vi.fn(),
     onOpenLeaderboardPopup: vi.fn(),
     onCopySessionDiagnostics: vi.fn(),
     diagnosticsStatusMessage: '',
@@ -111,6 +112,16 @@ describe('AppHeaderMenu accordion animations', () => {
     await user.click(screen.getByText('Atividade do Dia'));
 
     expect(onOpenActivityPopup).toHaveBeenCalled();
+  });
+
+  it('opens car history popup when clicking car history section header', async () => {
+    const user = userEvent.setup();
+    const onOpenCarHistoryPopup = vi.fn();
+
+    render(<AppHeaderMenu {...createProps({ onOpenCarHistoryPopup })} />);
+    await user.click(screen.getByText('Histórico de Viaturas'));
+
+    expect(onOpenCarHistoryPopup).toHaveBeenCalled();
   });
 
   it('renders activity action without a live count badge', () => {

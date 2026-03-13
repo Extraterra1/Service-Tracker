@@ -5,6 +5,7 @@ import './App.css';
 import AccessGateScreen from './components/AccessGateScreen';
 import ActivityPopup from './components/ActivityPopup';
 import AppHeaderMenu from './components/AppHeaderMenu';
+import CarHistoryPopup from './components/CarHistoryPopup';
 import DateNavigator from './components/DateNavigator';
 import LeaderboardPopup from './components/LeaderboardPopup';
 import SignedOutLanding from './components/SignedOutLanding';
@@ -19,6 +20,7 @@ import {
 } from './lib/sessionDiagnostics';
 import { useAccessGate } from './hooks/useAccessGate';
 import { useActivityEntries } from './hooks/useActivityEntries';
+import { useCarHistory } from './hooks/useCarHistory';
 import { useDateCollections } from './hooks/useDateCollections';
 import { useLeaderboardData } from './hooks/useLeaderboardData';
 import { usePinSync } from './hooks/usePinSync';
@@ -136,6 +138,7 @@ function App() {
   const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
   const [timeOverrideValue, setTimeOverrideValue] = useState('');
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
+  const [carHistoryPopupOpen, setCarHistoryPopupOpen] = useState(false);
   const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
   const [errorMessage, setErrorMessage] = useState('');
@@ -193,6 +196,18 @@ function App() {
   } = useActivityEntries({
     enabled: activityPopupOpen && canReadServiceData,
     selectedDate
+  });
+  const {
+    plateOptions: carHistoryPlateOptions,
+    entriesByPlate: carHistoryEntriesByPlate,
+    rangeStart: carHistoryRangeStart,
+    rangeEnd: carHistoryRangeEnd,
+    loading: loadingCarHistory,
+    error: carHistoryErrorMessage,
+    loadCarHistory,
+    resetCarHistory
+  } = useCarHistory({
+    accessState
   });
   const {
     data: leaderboardData,
@@ -487,10 +502,12 @@ function App() {
   useEffect(() => {
     if (!canReadServiceData) {
       setActivityPopupOpen(false);
+      setCarHistoryPopupOpen(false);
       setLeaderboardPopupOpen(false);
+      resetCarHistory();
       resetLeaderboard();
     }
-  }, [canReadServiceData, resetLeaderboard]);
+  }, [canReadServiceData, resetCarHistory, resetLeaderboard]);
 
   useEffect(() => {
     if (manualCompletedCandidates.length === 0) {
@@ -538,6 +555,7 @@ function App() {
       setErrorMessage(error.message);
     } finally {
       setActivityPopupOpen(false);
+      setCarHistoryPopupOpen(false);
       setTimeOverrideItemId('');
       setTimeOverrideValue('');
     }
@@ -752,6 +770,16 @@ function App() {
     setActivityPopupOpen(false);
   }, []);
 
+  const handleOpenCarHistoryPopup = useCallback(() => {
+    menuPanelRef.current?.removeAttribute('open');
+    setCarHistoryPopupOpen(true);
+    void loadCarHistory();
+  }, [loadCarHistory]);
+
+  const handleCloseCarHistoryPopup = useCallback(() => {
+    setCarHistoryPopupOpen(false);
+  }, []);
+
   const handleOpenLeaderboardPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
     setLeaderboardPopupOpen(true);
@@ -862,6 +890,7 @@ function App() {
         onResetTimeOverride={handleResetTimeOverride}
         selectedDate={selectedDate}
         onOpenActivityPopup={handleOpenActivityPopup}
+        onOpenCarHistoryPopup={handleOpenCarHistoryPopup}
         onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
         onCopySessionDiagnostics={handleCopySessionDiagnostics}
         diagnosticsStatusMessage={diagnosticsStatusMessage}
@@ -912,6 +941,18 @@ function App() {
           plateByItemId={activityPlateByItemId}
           activityTimeFormatter={activityTimeFormatter}
           onClose={handleCloseActivityPopup}
+        />
+      ) : null}
+
+      {carHistoryPopupOpen ? (
+        <CarHistoryPopup
+          loading={loadingCarHistory}
+          error={carHistoryErrorMessage}
+          plateOptions={carHistoryPlateOptions}
+          entriesByPlate={carHistoryEntriesByPlate}
+          rangeStart={carHistoryRangeStart}
+          rangeEnd={carHistoryRangeEnd}
+          onClose={handleCloseCarHistoryPopup}
         />
       ) : null}
 

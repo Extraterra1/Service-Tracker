@@ -1008,6 +1008,165 @@ h1 {
   color: var(--text-muted);
 }
 
+.car-history-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  background: rgba(10, 16, 28, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem;
+}
+
+.car-history-popup {
+  width: min(96vw, 620px);
+  max-height: min(84vh, 760px);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: var(--panel-bg-strong);
+  box-shadow: var(--shadow);
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.car-history-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.car-history-popup-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.car-history-popup-header h3 {
+  margin: 0;
+  font-size: 1.04rem;
+  font-family: 'Sora', 'Urbanist', sans-serif;
+  color: var(--item-primary);
+}
+
+.car-history-popup-close {
+  width: 1.92rem;
+  height: 1.92rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--ghost-bg);
+  color: var(--ghost-text);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.car-history-popup-close:hover {
+  border-color: color-mix(in oklab, var(--accent), transparent 28%);
+}
+
+.car-history-popup-close:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 14%);
+  outline-offset: 2px;
+}
+
+.car-history-popup-hint {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--subtle-color);
+}
+
+.car-history-popup-select {
+  width: 100%;
+}
+
+.car-history-popup-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.car-history-popup-item {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--panel-bg);
+  padding: 0.58rem 0.64rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.car-history-popup-row {
+  display: grid;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.car-history-popup-row-head {
+  grid-template-columns: auto auto 1fr;
+}
+
+.car-history-popup-row-body {
+  grid-template-columns: minmax(0, 1fr) auto;
+  color: var(--subtle-color);
+  font-size: 0.8rem;
+}
+
+.car-history-popup-date,
+.car-history-popup-time {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--item-primary);
+}
+
+.car-history-popup-time {
+  justify-self: end;
+}
+
+.car-history-popup-service {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.16rem 0.48rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.car-history-popup-service.is-pickup {
+  background: color-mix(in oklab, var(--accent), white 82%);
+  color: color-mix(in oklab, var(--accent), black 16%);
+}
+
+.car-history-popup-service.is-return {
+  background: rgba(28, 127, 146, 0.15);
+  color: #165f6d;
+}
+
+.car-history-popup-client {
+  min-width: 0;
+  color: var(--item-primary);
+  font-weight: 700;
+}
+
+.car-history-popup-reservation {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 .leaderboard-popup-backdrop {
   position: fixed;
   inset: 0;
@@ -2636,9 +2795,22 @@ h1 {
     padding: 0.66rem;
   }
 
+  .car-history-popup {
+    width: min(96vw, 560px);
+  }
+
   .plate-popup-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.32rem;
+  }
+
+  .car-history-popup-row-head,
+  .car-history-popup-row-body {
+    grid-template-columns: 1fr;
+  }
+
+  .car-history-popup-time {
+    justify-self: start;
   }
 
   .item-vehicle-row {
