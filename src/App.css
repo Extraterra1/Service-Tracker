@@ -1303,8 +1303,7 @@ h1 {
 .car-history-popup-item {
   border: 1px solid var(--stroke);
   border-radius: 10px;
-  background: color-mix(in oklab, var(--panel-bg), var(--accent) 4%);
-  border-color: color-mix(in oklab, var(--accent), transparent 44%);
+  background: var(--panel-bg);
   padding: 0.58rem 0.64rem;
   display: flex;
   flex-direction: column;
