@@ -1083,6 +1083,33 @@ h1 {
   color: var(--subtle-color);
 }
 
+.car-history-popup-range {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--panel-bg);
+}
+
+.car-history-popup-range-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.car-history-popup-range-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+}
+
+.car-history-popup-range-controls .field-inline-date {
+  justify-content: space-between;
+}
+
 .car-history-popup-picker {
   position: relative;
   width: 100%;
@@ -2865,6 +2892,15 @@ h1 {
   .car-history-popup-row-head,
   .car-history-popup-row-body {
     grid-template-columns: 1fr;
+  }
+
+  .car-history-popup-range-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .car-history-popup-range-controls {
+    flex-direction: column;
   }
 
   .car-history-popup-time {

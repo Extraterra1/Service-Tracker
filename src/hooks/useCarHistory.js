@@ -16,7 +16,7 @@ export function useCarHistory({ accessState }) {
   const [error, setError] = useState('');
   const requestIdRef = useRef(0);
 
-  const loadCarHistory = useCallback(async () => {
+  const loadCarHistory = useCallback(async (rangeOverride) => {
     if (accessState !== 'allowed') {
       return null;
     }
@@ -28,7 +28,16 @@ export function useCarHistory({ accessState }) {
 
     try {
       const { fetchCarHistory, getCarHistoryRange } = await loadCarHistoryStoreModule();
-      const nextRange = getCarHistoryRange();
+      const nextRange =
+        String(rangeOverride?.rangeStart ?? '').trim() && String(rangeOverride?.rangeEnd ?? '').trim()
+          ? {
+              rangeStart: String(rangeOverride.rangeStart).trim(),
+              rangeEnd: String(rangeOverride.rangeEnd).trim()
+            }
+          : getCarHistoryRange();
+
+      setRangeStart(nextRange.rangeStart);
+      setRangeEnd(nextRange.rangeEnd);
       const response = await fetchCarHistory(nextRange);
 
       if (requestIdRef.current !== requestId) {

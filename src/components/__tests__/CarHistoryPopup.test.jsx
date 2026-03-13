@@ -35,6 +35,7 @@ function createProps(overrides = {}) {
     },
     rangeStart: '2026-02-26',
     rangeEnd: '2026-03-28',
+    onApplyDateRange: vi.fn(),
     onClose: vi.fn(),
     ...overrides
   };
@@ -57,7 +58,9 @@ describe('CarHistoryPopup', () => {
     const user = userEvent.setup();
     render(<CarHistoryPopup {...createProps()} />);
 
-    expect(screen.getByText('Janela: 2026-02-26 a 2026-03-28')).toBeInTheDocument();
+    expect(screen.getByText('Janela do histórico')).toBeInTheDocument();
+    expect(screen.getByLabelText('Data inicial')).toHaveValue('2026-02-26');
+    expect(screen.getByLabelText('Data final')).toHaveValue('2026-03-28');
     expect(screen.getByRole('heading', { name: 'Selecionar matrícula' })).toBeInTheDocument();
     expect(screen.getByText('Pesquisa uma matrícula para ver o histórico.')).toBeInTheDocument();
     expect(screen.queryByText('2026-03-10')).not.toBeInTheDocument();
@@ -88,5 +91,29 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByRole('heading', { name: 'BB-11-BB' })).toBeInTheDocument();
     expect(screen.getByText('2026-03-08')).toBeInTheDocument();
     expect(screen.getByText('Recolha')).toBeInTheDocument();
+  });
+
+  it('lets the user edit the date window and apply it', async () => {
+    const user = userEvent.setup();
+    const onApplyDateRange = vi.fn();
+
+    render(<CarHistoryPopup {...createProps({ onApplyDateRange })} />);
+
+    const startInput = screen.getByLabelText('Data inicial');
+    const endInput = screen.getByLabelText('Data final');
+
+    expect(startInput).toHaveValue('2026-02-26');
+    expect(endInput).toHaveValue('2026-03-28');
+
+    await user.clear(startInput);
+    await user.type(startInput, '2026-03-01');
+    await user.clear(endInput);
+    await user.type(endInput, '2026-03-12');
+    await user.click(screen.getByRole('button', { name: 'Atualizar janela' }));
+
+    expect(onApplyDateRange).toHaveBeenCalledWith({
+      rangeStart: '2026-03-01',
+      rangeEnd: '2026-03-12'
+    });
   });
 });

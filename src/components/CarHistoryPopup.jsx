@@ -26,14 +26,20 @@ function matchesPlateOption(option, query) {
   return false;
 }
 
-function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onClose }) {
+function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onClose }) {
   const [selectedPlateKeyState, setSelectedPlateKeyState] = useState('');
   const [searchValueState, setSearchValueState] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isSearchPristine, setIsSearchPristine] = useState(true);
   const [highlightedIndexState, setHighlightedIndexState] = useState(0);
+  const [draftRangeState, setDraftRangeState] = useState({
+    sourceKey: '',
+    rangeStart: '',
+    rangeEnd: ''
+  });
   const pickerRef = useRef(null);
   const listboxId = useId();
+  const appliedRangeKey = `${rangeStart}:${rangeEnd}`;
   const selectedPlateKey = useMemo(() => {
     if (plateOptions.some((option) => option.value === selectedPlateKeyState)) {
       return selectedPlateKeyState;
@@ -50,8 +56,23 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     [effectiveSearchValue, plateOptions]
   );
   const selectedEntries = selectedPlateKey ? entriesByPlate[selectedPlateKey] ?? [] : [];
+  const draftRange =
+    draftRangeState.sourceKey === appliedRangeKey
+      ? draftRangeState
+      : {
+          sourceKey: appliedRangeKey,
+          rangeStart,
+          rangeEnd
+        };
   const highlightedIndex = filteredPlateOptions.length > 0 ? Math.min(highlightedIndexState, filteredPlateOptions.length - 1) : 0;
   const activeOption = isPickerOpen ? filteredPlateOptions[highlightedIndex] ?? filteredPlateOptions[0] : null;
+  const canApplyDateRange =
+    Boolean(draftRange.rangeStart) &&
+    Boolean(draftRange.rangeEnd) &&
+    draftRange.rangeStart <= draftRange.rangeEnd &&
+    (draftRange.rangeStart !== rangeStart || draftRange.rangeEnd !== rangeEnd) &&
+    !loading;
+  const showRangeControls = Boolean(rangeStart || rangeEnd || plateOptions.length > 0 || error || loading);
 
   function openPicker() {
     setIsPickerOpen(true);
@@ -74,6 +95,14 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     setHighlightedIndexState(0);
   }
 
+  function updateDraftRange(field, value) {
+    setDraftRangeState({
+      sourceKey: appliedRangeKey,
+      rangeStart: field === 'rangeStart' ? value : draftRange.rangeStart,
+      rangeEnd: field === 'rangeEnd' ? value : draftRange.rangeEnd
+    });
+  }
+
   return (
     <div
       className="car-history-popup-backdrop"
@@ -94,140 +123,185 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
           </button>
         </header>
 
-        <p className="car-history-popup-hint">Janela: {rangeStart && rangeEnd ? `${rangeStart} a ${rangeEnd}` : '--'}</p>
-
-        {loading ? (
-          <p className="helper-text">A carregar histórico...</p>
-        ) : error ? (
-          <p className="helper-text">{error}</p>
-        ) : plateOptions.length === 0 ? (
-          <p className="helper-text">Sem histórico de viaturas para esta janela.</p>
-        ) : (
+        {showRangeControls ? (
           <>
-            <label className="sr-only" htmlFor="car-history-plate-search">
-              Selecionar matrícula
-            </label>
-            <div
-              ref={pickerRef}
-              className="car-history-popup-picker"
-              onBlur={() => {
-                requestAnimationFrame(() => {
-                  if (pickerRef.current?.contains(document.activeElement)) {
-                    return;
+            <div className="car-history-popup-range">
+              <div className="car-history-popup-range-header">
+                <p className="car-history-popup-hint">Janela do histórico</p>
+                <button
+                  type="button"
+                  className="primary-btn compact-btn"
+                  onClick={() =>
+                    onApplyDateRange({
+                      rangeStart: draftRange.rangeStart,
+                      rangeEnd: draftRange.rangeEnd
+                    })
                   }
-                  closePicker();
-                });
-              }}
-            >
-              <input
-                id="car-history-plate-search"
-                className="car-history-popup-search"
-                type="text"
-                role="combobox"
-                value={searchValue}
-                onFocus={openPicker}
-                onChange={(event) => {
-                  setSearchValueState(event.target.value);
-                  setIsPickerOpen(true);
-                  setIsSearchPristine(false);
-                  setHighlightedIndexState(0);
-                }}
-                onClick={() => {
-                  if (!isPickerOpen) {
-                    openPicker();
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'ArrowDown') {
-                    event.preventDefault();
-                    if (!isPickerOpen) {
-                      openPicker();
-                      return;
-                    }
-                    setHighlightedIndexState((currentIndex) => {
-                      if (filteredPlateOptions.length === 0) {
-                        return 0;
+                  disabled={!canApplyDateRange}
+                >
+                  Atualizar janela
+                </button>
+              </div>
+              <div className="car-history-popup-range-controls">
+                <label className="field-inline field-inline-date" htmlFor="car-history-range-start">
+                  <span>Data inicial</span>
+                  <input
+                    id="car-history-range-start"
+                    type="date"
+                    value={draftRange.rangeStart}
+                    onChange={(event) => updateDraftRange('rangeStart', event.target.value)}
+                  />
+                </label>
+                <label className="field-inline field-inline-date" htmlFor="car-history-range-end">
+                  <span>Data final</span>
+                  <input
+                    id="car-history-range-end"
+                    type="date"
+                    value={draftRange.rangeEnd}
+                    onChange={(event) => updateDraftRange('rangeEnd', event.target.value)}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {loading ? (
+              <p className="helper-text">A carregar histórico...</p>
+            ) : error ? (
+              <p className="helper-text">{error}</p>
+            ) : plateOptions.length === 0 ? (
+              <p className="helper-text">Sem histórico de viaturas para esta janela.</p>
+            ) : (
+              <>
+                <label className="sr-only" htmlFor="car-history-plate-search">
+                  Selecionar matrícula
+                </label>
+                <div
+                  ref={pickerRef}
+                  className="car-history-popup-picker"
+                  onBlur={() => {
+                    requestAnimationFrame(() => {
+                      if (pickerRef.current?.contains(document.activeElement)) {
+                        return;
                       }
-                      return Math.min(currentIndex + 1, filteredPlateOptions.length - 1);
+                      closePicker();
                     });
-                  }
+                  }}
+                >
+                  <input
+                    id="car-history-plate-search"
+                    className="car-history-popup-search"
+                    type="text"
+                    role="combobox"
+                    value={searchValue}
+                    onFocus={openPicker}
+                    onChange={(event) => {
+                      setSearchValueState(event.target.value);
+                      setIsPickerOpen(true);
+                      setIsSearchPristine(false);
+                      setHighlightedIndexState(0);
+                    }}
+                    onClick={() => {
+                      if (!isPickerOpen) {
+                        openPicker();
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        if (!isPickerOpen) {
+                          openPicker();
+                          return;
+                        }
+                        setHighlightedIndexState((currentIndex) => {
+                          if (filteredPlateOptions.length === 0) {
+                            return 0;
+                          }
+                          return Math.min(currentIndex + 1, filteredPlateOptions.length - 1);
+                        });
+                      }
 
-                  if (event.key === 'ArrowUp') {
-                    event.preventDefault();
-                    if (!isPickerOpen) {
-                      openPicker();
-                      return;
-                    }
-                    setHighlightedIndexState((currentIndex) => Math.max(currentIndex - 1, 0));
-                  }
+                      if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        if (!isPickerOpen) {
+                          openPicker();
+                          return;
+                        }
+                        setHighlightedIndexState((currentIndex) => Math.max(currentIndex - 1, 0));
+                      }
 
-                  if (event.key === 'Enter' && isPickerOpen && activeOption) {
-                    event.preventDefault();
-                    selectPlateOption(activeOption);
-                  }
+                      if (event.key === 'Enter' && isPickerOpen && activeOption) {
+                        event.preventDefault();
+                        selectPlateOption(activeOption);
+                      }
 
-                  if (event.key === 'Escape') {
-                    event.preventDefault();
-                    closePicker();
-                  }
-                }}
-                aria-label="Selecionar matrícula"
-                aria-autocomplete="list"
-                aria-expanded={isPickerOpen ? 'true' : 'false'}
-                aria-controls={listboxId}
-                aria-activedescendant={activeOption ? `${listboxId}-${activeOption.value}` : undefined}
-                autoComplete="off"
-                spellCheck="false"
-                placeholder="Pesquisar matrícula"
-              />
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closePicker();
+                      }
+                    }}
+                    aria-label="Selecionar matrícula"
+                    aria-autocomplete="list"
+                    aria-expanded={isPickerOpen ? 'true' : 'false'}
+                    aria-controls={listboxId}
+                    aria-activedescendant={activeOption ? `${listboxId}-${activeOption.value}` : undefined}
+                    autoComplete="off"
+                    spellCheck="false"
+                    placeholder="Pesquisar matrícula"
+                  />
 
-              {isPickerOpen ? (
-                filteredPlateOptions.length > 0 ? (
-                  <ul id={listboxId} className="car-history-popup-options" role="listbox" aria-label="Resultados de matrículas">
-                    {filteredPlateOptions.map((option, optionIndex) => (
-                      <li
-                        key={option.value}
-                        id={`${listboxId}-${option.value}`}
-                        className={`car-history-popup-option${optionIndex === highlightedIndex ? ' is-highlighted' : ''}`}
-                        role="option"
-                        aria-selected={option.value === selectedPlateKey}
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                        }}
-                        onClick={() => selectPlateOption(option)}
-                      >
-                        {option.label}
+                  {isPickerOpen ? (
+                    filteredPlateOptions.length > 0 ? (
+                      <ul id={listboxId} className="car-history-popup-options" role="listbox" aria-label="Resultados de matrículas">
+                        {filteredPlateOptions.map((option, optionIndex) => (
+                          <li
+                            key={option.value}
+                            id={`${listboxId}-${option.value}`}
+                            className={`car-history-popup-option${optionIndex === highlightedIndex ? ' is-highlighted' : ''}`}
+                            role="option"
+                            aria-selected={option.value === selectedPlateKey}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                            }}
+                            onClick={() => selectPlateOption(option)}
+                          >
+                            {option.label}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="car-history-popup-search-empty">Sem matrículas correspondentes.</p>
+                    )
+                  ) : null}
+                </div>
+
+                {selectedPlateKey ? (
+                  <ul className="car-history-popup-list">
+                    {selectedEntries.map((entry) => (
+                      <li key={entry.id} className="car-history-popup-item">
+                        <div className="car-history-popup-row car-history-popup-row-head">
+                          <span className="car-history-popup-date">{entry.date}</span>
+                          <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
+                            {getServiceLabel(entry.serviceType)}
+                          </span>
+                          <span className="car-history-popup-time">{entry.effectiveTime}</span>
+                        </div>
+                        <div className="car-history-popup-row car-history-popup-row-body">
+                          <span className="car-history-popup-client">{entry.clientName}</span>
+                          <span className="car-history-popup-reservation">{entry.reservationId}</span>
+                        </div>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="car-history-popup-search-empty">Sem matrículas correspondentes.</p>
-                )
-              ) : null}
-            </div>
-
-            {selectedPlateKey ? (
-              <ul className="car-history-popup-list">
-                {selectedEntries.map((entry) => (
-                  <li key={entry.id} className="car-history-popup-item">
-                    <div className="car-history-popup-row car-history-popup-row-head">
-                      <span className="car-history-popup-date">{entry.date}</span>
-                      <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
-                        {getServiceLabel(entry.serviceType)}
-                      </span>
-                      <span className="car-history-popup-time">{entry.effectiveTime}</span>
-                    </div>
-                    <div className="car-history-popup-row car-history-popup-row-body">
-                      <span className="car-history-popup-client">{entry.clientName}</span>
-                      <span className="car-history-popup-reservation">{entry.reservationId}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="helper-text">Pesquisa uma matrícula para ver o histórico.</p>
+                  <p className="helper-text">Pesquisa uma matrícula para ver o histórico.</p>
+                )}
+              </>
             )}
           </>
+        ) : loading ? (
+          <p className="helper-text">A carregar histórico...</p>
+        ) : (
+          <p className="car-history-popup-hint">Janela: --</p>
         )}
       </section>
     </div>

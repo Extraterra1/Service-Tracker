@@ -952,6 +952,7 @@ function App() {
           entriesByPlate={carHistoryEntriesByPlate}
           rangeStart={carHistoryRangeStart}
           rangeEnd={carHistoryRangeEnd}
+          onApplyDateRange={loadCarHistory}
           onClose={handleCloseCarHistoryPopup}
         />
       ) : null}

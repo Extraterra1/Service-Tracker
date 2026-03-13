@@ -82,4 +82,34 @@ describe('useCarHistory', () => {
     expect(result.current.rangeEnd).toBe('');
     expect(result.current.error).toBe('');
   });
+
+  it('loads history with an explicit date range override', async () => {
+    fetchCarHistoryMock.mockResolvedValue({
+      plateOptions: [{ value: 'BB11BB', label: 'BB-11-BB' }],
+      entriesByPlate: {
+        BB11BB: [{ id: 'entry-2', date: '2026-03-08' }]
+      }
+    });
+
+    const { result } = renderHook(() =>
+      useCarHistory({
+        accessState: 'allowed'
+      })
+    );
+
+    await act(async () => {
+      await result.current.loadCarHistory({
+        rangeStart: '2026-03-01',
+        rangeEnd: '2026-03-12'
+      });
+    });
+
+    expect(getCarHistoryRangeMock).not.toHaveBeenCalled();
+    expect(fetchCarHistoryMock).toHaveBeenCalledWith({
+      rangeStart: '2026-03-01',
+      rangeEnd: '2026-03-12'
+    });
+    expect(result.current.rangeStart).toBe('2026-03-01');
+    expect(result.current.rangeEnd).toBe('2026-03-12');
+  });
 });
