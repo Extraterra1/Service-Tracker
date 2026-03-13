@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import CarHistoryPopup from '../CarHistoryPopup';
+import { getTodayDate } from '../../lib/date';
 
 function createProps(overrides = {}) {
   return {
@@ -15,7 +16,7 @@ function createProps(overrides = {}) {
       AA00AA: [
         {
           id: 'entry-1',
-          date: '2026-03-10',
+          date: getTodayDate(),
           serviceType: 'pickup',
           clientName: 'Maria Da Silva',
           reservationId: 'RES-001',
@@ -84,6 +85,16 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('Aeroporto da Madeira')).toBeInTheDocument();
   });
 
+  it('shows a "Hoje" pill for rows that match today', async () => {
+    const user = userEvent.setup();
+    render(<CarHistoryPopup {...createProps()} />);
+
+    await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
+    await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
+
+    expect(screen.getByText('Hoje')).toBeInTheDocument();
+  });
+
   it('supports fuzzy searching plates before selecting another history list', async () => {
     const user = userEvent.setup();
     render(<CarHistoryPopup {...createProps()} />);
@@ -103,10 +114,12 @@ describe('CarHistoryPopup', () => {
   });
 
   it('preselects the plate from initialPlateKey when provided', async () => {
+    const todayDate = getTodayDate();
+
     render(<CarHistoryPopup {...createProps({ initialPlateKey: 'AA00AA' })} />);
 
     expect(screen.getByRole('heading', { name: 'AA-00-AA' })).toBeInTheDocument();
-    expect(screen.getByText('2026-03-10')).toBeInTheDocument();
+    expect(screen.getByText(todayDate)).toBeInTheDocument();
     expect(screen.queryByText('Pesquisa uma matrícula para ver o histórico.')).not.toBeInTheDocument();
   });
 

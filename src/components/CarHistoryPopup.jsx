@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { normalizePlate } from '../lib/plates';
+import { getTodayDate } from '../lib/date';
 
 const HISTORY_SKELETON_ROWS = [0, 1, 2];
 const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -363,22 +364,29 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
 
                 {animatedPlateKeyState ? (
                   <ul key={animatedPlateKeyState} className={`car-history-popup-list${isPlateSwitchingState ? ' is-fading' : ''}`}>
-                    {selectedEntries.map((entry) => (
-                      <li key={entry.id} className="car-history-popup-item">
-                        <div className="car-history-popup-row car-history-popup-row-head">
-                          <span className="car-history-popup-date">{entry.date}</span>
-                          <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
-                            {getServiceLabel(entry.serviceType)}
-                          </span>
-                          <span className="car-history-popup-time">{entry.effectiveTime}</span>
-                        </div>
-                        <div className="car-history-popup-row car-history-popup-row-body">
-                          <span className="car-history-popup-client">{entry.clientName}</span>
-                          <span className="car-history-popup-reservation">{entry.reservationId}</span>
-                          <span className="car-history-popup-location">{entry.location}</span>
-                        </div>
-                      </li>
-                    ))}
+                    {selectedEntries.map((entry) => {
+                      const isToday = entry.date === getTodayDate();
+
+                      return (
+                        <li key={entry.id} className={`car-history-popup-item${isToday ? ' is-today' : ''}`}>
+                          <div className="car-history-popup-row car-history-popup-row-head">
+                            <span className="car-history-popup-date">{entry.date}</span>
+                            <span className="car-history-popup-pill-group">
+                              <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
+                                {getServiceLabel(entry.serviceType)}
+                              </span>
+                              {isToday ? <span className="car-history-popup-today-pill">Hoje</span> : null}
+                            </span>
+                            <span className="car-history-popup-time">{entry.effectiveTime}</span>
+                          </div>
+                          <div className="car-history-popup-row car-history-popup-row-body">
+                            <span className="car-history-popup-client">{entry.clientName}</span>
+                            <span className="car-history-popup-reservation">{entry.reservationId}</span>
+                            <span className="car-history-popup-location">{entry.location}</span>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p className="helper-text">Pesquisa uma matrícula para ver o histórico.</p>
