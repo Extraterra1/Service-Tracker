@@ -1,6 +1,8 @@
 import { useDeferredValue, useId, useMemo, useRef, useState } from 'react';
 import { normalizePlate } from '../lib/plates';
 
+const HISTORY_SKELETON_ROWS = [0, 1, 2];
+
 function getServiceLabel(serviceType) {
   return serviceType === 'return' ? 'Recolha' : 'Entrega';
 }
@@ -165,7 +167,26 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
             </div>
 
             {loading ? (
-              <p className="helper-text">A carregar histórico...</p>
+              <>
+                <p className="sr-only" role="status">
+                  A carregar histórico...
+                </p>
+                <div className="car-history-popup-skeleton" data-testid="car-history-loading-skeleton" aria-hidden="true">
+                  {HISTORY_SKELETON_ROWS.map((rowIndex) => (
+                    <div key={`history-skeleton-${rowIndex}`} className="car-history-popup-skeleton-item">
+                      <div className="car-history-popup-skeleton-row car-history-popup-skeleton-row-head">
+                        <span className="car-history-popup-skeleton-chip is-wide" />
+                        <span className="car-history-popup-skeleton-chip is-tag" />
+                        <span className="car-history-popup-skeleton-chip is-time" />
+                      </div>
+                      <div className="car-history-popup-skeleton-row car-history-popup-skeleton-row-body">
+                        <span className="car-history-popup-skeleton-chip is-client" />
+                        <span className="car-history-popup-skeleton-chip is-reservation" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : error ? (
               <p className="helper-text">{error}</p>
             ) : plateOptions.length === 0 ? (

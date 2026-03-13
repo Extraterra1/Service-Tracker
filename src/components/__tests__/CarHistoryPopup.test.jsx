@@ -46,6 +46,8 @@ describe('CarHistoryPopup', () => {
     render(<CarHistoryPopup {...createProps({ loading: true })} />);
 
     expect(screen.getByText('A carregar histórico...')).toBeInTheDocument();
+    expect(screen.getByTestId('car-history-loading-skeleton')).toBeInTheDocument();
+    expect(screen.queryByText('Sem histórico de viaturas para esta janela.')).not.toBeInTheDocument();
   });
 
   it('shows an empty state when no plates are available', () => {

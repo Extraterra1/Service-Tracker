@@ -1172,6 +1172,76 @@ h1 {
   font-size: 0.73rem;
 }
 
+.car-history-popup-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: car-history-fade-in 220ms ease-out forwards;
+}
+
+.car-history-popup-skeleton-item {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--panel-bg);
+  padding: 0.58rem 0.64rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.36rem;
+}
+
+.car-history-popup-skeleton-row {
+  display: grid;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.car-history-popup-skeleton-row-head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.car-history-popup-skeleton-row-body {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.car-history-popup-skeleton-chip {
+  display: block;
+  height: 0.76rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--ghost-bg), white 18%) 0%,
+      color-mix(in oklab, var(--ghost-bg), white 42%) 50%,
+      color-mix(in oklab, var(--ghost-bg), white 18%) 100%
+    );
+  background-size: 200% 100%;
+  animation: car-history-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.car-history-popup-skeleton-chip.is-wide {
+  width: 7.1rem;
+}
+
+.car-history-popup-skeleton-chip.is-tag {
+  width: 4.4rem;
+}
+
+.car-history-popup-skeleton-chip.is-time {
+  width: 3.1rem;
+  justify-self: end;
+}
+
+.car-history-popup-skeleton-chip.is-client {
+  width: 8.4rem;
+}
+
+.car-history-popup-skeleton-chip.is-reservation {
+  width: 5.2rem;
+  justify-self: end;
+}
+
 .car-history-popup-list {
   margin: 0;
   padding: 0;
@@ -1181,6 +1251,9 @@ h1 {
   gap: 0.45rem;
   overflow-y: auto;
   min-height: 0;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: car-history-fade-in 200ms ease-out forwards;
 }
 
 .car-history-popup-item {
@@ -1244,12 +1317,34 @@ h1 {
 .car-history-popup-client {
   min-width: 0;
   color: var(--item-primary);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .car-history-popup-reservation {
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+@keyframes car-history-skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes car-history-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .leaderboard-popup-backdrop {
