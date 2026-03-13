@@ -2820,8 +2820,6 @@ h1 {
 .item-carline-model:hover,
 .item-carline-model:focus-visible {
   color: color-mix(in oklab, var(--item-service), black 16%);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
 }
 
 .item-carline-model:focus-visible {
