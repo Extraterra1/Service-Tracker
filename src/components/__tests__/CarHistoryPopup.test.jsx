@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import CarHistoryPopup from '../CarHistoryPopup';
@@ -83,6 +83,20 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('RET-200')).toBeInTheDocument();
     expect(screen.getByText('08:15')).toBeInTheDocument();
     expect(screen.getByText('Aeroporto da Madeira')).toBeInTheDocument();
+  });
+
+  it('separates visible controls from the scrollable results region', () => {
+    render(<CarHistoryPopup {...createProps({ initialPlateKey: 'AA00AA' })} />);
+
+    const controls = screen.getByTestId('car-history-controls');
+    const results = screen.getByTestId('car-history-results');
+
+    expect(within(controls).getByLabelText('Data inicial')).toBeInTheDocument();
+    expect(within(controls).getByLabelText('Data final')).toBeInTheDocument();
+    expect(within(controls).getByRole('combobox', { name: 'Selecionar matrícula' })).toBeInTheDocument();
+
+    expect(within(results).getByText(getTodayDate())).toBeInTheDocument();
+    expect(within(results).getByText('Maria Da Silva')).toBeInTheDocument();
   });
 
   it('shows a "Hoje" pill for rows that match today', async () => {

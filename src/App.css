@@ -1030,6 +1030,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  overflow: hidden;
 }
 
 .car-history-popup-header {
@@ -1037,6 +1038,11 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+.car-history-popup-header-copy {
+  min-width: 0;
 }
 
 .car-history-popup-kicker {
@@ -1053,6 +1059,8 @@ h1 {
   font-size: 1.04rem;
   font-family: 'Sora', 'Urbanist', sans-serif;
   color: var(--item-primary);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .car-history-popup-close {
@@ -1066,6 +1074,32 @@ h1 {
   font-size: 0.95rem;
   font-weight: 700;
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.car-history-popup-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.car-history-popup-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.car-history-popup-results {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.45rem;
 }
 
 .car-history-popup-close:hover {
@@ -1185,10 +1219,13 @@ h1 {
 .car-history-popup-skeleton {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: 0.45rem;
   opacity: 0;
   transform: translateY(6px);
   animation: car-history-fade-in 220ms ease-out forwards;
+  overflow-y: auto;
 }
 
 .car-history-popup-skeleton-item {
@@ -1324,6 +1361,7 @@ h1 {
 
 .car-history-popup-row-head {
   grid-template-columns: auto auto 1fr;
+  grid-template-areas: "date pills time";
 }
 
 .car-history-popup-row-body {
@@ -1342,14 +1380,21 @@ h1 {
   color: var(--item-primary);
 }
 
+.car-history-popup-date {
+  grid-area: date;
+}
+
 .car-history-popup-pill-group {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
   gap: 0.34rem;
+  grid-area: pills;
+  min-width: 0;
 }
 
 .car-history-popup-time {
+  grid-area: time;
   justify-self: end;
 }
 
@@ -1411,6 +1456,8 @@ h1 {
   grid-area: reservation;
   font-size: 0.75rem;
   font-weight: 700;
+  justify-self: end;
+  min-width: 0;
 }
 
 .car-history-popup-location {
@@ -3104,8 +3151,21 @@ h1 {
     padding: 0.66rem;
   }
 
+  .car-history-popup-backdrop {
+    align-items: flex-end;
+    padding:
+      max(0.3rem, env(safe-area-inset-top, 0px))
+      max(0.3rem, env(safe-area-inset-right, 0px))
+      max(0.3rem, env(safe-area-inset-bottom, 0px))
+      max(0.3rem, env(safe-area-inset-left, 0px));
+  }
+
   .car-history-popup {
-    width: min(96vw, 560px);
+    width: min(calc(100vw - 0.6rem), 560px);
+    max-height: min(calc(100dvh - 0.6rem), 820px);
+    border-radius: 18px;
+    padding: 0.68rem;
+    gap: 0.5rem;
   }
 
   .plate-popup-grid {
@@ -3113,19 +3173,108 @@ h1 {
     gap: 0.32rem;
   }
 
-  .car-history-popup-row-head,
-  .car-history-popup-row-body {
-    grid-template-columns: 1fr;
+  .car-history-popup-header {
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .car-history-popup-header h3 {
+    font-size: 0.98rem;
+  }
+
+  .car-history-popup-controls {
+    gap: 0.42rem;
+  }
+
+  .car-history-popup-range {
+    align-items: stretch;
+    gap: 0.3rem;
+    padding: 0.38rem 0.44rem;
+  }
+
+  .car-history-popup-range-label {
+    white-space: normal;
+    font-size: 0.68rem;
   }
 
   .car-history-popup-range-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    width: 100%;
+    gap: 0.34rem;
+  }
+
+  .car-history-popup-range-controls .field-inline-date {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.12rem;
+    min-width: 0;
+  }
+
+  .car-history-popup-range-controls .field-inline-date span {
+    font-size: 0.64rem;
+    line-height: 1.1;
+  }
+
+  .car-history-popup-range-controls .field-inline-date input {
     width: 100%;
+    min-width: 0;
+    height: 1.92rem;
+    padding: 0 0.42rem;
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+
+  .car-history-popup-search {
+    height: 2.14rem;
+    padding: 0 0.7rem;
+    font-size: 0.79rem;
+  }
+
+  .car-history-popup-options,
+  .car-history-popup-search-empty {
+    max-height: min(42dvh, 260px);
+  }
+
+  .car-history-popup-row-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "date time"
+      "pills pills";
+    align-items: start;
+    row-gap: 0.36rem;
+  }
+
+  .car-history-popup-pill-group {
+    flex-wrap: wrap;
+  }
+
+  .car-history-popup-row-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "client"
+      "reservation"
+      "location";
+    gap: 0.2rem;
+  }
+
+  .car-history-popup-reservation {
+    justify-self: start;
   }
 
   .car-history-popup-time {
-    justify-self: start;
+    justify-self: end;
+  }
+
+  .car-history-popup-list {
+    gap: 0.38rem;
+    padding-bottom: calc(0.18rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .car-history-popup-item {
+    padding: 0.62rem;
+    gap: 0.42rem;
   }
 
   .item-vehicle-row {
