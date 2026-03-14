@@ -55,6 +55,13 @@ describe('ServiceItemCard location links', () => {
     expect(appCss).toMatch(/\.item-location-link:hover\s*{[\s\S]*opacity:\s*0\.82;/);
   });
 
+  it('clamps client names to first and last with middle initials', () => {
+    renderCard(createItem({ name: 'Benis Ambroise Pedro' }));
+
+    expect(screen.getByText('Benis A. Pedro')).toBeInTheDocument();
+    expect(screen.queryByText('Benis Ambroise Pedro')).not.toBeInTheDocument();
+  });
+
   it('keeps the location row itself out of the shared line-through styling', () => {
     expect(appCss).toMatch(/\.service-item \.item-location\s*{[\s\S]*text-decoration-line:\s*none;/);
   });
@@ -62,8 +69,8 @@ describe('ServiceItemCard location links', () => {
   it('keeps airport addresses as plain text', () => {
     renderCard(createItem({ location: 'AEROPORTO DA MADEIRA' }));
 
-    expect(screen.getByText('AEROPORTO DA MADEIRA')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'AEROPORTO DA MADEIRA' })).not.toBeInTheDocument();
+    expect(screen.getByText('aeroporto')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'aeroporto' })).not.toBeInTheDocument();
   });
 
   it('keeps escritorio addresses as plain text', () => {

@@ -29,6 +29,33 @@ function normalizeLocationText(value) {
     .toLowerCase();
 }
 
+function normalizeLocationLabel(value) {
+  const text = String(value ?? '').trim();
+  if (!text) {
+    return text;
+  }
+
+  return normalizeLocationText(text) === 'aeroporto da madeira' ? 'aeroporto' : text;
+}
+
+function getClampedClientName(name) {
+  const text = String(name ?? '').trim();
+  if (!text) {
+    return '';
+  }
+
+  const parts = text.split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) {
+    return text;
+  }
+
+  const firstName = parts[0];
+  const lastName = parts[parts.length - 1];
+  const middleInitials = parts.slice(1, -1).map((part) => `${part[0].toUpperCase()}.`);
+
+  return `${firstName} ${middleInitials.join(' ')} ${lastName}`.replace(/\s{2,}/g, ' ').trim();
+}
+
 function getGoogleMapsHref(location) {
   const displayLocation = String(location ?? '').trim();
   if (!displayLocation) {
@@ -110,7 +137,9 @@ function ServiceItemCard({
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
   const isDelivery = item.serviceType === 'pickup';
   const isReady = readyState?.ready === true;
-  const locationLabel = String(item.location ?? '').trim() || 'Localização não indicada';
+  const clientDisplayName = getClampedClientName(item.name);
+  const locationLabel = normalizeLocationLabel(item.location) || 'Localização não indicada';
+  const accessibleClientName = clientDisplayName || item.id || item.itemId || 'Sem nome';
   const locationHref = getGoogleMapsHref(item.location);
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
@@ -261,7 +290,10 @@ function ServiceItemCard({
             ) : null}
           </div>
 
-          <label className={`item-check ${done ? 'is-checked' : ''}`} aria-label={`Marcar ${item.name || item.id || item.itemId} como concluído`}>
+          <label
+            className={`item-check ${done ? 'is-checked' : ''}`}
+            aria-label={`Marcar ${accessibleClientName} como concluído`}
+          >
             <input
               type="checkbox"
               checked={done}
@@ -283,7 +315,7 @@ function ServiceItemCard({
       </div>
 
       <div className="item-identity-row">
-        <p className="item-name">{item.name || 'Sem nome'}</p>
+        <p className="item-name">{clientDisplayName || 'Sem nome'}</p>
         <p className="item-subline">
           <span>#{item.id || 'n/a'}</span>
           {phoneValue ? (

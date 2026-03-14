@@ -94,7 +94,7 @@ describe('carHistoryStore', () => {
     expect(history.entriesByPlate.BB11BB).toEqual([
       expect.objectContaining({
         clientName: 'Joao Sousa',
-        location: 'aeroporto da madeira'
+        location: 'aeroporto'
       })
     ]);
   });

@@ -21,9 +21,28 @@ function normalizeItems(items, date, serviceType) {
     return [];
   }
 
+  const normalizeLocation = (value) => {
+    const text = String(value ?? '').trim();
+    if (!text) {
+      return '';
+    }
+
+    const normalizedText = text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+    if (normalizedText === 'aeroporto da madeira') {
+      return 'AEROPORTO';
+    }
+
+    return text;
+  };
+
   return items.map((item, index) => ({
     ...item,
     serviceType: item.serviceType ?? serviceType,
+    location: normalizeLocation(item?.location),
     itemId: item.itemId ?? fallbackItemId(item, date, serviceType, index)
   }));
 }
