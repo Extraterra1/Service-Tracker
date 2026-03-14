@@ -2489,7 +2489,6 @@ h1 {
 .service-item .item-name,
 .service-item .item-subline,
 .service-item .item-carline,
-.service-item .item-location,
 .service-item .item-note {
   text-decoration-line: line-through;
   text-decoration-thickness: 2px;
@@ -2503,9 +2502,12 @@ h1 {
 .service-item.is-done .item-name,
 .service-item.is-done .item-subline,
 .service-item.is-done .item-carline,
-.service-item.is-done .item-location,
 .service-item.is-done .item-note {
   text-decoration-color: var(--line-through);
+}
+
+.service-item .item-location {
+  text-decoration-line: none;
 }
 
 .item-head {
@@ -2946,8 +2948,28 @@ h1 {
 .item-location {
   font-size: 0.74rem;
   color: var(--item-meta);
+  text-decoration-line: none;
   white-space: nowrap;
   text-align: right;
+}
+
+.item-location-link {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.item-location-link:hover {
+  color: var(--item-primary);
+  opacity: 0.82;
+}
+
+.item-location-link:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 12%);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .item-note {

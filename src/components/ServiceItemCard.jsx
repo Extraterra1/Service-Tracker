@@ -21,6 +21,32 @@ function isValidTimeInput(value) {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
 }
 
+function normalizeLocationText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function getGoogleMapsHref(location) {
+  const displayLocation = String(location ?? '').trim();
+  if (!displayLocation) {
+    return '';
+  }
+
+  const normalizedLocation = normalizeLocationText(displayLocation);
+  if (
+    normalizedLocation.includes('aeroporto') ||
+    normalizedLocation.includes('airport') ||
+    normalizedLocation.includes('escritorio')
+  ) {
+    return '';
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayLocation)}`;
+}
+
 const doneCardVariants = {
   active: {
     opacity: 1
@@ -84,6 +110,8 @@ function ServiceItemCard({
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
   const isDelivery = item.serviceType === 'pickup';
   const isReady = readyState?.ready === true;
+  const locationLabel = String(item.location ?? '').trim() || 'Localização não indicada';
+  const locationHref = getGoogleMapsHref(item.location);
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
   const timeMenuWrapRef = useRef(null);
@@ -332,7 +360,15 @@ function ServiceItemCard({
             </span>
           ) : null}
         </p>
-        <p className="item-location">{item.location || 'Localização não indicada'}</p>
+        <p className="item-location">
+          {locationHref ? (
+            <a className="item-location-link" href={locationHref} target="_blank" rel="noreferrer">
+              {locationLabel}
+            </a>
+          ) : (
+            locationLabel
+          )}
+        </p>
       </div>
 
       {Array.isArray(item.extras) && item.extras.length > 0 ? <p className="item-note item-note-extra">Extras: {item.extras.join(', ')}</p> : null}
