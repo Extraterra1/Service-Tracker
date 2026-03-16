@@ -74,24 +74,27 @@ function ServiceWorkspace({
         plateLabelByKey.set(plate, String(item.plate).trim().toUpperCase());
       }
 
-      const nextTimes = returnByPlate.get(plate) ?? [];
-      nextTimes.push(getItemDisplayTime(item));
-      returnByPlate.set(plate, nextTimes);
+      const nextReturnEntry = returnByPlate.get(plate) ?? { times: [], returnDone: false };
+      nextReturnEntry.times.push(getItemDisplayTime(item));
+      nextReturnEntry.returnDone ||= statusMap[item.itemId]?.done === true;
+      returnByPlate.set(plate, nextReturnEntry);
     });
 
     const shared = [...pickupByPlate.keys()].filter((plate) => returnByPlate.has(plate)).sort((a, b) => a.localeCompare(b));
 
     return shared.reduce((acc, plate, index) => {
+      const returnEntry = returnByPlate.get(plate) ?? { times: [], returnDone: false };
       acc[plate] = {
         plate,
         displayPlate: plateLabelByKey.get(plate) ?? plate,
         color: getPlateColor(index),
         pickupTimes: uniqueTimes(pickupByPlate.get(plate) ?? []),
-        returnTimes: uniqueTimes(returnByPlate.get(plate) ?? [])
+        returnTimes: uniqueTimes(returnEntry.times),
+        returnDone: returnEntry.returnDone === true
       };
       return acc;
     }, {});
-  }, [serviceData.pickups, serviceData.returns]);
+  }, [serviceData.pickups, serviceData.returns, statusMap]);
 
   const activePlateInfoPopup = useMemo(() => {
     if (!plateInfoPopup) {

@@ -3015,6 +3015,7 @@ h1 {
   width: 1.02rem;
   height: 1.02rem;
   border-radius: 999px;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3037,6 +3038,28 @@ h1 {
   width: 0.74rem;
   height: 0.74rem;
   stroke-width: 2.6;
+}
+
+.item-shared-plate-done-badge {
+  position: absolute;
+  right: -0.14rem;
+  bottom: -0.16rem;
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in oklab, white, transparent 18%);
+  background: #1f8a45;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(7, 24, 14, 0.26);
+}
+
+.item-shared-plate-done-icon {
+  width: 0.38rem;
+  height: 0.38rem;
+  stroke-width: 3.2;
 }
 
 .item-location {

@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ServiceWorkspace from '../ServiceWorkspace';
 
@@ -27,5 +27,64 @@ describe('ServiceWorkspace', () => {
     );
 
     expect(setIntervalSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows a completed shared-plate marker on entrega cards when the paired recolha is done', () => {
+    render(
+      <ServiceWorkspace
+        serviceData={{
+          pickups: [
+            {
+              itemId: 'pickup-1',
+              serviceType: 'pickup',
+              time: '09:00',
+              name: 'Carlos',
+              id: '0001',
+              phone: '',
+              car: 'Fiat Panda',
+              plate: 'AA-00-AA',
+              location: 'AEROPORTO DA MADEIRA',
+              extras: [],
+              notes: ''
+            }
+          ],
+          returns: [
+            {
+              itemId: 'return-1',
+              serviceType: 'return',
+              time: '18:00',
+              name: 'Carlos',
+              id: '0002',
+              phone: '',
+              car: 'Fiat Panda',
+              plate: 'AA-00-AA',
+              location: 'Funchal',
+              extras: [],
+              notes: ''
+            }
+          ]
+        }}
+        statusMap={{
+          'return-1': {
+            done: true
+          }
+        }}
+        readyMap={{}}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        onSharedPlateTap={vi.fn()}
+        updatingItemId=""
+        disabled={false}
+        loading={false}
+        canShowEmptyState
+        lockedMessage=""
+      />
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Viatura com entrega e recolha nesta data; recolha concluída' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Viatura com entrega e recolha nesta data' })).toBeInTheDocument();
   });
 });

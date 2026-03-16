@@ -5,12 +5,20 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
-import { Clock3, Plane, Repeat2 } from 'lucide-react';
+import { Check, Clock3, Plane, Repeat2 } from 'lucide-react';
 import { WebHaptics } from 'web-haptics';
 
-function getSharedMarkerColor(markers, plateValue) {
+function getSharedMarker(markers, plateValue) {
   const plateKey = normalizePlate(plateValue);
-  return plateKey ? markers?.[plateKey]?.color ?? '' : '';
+  return plateKey ? markers?.[plateKey] ?? null : null;
+}
+
+function getSharedMarkerColor(markers, plateValue) {
+  return getSharedMarker(markers, plateValue)?.color ?? '';
+}
+
+function getSharedMarkerReturnDone(markers, plateValue) {
+  return getSharedMarker(markers, plateValue)?.returnDone === true;
 }
 
 function getDisplayTime(item) {
@@ -157,6 +165,10 @@ function ServiceItemCard({
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
   const isDelivery = item.serviceType === 'pickup';
+  const showSharedPlateDoneBadge = isDelivery && sharedPlateMarker?.returnDone === true;
+  const sharedPlateLabel = showSharedPlateDoneBadge
+    ? 'Viatura com entrega e recolha nesta data; recolha concluída'
+    : 'Viatura com entrega e recolha nesta data';
   const isReady = readyState?.ready === true;
   const clientDisplayName = getClampedClientName(item.name);
   const locationLabel = normalizeLocationLabel(item.location) || 'Localização não indicada';
@@ -403,11 +415,16 @@ function ServiceItemCard({
                   type="button"
                   className="item-shared-plate-tag item-shared-plate-button"
                   style={{ '--shared-plate-color': sharedPlateMarker.color }}
-                  title="Viatura com entrega e recolha nesta data"
-                  aria-label="Viatura com entrega e recolha nesta data"
+                  title={sharedPlateLabel}
+                  aria-label={sharedPlateLabel}
                   onClick={() => onSharedPlateTap?.(sharedPlateMarker)}
                 >
                   <Repeat2 className="item-shared-plate-icon" aria-hidden="true" />
+                  {showSharedPlateDoneBadge ? (
+                    <span className="item-shared-plate-done-badge" aria-hidden="true">
+                      <Check className="item-shared-plate-done-icon" aria-hidden="true" />
+                    </span>
+                  ) : null}
                 </button>
               ) : null}
             </span>
@@ -500,7 +517,9 @@ function areSameItemProps(prevProps, nextProps) {
 
   return (
     getSharedMarkerColor(prevProps.sharedPlateMarkers, prevItem.plate) ===
-    getSharedMarkerColor(nextProps.sharedPlateMarkers, nextItem.plate)
+      getSharedMarkerColor(nextProps.sharedPlateMarkers, nextItem.plate) &&
+    getSharedMarkerReturnDone(prevProps.sharedPlateMarkers, prevItem.plate) ===
+      getSharedMarkerReturnDone(nextProps.sharedPlateMarkers, nextItem.plate)
   );
 }
 
