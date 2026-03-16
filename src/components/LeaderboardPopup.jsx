@@ -125,7 +125,7 @@ function PeriodChevronIcon({ direction = 'left', className = '' }) {
   );
 }
 
-function LeaderboardPodiumCard({ entry, position }) {
+function LeaderboardPodiumCard({ entry, position, showWinnerBanner = false }) {
   const isFirst = position === 1;
   const isThird = position === 3;
 
@@ -162,6 +162,8 @@ function LeaderboardPodiumCard({ entry, position }) {
 
         <span className={`leaderboard-podium-rank-badge leaderboard-podium-rank-badge-${position}`}>{entry.rank}</span>
       </div>
+
+      {showWinnerBanner ? <span className="leaderboard-podium-winner-ribbon">Winner!</span> : null}
 
       <p className="leaderboard-name leaderboard-podium-name" title={getIdentityLabel(entry)}>
         {getIdentityLabel(entry)}
@@ -260,6 +262,7 @@ function LeaderboardPopup({
   const totalActions = Number(data?.totalActions ?? 0);
   const participants = Number(data?.participants ?? rows.length);
   const showPeriodHistory = period === 'weekly' || period === 'monthly';
+  const showHistoricalWinnerBanner = showPeriodHistory && canNavigateForward && Boolean(topOne);
   const lastLoadedLabel = lastLoadedAt
     ? new Intl.DateTimeFormat('pt-PT', {
         hour: '2-digit',
@@ -360,7 +363,7 @@ function LeaderboardPopup({
                 <section className="leaderboard-podium-stage" aria-label="Top 3">
                   <div className="leaderboard-podium-track">
                     <LeaderboardPodiumCard entry={topTwo} position={2} />
-                    <LeaderboardPodiumCard entry={topOne} position={1} />
+                    <LeaderboardPodiumCard entry={topOne} position={1} showWinnerBanner={showHistoricalWinnerBanner} />
                     <LeaderboardPodiumCard entry={topThree} position={3} />
                   </div>
                 </section>

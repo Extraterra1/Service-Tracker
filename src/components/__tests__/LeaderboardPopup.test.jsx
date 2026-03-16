@@ -106,6 +106,16 @@ describe('LeaderboardPopup', () => {
     expect(screen.getByText('03/03/2026 - 09/03/2026')).toBeInTheDocument();
   });
 
+  it('renders a winner banner for the first-place card on historical periods', () => {
+    renderPopup({
+      period: 'monthly',
+      periodWindowLabel: 'fevereiro 2026',
+      canNavigateForward: true,
+    });
+
+    expect(screen.getByText('Winner!')).toBeInTheDocument();
+  });
+
   it('does not render history navigation for all-time', () => {
     renderPopup({
       period: 'all_time',
@@ -114,6 +124,7 @@ describe('LeaderboardPopup', () => {
 
     expect(screen.queryByRole('button', { name: 'Período anterior' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Próximo período' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Winner!')).not.toBeInTheDocument();
   });
 
   it('triggers period history navigation callbacks', async () => {
@@ -137,6 +148,7 @@ describe('LeaderboardPopup', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Próximo período' })).toBeDisabled();
+    expect(screen.queryByText('Winner!')).not.toBeInTheDocument();
   });
 
   it('renders empty and error states', () => {
