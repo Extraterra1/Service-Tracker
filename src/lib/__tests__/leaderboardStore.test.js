@@ -187,6 +187,16 @@ describe('leaderboardStore', () => {
     expect(formatInMadeira(endDate, { weekday: 'short' })).toBe('Mon');
   });
 
+  it('weekly range can target a previous week from the provided anchor date', () => {
+    const now = new Date('2026-02-25T12:45:00.000Z'); // Wednesday in the previous week
+    const range = getLeaderboardRange('weekly', now, 'Atlantic/Madeira');
+    const startDate = range.startAt.toDate();
+    const endDate = range.endAt.toDate();
+
+    expect(formatInMadeira(startDate, { day: '2-digit', month: '2-digit', year: 'numeric' })).toBe('23/02/2026');
+    expect(formatInMadeira(endDate, { day: '2-digit', month: '2-digit', year: 'numeric' })).toBe('02/03/2026');
+  });
+
   it('monthly range starts on day 1 at 00:00 in Madeira timezone', () => {
     const now = new Date('2026-03-18T15:20:00.000Z');
     const range = getLeaderboardRange('monthly', now, 'Atlantic/Madeira');
@@ -194,6 +204,16 @@ describe('leaderboardStore', () => {
 
     expect(formatInMadeira(startDate, { day: '2-digit' })).toBe('01');
     expect(formatInMadeira(startDate, { hour: '2-digit', minute: '2-digit', hour12: false })).toBe('00:00');
+  });
+
+  it('monthly range can target a previous month from the provided anchor date', () => {
+    const now = new Date('2026-02-18T15:20:00.000Z');
+    const range = getLeaderboardRange('monthly', now, 'Atlantic/Madeira');
+    const startDate = range.startAt.toDate();
+    const endDate = range.endAt.toDate();
+
+    expect(formatInMadeira(startDate, { day: '2-digit', month: '2-digit', year: 'numeric' })).toBe('01/02/2026');
+    expect(formatInMadeira(endDate, { day: '2-digit', month: '2-digit', year: 'numeric' })).toBe('01/03/2026');
   });
 
   it('all-time cap is set to 10000 actions', () => {

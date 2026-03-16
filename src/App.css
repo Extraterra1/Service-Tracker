@@ -1548,7 +1548,9 @@ h1 {
 
 .leaderboard-toolbar {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
+  gap: 12px;
 }
 
 .leaderboard-period-tabs {
@@ -1593,6 +1595,59 @@ h1 {
   line-height: 16px;
   color: #6b7280;
   text-align: center;
+}
+
+.leaderboard-period-history {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+}
+
+.leaderboard-period-history-btn {
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #f9fafb;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.leaderboard-period-history-btn:hover {
+  background: #fee2e2;
+  color: #be2539;
+}
+
+.leaderboard-period-history-btn:focus-visible {
+  outline: 2px solid #fca5a5;
+  outline-offset: 2px;
+}
+
+.leaderboard-period-history-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.leaderboard-period-history-label {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: capitalize;
+}
+
+.leaderboard-period-history-label.is-static {
+  font-size: 12px;
+  line-height: 16px;
+  color: #6b7280;
 }
 
 .leaderboard-error-banner {

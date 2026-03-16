@@ -26,6 +26,9 @@ function renderPopup(overrides = {}) {
     errorMessage: '',
     onClose: vi.fn(),
     onPeriodChange: vi.fn(),
+    periodWindowLabel: '03/03/2026 - 09/03/2026',
+    canNavigateForward: true,
+    onNavigatePeriod: vi.fn(),
     ...overrides,
   };
 
@@ -90,6 +93,50 @@ describe('LeaderboardPopup', () => {
     await user.click(screen.getByRole('tab', { name: 'Mês' }));
 
     expect(onPeriodChange).toHaveBeenCalledWith('monthly');
+  });
+
+  it('renders history navigation for weekly and monthly periods', () => {
+    renderPopup({
+      period: 'weekly',
+      periodWindowLabel: '03/03/2026 - 09/03/2026',
+    });
+
+    expect(screen.getByRole('button', { name: 'Período anterior' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Próximo período' })).toBeInTheDocument();
+    expect(screen.getByText('03/03/2026 - 09/03/2026')).toBeInTheDocument();
+  });
+
+  it('does not render history navigation for all-time', () => {
+    renderPopup({
+      period: 'all_time',
+      periodWindowLabel: 'Todos os registos',
+    });
+
+    expect(screen.queryByRole('button', { name: 'Período anterior' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Próximo período' })).not.toBeInTheDocument();
+  });
+
+  it('triggers period history navigation callbacks', async () => {
+    const user = userEvent.setup();
+    const { onNavigatePeriod } = renderPopup({
+      period: 'monthly',
+      periodWindowLabel: 'março 2026',
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Período anterior' }));
+    await user.click(screen.getByRole('button', { name: 'Próximo período' }));
+
+    expect(onNavigatePeriod).toHaveBeenCalledWith('previous');
+    expect(onNavigatePeriod).toHaveBeenCalledWith('next');
+  });
+
+  it('disables forward navigation when the current period is already selected', () => {
+    renderPopup({
+      period: 'weekly',
+      canNavigateForward: false,
+    });
+
+    expect(screen.getByRole('button', { name: 'Próximo período' })).toBeDisabled();
   });
 
   it('renders empty and error states', () => {

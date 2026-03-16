@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { getLeaderboardCacheKey, normalizeLeaderboardPeriod } from '../lib/leaderboardPeriods';
 
 const LEADERBOARD_CACHE_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_MIN_LOADING_MS = 250;
@@ -8,6 +9,30 @@ let leaderboardStoreModulePromise;
 function loadLeaderboardStoreModule() {
   leaderboardStoreModulePromise ??= import('../lib/leaderboardStore');
   return leaderboardStoreModulePromise;
+}
+
+function toDateValue(value) {
+  const date = value instanceof Date ? value : new Date(value ?? Date.now());
+
+  if (Number.isNaN(date.getTime())) {
+    return new Date();
+  }
+
+  return date;
+}
+
+function normalizeLeaderboardRequest(value) {
+  if (typeof value === 'string') {
+    return {
+      period: normalizeLeaderboardPeriod(value),
+      now: new Date(),
+    };
+  }
+
+  return {
+    period: normalizeLeaderboardPeriod(value?.period),
+    now: toDateValue(value?.now),
+  };
 }
 
 export function useLeaderboardData({ accessState, minimumLoadingMs = DEFAULT_MIN_LOADING_MS }) {
@@ -20,12 +45,15 @@ export function useLeaderboardData({ accessState, minimumLoadingMs = DEFAULT_MIN
   const requestIdRef = useRef(0);
 
   const loadLeaderboard = useCallback(
-    async (period) => {
+    async (requestInput) => {
       if (accessState !== 'allowed') {
         return null;
       }
 
-      const cachedEntry = cacheRef.current.get(period);
+      const request = normalizeLeaderboardRequest(requestInput);
+      const { fetchLeaderboard } = await loadLeaderboardStoreModule();
+      const cacheKey = getLeaderboardCacheKey(request.period, request.now);
+      const cachedEntry = cacheRef.current.get(cacheKey);
       const nowMs = Date.now();
       if (cachedEntry && nowMs - cachedEntry.loadedAtMs < LEADERBOARD_CACHE_TTL_MS) {
         requestIdRef.current += 1;
@@ -44,18 +72,14 @@ export function useLeaderboardData({ accessState, minimumLoadingMs = DEFAULT_MIN
       setError('');
 
       try {
-        const { fetchLeaderboard } = await loadLeaderboardStoreModule();
-        const response = await fetchLeaderboard({
-          period,
-          now: new Date()
-        });
+        const response = await fetchLeaderboard(request);
 
         if (requestIdRef.current !== requestId) {
           return null;
         }
 
         const loadedAtMs = Date.now();
-        cacheRef.current.set(period, {
+        cacheRef.current.set(cacheKey, {
           data: response,
           loadedAtMs
         });

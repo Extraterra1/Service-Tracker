@@ -41,6 +41,14 @@ describe('useLeaderboardData', () => {
 
   it('reuses warm cache for the same period within the TTL', async () => {
     fetchLeaderboardMock.mockResolvedValue(createLeaderboardResponse('Weekly Warm'));
+    const initialRequest = {
+      period: 'weekly',
+      now: new Date('2026-03-07T12:00:00.000Z'),
+    };
+    const sameWindowRequest = {
+      period: 'weekly',
+      now: new Date('2026-03-08T10:00:00.000Z'),
+    };
 
     const { result } = renderHook(() =>
       useLeaderboardData({
@@ -50,7 +58,7 @@ describe('useLeaderboardData', () => {
     );
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard(initialRequest);
     });
 
     expect(fetchLeaderboardMock).toHaveBeenCalledTimes(1);
@@ -63,11 +71,41 @@ describe('useLeaderboardData', () => {
     });
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard(sameWindowRequest);
     });
 
     expect(fetchLeaderboardMock).toHaveBeenCalledTimes(1);
     expect(result.current.data?.rows[0]?.displayName).toBe('Weekly Warm');
+  });
+
+  it('stores separate cache entries for different windows within the same period', async () => {
+    fetchLeaderboardMock
+      .mockResolvedValueOnce(createLeaderboardResponse('Current Week'))
+      .mockResolvedValueOnce(createLeaderboardResponse('Previous Week'));
+
+    const { result } = renderHook(() =>
+      useLeaderboardData({
+        accessState: 'allowed',
+        minimumLoadingMs: 0
+      })
+    );
+
+    await act(async () => {
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-07T12:00:00.000Z'),
+      });
+    });
+
+    await act(async () => {
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-02-25T12:00:00.000Z'),
+      });
+    });
+
+    expect(fetchLeaderboardMock).toHaveBeenCalledTimes(2);
+    expect(result.current.data?.rows[0]?.displayName).toBe('Previous Week');
   });
 
   it('switches back to a cached period without refetching', async () => {
@@ -83,8 +121,14 @@ describe('useLeaderboardData', () => {
     );
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
-      await result.current.loadLeaderboard('monthly');
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-07T12:00:00.000Z'),
+      });
+      await result.current.loadLeaderboard({
+        period: 'monthly',
+        now: new Date('2026-03-07T12:00:00.000Z'),
+      });
     });
 
     expect(fetchLeaderboardMock).toHaveBeenCalledTimes(2);
@@ -95,7 +139,10 @@ describe('useLeaderboardData', () => {
     });
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-08T10:00:00.000Z'),
+      });
     });
 
     expect(fetchLeaderboardMock).toHaveBeenCalledTimes(2);
@@ -122,15 +169,24 @@ describe('useLeaderboardData', () => {
     );
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-07T12:00:00.000Z'),
+      });
     });
 
     await act(async () => {
-      void result.current.loadLeaderboard('monthly');
+      void result.current.loadLeaderboard({
+        period: 'monthly',
+        now: new Date('2026-03-07T12:00:00.000Z'),
+      });
     });
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-08T10:00:00.000Z'),
+      });
     });
 
     expect(result.current.data?.rows[0]?.displayName).toBe('Weekly');
@@ -157,7 +213,10 @@ describe('useLeaderboardData', () => {
     );
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-07T12:00:00.000Z'),
+      });
     });
 
     act(() => {
@@ -165,7 +224,10 @@ describe('useLeaderboardData', () => {
     });
 
     await act(async () => {
-      await result.current.loadLeaderboard('weekly');
+      await result.current.loadLeaderboard({
+        period: 'weekly',
+        now: new Date('2026-03-14T12:00:00.000Z'),
+      });
     });
 
     expect(fetchLeaderboardMock).toHaveBeenCalledTimes(2);

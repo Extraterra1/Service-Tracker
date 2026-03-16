@@ -11,6 +11,7 @@ import LeaderboardPopup from './components/LeaderboardPopup';
 import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { CURRENT_DAY_ONLY_MUTATION_ERROR, getTodayDate, isCurrentServiceDate } from './lib/date';
+import { canNavigateLeaderboardPeriodForward, getLeaderboardPeriodWindow, shiftLeaderboardAnchor } from './lib/leaderboardPeriods';
 import {
   collectServiceWorkerDiagnostics,
   collectStorageDiagnostics,
@@ -142,6 +143,10 @@ function App() {
   const [carHistoryPopupOpen, setCarHistoryPopupOpen] = useState(false);
   const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
+  const [leaderboardAnchors, setLeaderboardAnchors] = useState(() => ({
+    weekly: new Date(),
+    monthly: new Date(),
+  }));
   const [carHistoryInitialPlateKey, setCarHistoryInitialPlateKey] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
@@ -225,6 +230,15 @@ function App() {
   const menuPanelRef = useRef(null);
   const lastSyncedProfileRef = useRef('');
   const diagnosticsStatusTimeoutRef = useRef(0);
+  const leaderboardAnchor = leaderboardAnchors[leaderboardPeriod] ?? new Date();
+  const leaderboardWindow = useMemo(
+    () => getLeaderboardPeriodWindow(leaderboardPeriod, leaderboardAnchor),
+    [leaderboardAnchor, leaderboardPeriod]
+  );
+  const canNavigateLeaderboardForward = useMemo(
+    () => canNavigateLeaderboardPeriodForward(leaderboardPeriod, leaderboardAnchor),
+    [leaderboardAnchor, leaderboardPeriod]
+  );
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -795,8 +809,16 @@ function App() {
   const handleOpenLeaderboardPopup = useCallback(() => {
     menuPanelRef.current?.removeAttribute('open');
     setLeaderboardPopupOpen(true);
-    void loadLeaderboard(leaderboardPeriod);
-  }, [leaderboardPeriod, loadLeaderboard]);
+    if (leaderboardPeriod === 'all_time') {
+      void loadLeaderboard({ period: 'all_time' });
+      return;
+    }
+
+    void loadLeaderboard({
+      period: leaderboardPeriod,
+      now: leaderboardAnchor,
+    });
+  }, [leaderboardAnchor, leaderboardPeriod, loadLeaderboard]);
 
   const handleCloseLeaderboardPopup = useCallback(() => {
     setLeaderboardPopupOpen(false);
@@ -809,9 +831,51 @@ function App() {
       }
 
       setLeaderboardPeriod(nextPeriod);
-      void loadLeaderboard(nextPeriod);
+      if (nextPeriod === 'all_time') {
+        void loadLeaderboard({ period: 'all_time' });
+        return;
+      }
+
+      const nextAnchor = new Date();
+      setLeaderboardAnchors((current) => ({
+        ...current,
+        [nextPeriod]: nextAnchor,
+      }));
+      void loadLeaderboard({
+        period: nextPeriod,
+        now: nextAnchor,
+      });
     },
     [leaderboardPeriod, loadLeaderboard]
+  );
+
+  const handleLeaderboardPeriodNavigate = useCallback(
+    (direction) => {
+      if (leaderboardPeriod !== 'weekly' && leaderboardPeriod !== 'monthly') {
+        return;
+      }
+
+      if (direction !== 'previous' && direction !== 'next') {
+        return;
+      }
+
+      if (direction === 'next' && !canNavigateLeaderboardForward) {
+        return;
+      }
+
+      const delta = direction === 'previous' ? -1 : 1;
+      const nextAnchor = shiftLeaderboardAnchor(leaderboardPeriod, leaderboardAnchor, delta);
+
+      setLeaderboardAnchors((current) => ({
+        ...current,
+        [leaderboardPeriod]: nextAnchor,
+      }));
+      void loadLeaderboard({
+        period: leaderboardPeriod,
+        now: nextAnchor,
+      });
+    },
+    [canNavigateLeaderboardForward, leaderboardAnchor, leaderboardPeriod, loadLeaderboard]
   );
 
   const statusLine = useMemo(() => {
@@ -978,8 +1042,11 @@ function App() {
           lastLoadedAt={leaderboardLastLoadedAt}
           loading={leaderboardLoading}
           errorMessage={leaderboardError}
+          periodWindowLabel={leaderboardWindow.windowLabel}
+          canNavigateForward={canNavigateLeaderboardForward}
           onClose={handleCloseLeaderboardPopup}
           onPeriodChange={handleLeaderboardPeriodChange}
+          onNavigatePeriod={handleLeaderboardPeriodNavigate}
         />
       ) : null}
       <Analytics />

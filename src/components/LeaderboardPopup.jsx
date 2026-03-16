@@ -115,6 +115,16 @@ function CloseIcon({ className = '' }) {
   );
 }
 
+function PeriodChevronIcon({ direction = 'left', className = '' }) {
+  const path = direction === 'right' ? 'M7 4.75 11.25 9 7 13.25' : 'M11 4.75 6.75 9 11 13.25';
+
+  return (
+    <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" className={className}>
+      <path d={path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function LeaderboardPodiumCard({ entry, position }) {
   const isFirst = position === 1;
   const isThird = position === 3;
@@ -233,8 +243,11 @@ function LeaderboardPopup({
   lastLoadedAt = null,
   loading = false,
   errorMessage = '',
+  periodWindowLabel = '',
+  canNavigateForward = false,
   onClose,
   onPeriodChange,
+  onNavigatePeriod,
 }) {
   const rows = Array.isArray(data?.rows) ? data.rows : [];
   const topOne = rows[0] ?? null;
@@ -246,6 +259,7 @@ function LeaderboardPopup({
   const isInitialLoading = loading && !hasRows;
   const totalActions = Number(data?.totalActions ?? 0);
   const participants = Number(data?.participants ?? rows.length);
+  const showPeriodHistory = period === 'weekly' || period === 'monthly';
   const lastLoadedLabel = lastLoadedAt
     ? new Intl.DateTimeFormat('pt-PT', {
         hour: '2-digit',
@@ -294,6 +308,32 @@ function LeaderboardPopup({
                 </button>
               ))}
             </div>
+
+            {showPeriodHistory ? (
+              <div className="leaderboard-period-history" aria-label="Histórico do período">
+                <button
+                  type="button"
+                  className="leaderboard-period-history-btn"
+                  onClick={() => onNavigatePeriod?.('previous')}
+                  aria-label="Período anterior"
+                  disabled={loading}
+                >
+                  <PeriodChevronIcon direction="left" />
+                </button>
+                <p className="leaderboard-period-history-label">{periodWindowLabel}</p>
+                <button
+                  type="button"
+                  className="leaderboard-period-history-btn"
+                  onClick={() => onNavigatePeriod?.('next')}
+                  aria-label="Próximo período"
+                  disabled={loading || !canNavigateForward}
+                >
+                  <PeriodChevronIcon direction="right" />
+                </button>
+              </div>
+            ) : periodWindowLabel ? (
+              <p className="leaderboard-period-history-label is-static">{periodWindowLabel}</p>
+            ) : null}
           </div>
 
           <p className="leaderboard-meta">
