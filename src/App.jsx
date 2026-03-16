@@ -430,7 +430,10 @@ function App() {
         return {
           ...item,
           overrideTime,
-          displayTime: overrideTime
+          displayTime: overrideTime,
+          updatedAt: overrideEntry?.updatedAt ?? item.updatedAt ?? null,
+          updatedByName: overrideEntry?.updatedByName ?? item.updatedByName ?? '',
+          updatedByEmail: overrideEntry?.updatedByEmail ?? item.updatedByEmail ?? ''
         };
       });
 

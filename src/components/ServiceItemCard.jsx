@@ -119,14 +119,35 @@ function ServiceItemCard({
   const done = status?.done === true;
   const statusUpdatedAtMs = toTimestampMs(status?.updatedAt);
   const readyUpdatedAtMs = toTimestampMs(readyState?.updatedAt);
+  const overrideUpdatedAtMs = toTimestampMs(item?.updatedAt);
   const statusUpdatedBy = status?.updatedByName || status?.updatedByEmail || '';
   const readyUpdatedBy = readyState?.updatedByName || readyState?.updatedByEmail || '';
-  const updateSource = readyUpdatedAtMs > statusUpdatedAtMs ? 'ready' : 'status';
+  const overrideUpdatedBy = item?.updatedByName || item?.updatedByEmail || '';
+  let updateSource = 'status';
+  let latestUpdatedAtMs = statusUpdatedAtMs;
+
+  if (readyUpdatedAtMs > latestUpdatedAtMs) {
+    latestUpdatedAtMs = readyUpdatedAtMs;
+    updateSource = 'ready';
+  }
+
+  if (overrideUpdatedAtMs > latestUpdatedAtMs) {
+    latestUpdatedAtMs = overrideUpdatedAtMs;
+    updateSource = 'override';
+  }
+
   const updatedAt =
     updateSource === 'ready' && readyUpdatedAtMs > 0
       ? formatAuditTimestamp(readyState?.updatedAt)
-      : formatAuditTimestamp(status?.updatedAt);
-  const updatedBy = updateSource === 'ready' && readyUpdatedAtMs > 0 ? readyUpdatedBy : statusUpdatedBy;
+      : updateSource === 'override' && overrideUpdatedAtMs > 0
+        ? formatAuditTimestamp(item?.updatedAt)
+        : formatAuditTimestamp(status?.updatedAt);
+  const updatedBy =
+    updateSource === 'ready' && readyUpdatedAtMs > 0
+      ? readyUpdatedBy
+      : updateSource === 'override' && overrideUpdatedAtMs > 0
+        ? overrideUpdatedBy
+        : statusUpdatedBy;
   const serviceLabel = item.serviceType === 'return' ? 'RECOLHA' : 'ENTREGA';
   const originalTime = String(item.time ?? '').trim() || '--:--';
   const displayTime = getDisplayTime(item);

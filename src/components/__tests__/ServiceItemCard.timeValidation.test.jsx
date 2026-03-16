@@ -99,6 +99,19 @@ describe('ServiceItemCard time validation', () => {
     expect(screen.getByText(/Atualizado por Joao/)).toBeInTheDocument();
   });
 
+  it('shows team update footer when manual time override is updated', () => {
+    renderCard({
+      item: createItem({
+        overrideTime: '10:30',
+        updatedAt: new Date('2026-03-02T09:20:00.000Z'),
+        updatedByName: 'Marta',
+        updatedByEmail: 'marta@example.com'
+      })
+    });
+
+    expect(screen.getByText(/Atualizado por Marta/)).toBeInTheDocument();
+  });
+
   it('disables mutable controls when the selected service date is read-only', async () => {
     const user = userEvent.setup();
 
