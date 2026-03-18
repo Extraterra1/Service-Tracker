@@ -3070,7 +3070,26 @@ h1 {
   text-align: right;
 }
 
+.item-location-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.26rem;
+}
+
+.item-location-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  stroke-width: 2.2;
+  opacity: 0.88;
+  flex: 0 0 auto;
+}
+
 .item-location-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.26rem;
   color: inherit;
   text-decoration: none;
   transition:

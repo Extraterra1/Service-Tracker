@@ -23,7 +23,7 @@ function createItem(overrides = {}) {
 }
 
 function renderCard(item = createItem()) {
-  render(
+  return render(
     <ServiceItemCard
       item={item}
       status={{ done: false }}
@@ -41,13 +41,14 @@ function renderCard(item = createItem()) {
 
 describe('ServiceItemCard location links', () => {
   it('renders a Google Maps link for regular addresses', () => {
-    renderCard();
+    const { container } = renderCard();
 
     const link = screen.getByRole('link', { name: 'Rua do Castanheiro 12, Funchal' });
     expect(link).toHaveAttribute(
       'href',
       'https://www.google.com/maps/search/?api=1&query=Rua%20do%20Castanheiro%2012%2C%20Funchal'
     );
+    expect(container.querySelector('.item-location-icon.is-default')).toBeInTheDocument();
   });
 
   it('styles location links without underline and with a small hover effect', () => {
@@ -67,16 +68,19 @@ describe('ServiceItemCard location links', () => {
   });
 
   it('keeps airport addresses as plain text', () => {
-    renderCard(createItem({ location: 'AEROPORTO DA MADEIRA' }));
+    const { container } = renderCard(createItem({ location: 'AEROPORTO DA MADEIRA' }));
 
     expect(screen.getByText('aeroporto')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'aeroporto' })).not.toBeInTheDocument();
+    expect(container.querySelector('.item-location-icon.is-airport')).toBeInTheDocument();
+    expect(container.querySelector('.item-location-icon.is-default')).not.toBeInTheDocument();
   });
 
   it('keeps escritorio addresses as plain text', () => {
-    renderCard(createItem({ location: 'Escritório Just Drive' }));
+    const { container } = renderCard(createItem({ location: 'Escritório Just Drive' }));
 
     expect(screen.getByText('Escritório Just Drive')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Escritório Just Drive' })).not.toBeInTheDocument();
+    expect(container.querySelector('.item-location-icon.is-office')).toBeInTheDocument();
   });
 });

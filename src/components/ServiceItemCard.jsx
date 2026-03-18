@@ -5,7 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
-import { Check, Clock3, Plane, Repeat2 } from 'lucide-react';
+import { Check, Clock3, House, MapPin, Plane, Repeat2, TowerControl } from 'lucide-react';
 import { WebHaptics } from 'web-haptics';
 
 function getSharedMarker(markers, plateValue) {
@@ -46,6 +46,23 @@ function normalizeLocationLabel(value) {
   return normalizeLocationText(text) === 'aeroporto da madeira' ? 'aeroporto' : text;
 }
 
+function getLocationKind(location) {
+  const normalizedLocation = normalizeLocationText(location);
+  if (!normalizedLocation) {
+    return '';
+  }
+
+  if (normalizedLocation.includes('aeroporto') || normalizedLocation.includes('airport')) {
+    return 'airport';
+  }
+
+  if (normalizedLocation.includes('escritorio')) {
+    return 'office';
+  }
+
+  return '';
+}
+
 function getClampedClientName(name) {
   const text = String(name ?? '').trim();
   if (!text) {
@@ -70,12 +87,7 @@ function getGoogleMapsHref(location) {
     return '';
   }
 
-  const normalizedLocation = normalizeLocationText(displayLocation);
-  if (
-    normalizedLocation.includes('aeroporto') ||
-    normalizedLocation.includes('airport') ||
-    normalizedLocation.includes('escritorio')
-  ) {
+  if (getLocationKind(displayLocation)) {
     return '';
   }
 
@@ -173,7 +185,22 @@ function ServiceItemCard({
   const clientDisplayName = getClampedClientName(item.name);
   const locationLabel = normalizeLocationLabel(item.location) || 'Localização não indicada';
   const accessibleClientName = clientDisplayName || item.id || item.itemId || 'Sem nome';
+  const locationKind = getLocationKind(item.location);
   const locationHref = getGoogleMapsHref(item.location);
+  const locationIcon =
+    locationKind === 'airport' ? (
+      <TowerControl className="item-location-icon is-airport" aria-hidden="true" />
+    ) : locationKind === 'office' ? (
+      <House className="item-location-icon is-office" aria-hidden="true" />
+    ) : String(item.location ?? '').trim() ? (
+      <MapPin className="item-location-icon is-default" aria-hidden="true" />
+    ) : null;
+  const locationContent = (
+    <span className="item-location-content">
+      {locationIcon}
+      <span>{locationLabel}</span>
+    </span>
+  );
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
   const timeMenuWrapRef = useRef(null);
@@ -433,10 +460,10 @@ function ServiceItemCard({
         <p className="item-location">
           {locationHref ? (
             <a className="item-location-link" href={locationHref} target="_blank" rel="noreferrer">
-              {locationLabel}
+              {locationContent}
             </a>
           ) : (
-            locationLabel
+            locationContent
           )}
         </p>
       </div>
