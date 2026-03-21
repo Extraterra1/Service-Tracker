@@ -3427,6 +3427,7 @@ h1 {
     grid-area: label;
     grid-row: 1 / span 2;
     align-self: center;
+    display: none;
   }
 
   .item-time-original {
