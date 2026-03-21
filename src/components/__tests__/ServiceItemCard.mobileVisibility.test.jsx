@@ -9,4 +9,10 @@ describe('ServiceItemCard mobile service type label', () => {
       /@media \(max-width: 780px\)\s*{[\s\S]*?\.item-service-type\s*{[\s\S]*?display:\s*none;/
     );
   });
+
+  it('hides the footer lead text on mobile', () => {
+    expect(appCss).toMatch(
+      /@media \(max-width: 780px\)\s*{[\s\S]*?\.item-footer-lead\s*{[\s\S]*?display:\s*none;/
+    );
+  });
 });
