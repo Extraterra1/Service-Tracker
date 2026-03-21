@@ -362,6 +362,30 @@ function detectIso2FromLocalDigits(digits) {
   return '';
 }
 
+function isValidWhatsAppDigits(digits) {
+  return /^\d{8,15}$/.test(digits);
+}
+
+function normalizePhoneForWhatsApp(phoneRaw) {
+  const { internationalDigits, localDigits } = normalizePhoneForDetection(phoneRaw);
+
+  if (internationalDigits) {
+    if (!detectIso2FromInternationalDigits(internationalDigits) || !isValidWhatsAppDigits(internationalDigits)) {
+      return '';
+    }
+
+    return internationalDigits;
+  }
+
+  const localIso2 = detectIso2FromLocalDigits(localDigits);
+  if (localIso2 !== 'PT') {
+    return '';
+  }
+
+  const normalizedDigits = localDigits.startsWith('351') ? localDigits : `351${localDigits}`;
+  return isValidWhatsAppDigits(normalizedDigits) ? normalizedDigits : '';
+}
+
 export function detectPhoneCountryCode(phoneRaw) {
   const { internationalDigits, localDigits } = normalizePhoneForDetection(phoneRaw);
   if (internationalDigits) {
@@ -369,4 +393,9 @@ export function detectPhoneCountryCode(phoneRaw) {
   }
 
   return detectIso2FromLocalDigits(localDigits);
+}
+
+export function getWhatsAppHref(phoneRaw) {
+  const digits = normalizePhoneForWhatsApp(phoneRaw);
+  return digits ? `https://wa.me/${digits}` : '';
 }

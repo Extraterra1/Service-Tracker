@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import ReactCountryFlag from 'react-country-flag';
 import { formatAuditTimestamp } from '../lib/date';
-import { detectPhoneCountryCode } from '../lib/phone';
+import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
 import { Check, Clock3, House, MapPin, Plane, Repeat2, TowerControl } from 'lucide-react';
@@ -173,6 +173,7 @@ function ServiceItemCard({
   const displayTime = getDisplayTime(item);
   const phoneValue = String(item.phone ?? '').trim();
   const phoneCountryCode = useMemo(() => detectPhoneCountryCode(phoneValue), [phoneValue]);
+  const phoneHref = useMemo(() => getWhatsAppHref(phoneValue), [phoneValue]);
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
@@ -390,7 +391,13 @@ function ServiceItemCard({
                   />
                 </span>
               ) : null}
-              <span>{phoneValue}</span>
+              {phoneHref ? (
+                <a className="item-phone-link" href={phoneHref} target="_blank" rel="noreferrer">
+                  {phoneValue}
+                </a>
+              ) : (
+                <span>{phoneValue}</span>
+              )}
             </span>
           ) : (
             <span>Sem telefone</span>

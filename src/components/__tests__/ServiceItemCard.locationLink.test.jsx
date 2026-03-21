@@ -40,6 +40,20 @@ function renderCard(item = createItem()) {
 }
 
 describe('ServiceItemCard location links', () => {
+  it('renders a WhatsApp link for normalizable phone numbers', () => {
+    renderCard(createItem({ phone: '+351 912 345 678' }));
+
+    const link = screen.getByRole('link', { name: '+351 912 345 678' });
+    expect(link).toHaveAttribute('href', 'https://wa.me/351912345678');
+  });
+
+  it('keeps non-normalizable phone numbers as plain text', () => {
+    renderCard(createItem({ phone: 'abc123' }));
+
+    expect(screen.getByText('abc123')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'abc123' })).not.toBeInTheDocument();
+  });
+
   it('renders a Google Maps link for regular addresses', () => {
     const { container } = renderCard();
 
