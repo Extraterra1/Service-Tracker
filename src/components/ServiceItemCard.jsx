@@ -10,7 +10,7 @@ import { WebHaptics } from 'web-haptics';
 
 function getSharedMarker(markers, plateValue) {
   const plateKey = normalizePlate(plateValue);
-  return plateKey ? markers?.[plateKey] ?? null : null;
+  return plateKey ? (markers?.[plateKey] ?? null) : null;
 }
 
 function getSharedMarkerColor(markers, plateValue) {
@@ -135,7 +135,7 @@ function ServiceItemCard({
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   isUpdating = false,
-  disabled,
+  disabled
 }) {
   const done = status?.done === true;
   const statusUpdatedAtMs = toTimestampMs(status?.updatedAt);
@@ -352,10 +352,7 @@ function ServiceItemCard({
             ) : null}
           </div>
 
-          <label
-            className={`item-check ${done ? 'is-checked' : ''}`}
-            aria-label={`Marcar ${accessibleClientName} como concluído`}
-          >
+          <label className={`item-check ${done ? 'is-checked' : ''}`} aria-label={`Marcar ${accessibleClientName} como concluído`}>
             <input
               type="checkbox"
               checked={done}
@@ -384,12 +381,7 @@ function ServiceItemCard({
             <span className="item-phone-inline">
               {phoneCountryCode ? (
                 <span className="item-phone-flag" aria-hidden="true">
-                  <ReactCountryFlag
-                    countryCode={phoneCountryCode}
-                    svg
-                    title={phoneCountryCode}
-                    style={{ width: '1rem', height: '0.74rem' }}
-                  />
+                  <ReactCountryFlag countryCode={phoneCountryCode} svg title={phoneCountryCode} style={{ width: '1rem', height: '0.74rem' }} />
                 </span>
               ) : null}
               {phoneHref ? (
@@ -483,7 +475,7 @@ function ServiceItemCard({
       <footer className="item-footer">
         {updatedBy && updatedAt ? (
           <>
-            Atualizado por{' '}
+            <span className="item-footer-lead">Atualizado por</span>
             <span className="item-footer-updater">
               {showLastWeekWinnerMedal ? (
                 <span className="item-footer-winner-pill" aria-label={`${updatedBy} venceu a semana passada`}>
@@ -493,8 +485,8 @@ function ServiceItemCard({
               ) : (
                 <span className="item-footer-updater-name">{updatedBy}</span>
               )}
-            </span>{' '}
-            às {updatedAt}
+            </span>
+            <span className="item-footer-time">às {updatedAt}</span>
           </>
         ) : (
           'Sem atualização de equipa'
@@ -574,10 +566,8 @@ function areSameItemProps(prevProps, nextProps) {
   }
 
   return (
-    getSharedMarkerColor(prevProps.sharedPlateMarkers, prevItem.plate) ===
-      getSharedMarkerColor(nextProps.sharedPlateMarkers, nextItem.plate) &&
-    getSharedMarkerReturnDone(prevProps.sharedPlateMarkers, prevItem.plate) ===
-      getSharedMarkerReturnDone(nextProps.sharedPlateMarkers, nextItem.plate)
+    getSharedMarkerColor(prevProps.sharedPlateMarkers, prevItem.plate) === getSharedMarkerColor(nextProps.sharedPlateMarkers, nextItem.plate) &&
+    getSharedMarkerReturnDone(prevProps.sharedPlateMarkers, prevItem.plate) === getSharedMarkerReturnDone(nextProps.sharedPlateMarkers, nextItem.plate)
   );
 }
 

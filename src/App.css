@@ -2586,7 +2586,7 @@ h1 {
 }
 
 .service-item .item-name,
-.service-item .item-subline,
+.service-item .item-subline > :not(.item-phone-inline),
 .service-item .item-carline,
 .service-item .item-note {
   text-decoration-line: line-through;
@@ -2599,13 +2599,17 @@ h1 {
 }
 
 .service-item.is-done .item-name,
-.service-item.is-done .item-subline,
+.service-item.is-done .item-subline > :not(.item-phone-inline),
 .service-item.is-done .item-carline,
 .service-item.is-done .item-note {
   text-decoration-color: var(--line-through);
 }
 
 .service-item .item-location {
+  text-decoration-line: none;
+}
+
+.service-item .item-phone-inline {
   text-decoration-line: none;
 }
 
@@ -3152,6 +3156,8 @@ h1 {
 .item-footer {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.14rem;
 
   border-top: 1px dashed color-mix(in oklab, var(--accent), transparent 58%);
   padding-top: 0.17rem;
@@ -3159,16 +3165,15 @@ h1 {
   color: var(--item-footer);
 }
 
+.item-footer-lead,
+.item-footer-time {
+  white-space: nowrap;
+}
+
 .item-footer-updater {
   display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.18rem;
-  margin: 0 1ch;
-}
-
-.item-footer-updater-name {
-  font-weight: 700;
+  min-width: 0;
 }
 
 .item-footer-winner-pill {
@@ -3185,6 +3190,7 @@ h1 {
     0 1px 2px rgba(101, 76, 24, 0.12);
   color: #6f4f10;
   vertical-align: middle;
+  margin: 0 1ch;
 }
 
 .item-footer-winner-pill-icon {

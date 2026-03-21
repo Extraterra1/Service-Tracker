@@ -44,10 +44,6 @@ function renderCard({
   return { onSaveTimeOverride, item };
 }
 
-function hasFooterText(text) {
-  return (_, element) => element?.classList.contains('item-footer') && element.textContent?.includes(text);
-}
-
 describe('ServiceItemCard time validation', () => {
   it('uses a native time picker in the clock menu', async () => {
     const user = userEvent.setup();
@@ -100,7 +96,10 @@ describe('ServiceItemCard time validation', () => {
       }
     });
 
-    expect(screen.getByText(hasFooterText('Atualizado por Joao'))).toBeInTheDocument();
+    const footer = document.querySelector('.item-footer');
+    expect(footer?.querySelector('.item-footer-lead')?.textContent).toBe('Atualizado por');
+    expect(footer?.querySelector('.item-footer-updater-name')?.textContent).toBe('Joao');
+    expect(footer?.querySelector('.item-footer-time')?.textContent).toBe('às 09:15');
   });
 
   it('shows team update footer when manual time override is updated', () => {
@@ -113,7 +112,10 @@ describe('ServiceItemCard time validation', () => {
       })
     });
 
-    expect(screen.getByText(hasFooterText('Atualizado por Marta'))).toBeInTheDocument();
+    const footer = document.querySelector('.item-footer');
+    expect(footer?.querySelector('.item-footer-lead')?.textContent).toBe('Atualizado por');
+    expect(footer?.querySelector('.item-footer-updater-name')?.textContent).toBe('Marta');
+    expect(footer?.querySelector('.item-footer-time')?.textContent).toBe('às 09:20');
   });
 
   it('disables mutable controls when the selected service date is read-only', async () => {

@@ -132,10 +132,10 @@ describe('ServiceWorkspace', () => {
       />
     );
 
-    expect(
-      screen.getByText((_, element) => element?.classList.contains('item-footer') && element.textContent?.includes('Atualizado por Cristina'))
-    ).toBeInTheDocument();
+    const footer = document.querySelector('.item-footer');
+    expect(footer?.querySelector('.item-footer-lead')?.textContent).toBe('Atualizado por');
     expect(screen.getByLabelText('Cristina venceu a semana passada')).toHaveTextContent('Cristina');
+    expect(footer?.querySelector('.item-footer-time')?.textContent).toBe('às 09:15');
     expect(screen.queryByText('VENCEU A SEMANA PASSADA')).not.toBeInTheDocument();
   });
 });
