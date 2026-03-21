@@ -5,7 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
-import { Check, Clock3, House, MapPin, Plane, Repeat2, TowerControl } from 'lucide-react';
+import { Check, Clock3, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { WebHaptics } from 'web-haptics';
 
 function getSharedMarker(markers, plateValue) {
@@ -127,6 +127,7 @@ function ServiceItemCard({
   item,
   status,
   readyState,
+  showLastWeekWinnerMedal = false,
   sharedPlateMarkers = {},
   onSharedPlateTap,
   onToggleDone,
@@ -479,7 +480,26 @@ function ServiceItemCard({
 
       {item.notes ? <p className="item-note item-note-highlight">Notas: {item.notes}</p> : null}
 
-      <footer className="item-footer">{updatedBy && updatedAt ? `Atualizado por ${updatedBy} às ${updatedAt}` : 'Sem atualização de equipa'}</footer>
+      <footer className="item-footer">
+        {updatedBy && updatedAt ? (
+          <>
+            Atualizado por{' '}
+            <span className="item-footer-updater">
+              {showLastWeekWinnerMedal ? (
+                <span className="item-footer-winner-pill" aria-label={`${updatedBy} venceu a semana passada`}>
+                  <Trophy className="item-footer-winner-pill-icon" aria-hidden="true" />
+                  <span className="item-footer-winner-pill-name">{updatedBy}</span>
+                </span>
+              ) : (
+                <span className="item-footer-updater-name">{updatedBy}</span>
+              )}
+            </span>{' '}
+            às {updatedAt}
+          </>
+        ) : (
+          'Sem atualização de equipa'
+        )}
+      </footer>
     </MotionArticle>
   );
 }
@@ -495,6 +515,10 @@ function areSameItemProps(prevProps, nextProps) {
   }
 
   if (prevProps.isUpdating !== nextProps.isUpdating) {
+    return false;
+  }
+
+  if (prevProps.showLastWeekWinnerMedal !== nextProps.showLastWeekWinnerMedal) {
     return false;
   }
 

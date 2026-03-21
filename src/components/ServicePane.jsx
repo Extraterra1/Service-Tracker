@@ -1,9 +1,11 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import ServiceItemCard from './ServiceItemCard';
+import { getLatestUpdateIdentityKey } from '../lib/leaderboardWinnerBadges';
 import { toTimestampMs } from '../lib/timestamp';
 
 const COMPLETED_HIDE_AFTER_MS = 60 * 60 * 1000;
 const COMPLETED_ACCORDION_ANIMATION_MS = 380;
+const EMPTY_WINNER_KEYS = new Set();
 
 function toSortMinutes(item) {
   const value = String(item?.overrideTime ?? item?.displayTime ?? item?.time ?? '').trim();
@@ -31,6 +33,7 @@ function ServicePane({
   items,
   statusMap,
   readyMap = {},
+  lastWeekWinnerKeys = EMPTY_WINNER_KEYS,
   sharedPlateMarkers,
   onSharedPlateTap,
   onToggleDone,
@@ -210,6 +213,13 @@ function ServicePane({
                   item={item}
                   status={statusMap[item.itemId]}
                   readyState={readyMap[item.itemId]}
+                  showLastWeekWinnerMedal={lastWeekWinnerKeys.has(
+                    getLatestUpdateIdentityKey({
+                      item,
+                      status: statusMap[item.itemId],
+                      readyState: readyMap[item.itemId],
+                    })
+                  )}
                   sharedPlateMarkers={sharedPlateMarkers}
                   onSharedPlateTap={onSharedPlateTap}
                   onToggleDone={onToggleDone}
@@ -238,6 +248,13 @@ function ServicePane({
               item={item}
               status={statusMap[item.itemId]}
               readyState={readyMap[item.itemId]}
+              showLastWeekWinnerMedal={lastWeekWinnerKeys.has(
+                getLatestUpdateIdentityKey({
+                  item,
+                  status: statusMap[item.itemId],
+                  readyState: readyMap[item.itemId],
+                })
+              )}
               sharedPlateMarkers={sharedPlateMarkers}
               onSharedPlateTap={onSharedPlateTap}
               onToggleDone={onToggleDone}

@@ -32,6 +32,7 @@ function ServiceWorkspace({
   serviceData,
   statusMap,
   readyMap,
+  lastWeekWinnerKeys,
   onToggleDone,
   onToggleReady,
   onSaveTimeOverride,
@@ -129,6 +130,7 @@ function ServiceWorkspace({
           items={serviceData.pickups}
           statusMap={statusMap}
           readyMap={readyMap}
+          lastWeekWinnerKeys={lastWeekWinnerKeys}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
@@ -147,6 +149,7 @@ function ServiceWorkspace({
           items={serviceData.returns}
           statusMap={statusMap}
           readyMap={readyMap}
+          lastWeekWinnerKeys={lastWeekWinnerKeys}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}

@@ -12,6 +12,7 @@ import SignedOutLanding from './components/SignedOutLanding';
 import { signInWithGoogle, signOutUser } from './lib/auth';
 import { CURRENT_DAY_ONLY_MUTATION_ERROR, getTodayDate, isCurrentServiceDate } from './lib/date';
 import { canNavigateLeaderboardPeriodForward, getLeaderboardPeriodWindow, shiftLeaderboardAnchor } from './lib/leaderboardPeriods';
+import { getTopRankIdentityKeys } from './lib/leaderboardWinnerBadges';
 import {
   collectServiceWorkerDiagnostics,
   collectStorageDiagnostics,
@@ -226,10 +227,19 @@ function App() {
   } = useLeaderboardData({
     accessState
   });
+  const {
+    data: lastWeekLeaderboardData,
+    loadLeaderboard: loadLastWeekLeaderboard,
+    resetLeaderboard: resetLastWeekLeaderboard
+  } = useLeaderboardData({
+    accessState,
+    minimumLoadingMs: 0
+  });
 
   const menuPanelRef = useRef(null);
   const lastSyncedProfileRef = useRef('');
   const diagnosticsStatusTimeoutRef = useRef(0);
+  const lastWeekLeaderboardAnchor = useMemo(() => shiftLeaderboardAnchor('weekly', new Date(), -1), []);
   const leaderboardAnchor = leaderboardAnchors[leaderboardPeriod] ?? new Date();
   const leaderboardWindow = useMemo(
     () => getLeaderboardPeriodWindow(leaderboardPeriod, leaderboardAnchor),
@@ -239,6 +249,7 @@ function App() {
     () => canNavigateLeaderboardPeriodForward(leaderboardPeriod, leaderboardAnchor),
     [leaderboardAnchor, leaderboardPeriod]
   );
+  const lastWeekWinnerKeys = useMemo(() => getTopRankIdentityKeys(lastWeekLeaderboardData?.rows), [lastWeekLeaderboardData]);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event) => {
@@ -257,6 +268,18 @@ function App() {
       document.removeEventListener('pointerdown', handleOutsidePointerDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (accessState !== 'allowed') {
+      resetLastWeekLeaderboard();
+      return;
+    }
+
+    void loadLastWeekLeaderboard({
+      period: 'weekly',
+      now: lastWeekLeaderboardAnchor,
+    });
+  }, [accessState, lastWeekLeaderboardAnchor, loadLastWeekLeaderboard, resetLastWeekLeaderboard]);
 
   useEffect(
     () => () => {
@@ -998,6 +1021,7 @@ function App() {
             serviceData={serviceDataWithOverrides}
             statusMap={statusMap}
             readyMap={readyMap}
+            lastWeekWinnerKeys={lastWeekWinnerKeys}
             onToggleDone={handleToggleDone}
             onToggleReady={handleToggleReady}
             onSaveTimeOverride={handleSaveItemTimeOverride}

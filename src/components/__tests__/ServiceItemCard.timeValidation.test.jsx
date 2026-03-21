@@ -44,6 +44,10 @@ function renderCard({
   return { onSaveTimeOverride, item };
 }
 
+function hasFooterText(text) {
+  return (_, element) => element?.classList.contains('item-footer') && element.textContent?.includes(text);
+}
+
 describe('ServiceItemCard time validation', () => {
   it('uses a native time picker in the clock menu', async () => {
     const user = userEvent.setup();
@@ -96,7 +100,7 @@ describe('ServiceItemCard time validation', () => {
       }
     });
 
-    expect(screen.getByText(/Atualizado por Joao/)).toBeInTheDocument();
+    expect(screen.getByText(hasFooterText('Atualizado por Joao'))).toBeInTheDocument();
   });
 
   it('shows team update footer when manual time override is updated', () => {
@@ -109,7 +113,7 @@ describe('ServiceItemCard time validation', () => {
       })
     });
 
-    expect(screen.getByText(/Atualizado por Marta/)).toBeInTheDocument();
+    expect(screen.getByText(hasFooterText('Atualizado por Marta'))).toBeInTheDocument();
   });
 
   it('disables mutable controls when the selected service date is read-only', async () => {

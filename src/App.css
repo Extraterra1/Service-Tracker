@@ -16,8 +16,7 @@
   justify-content: center;
   background:
     radial-gradient(100% 90% at 0% 0%, color-mix(in oklab, var(--accent), transparent 90%), transparent 70%),
-    radial-gradient(110% 90% at 100% 100%, color-mix(in oklab, var(--accent-strong), transparent 94%), transparent 70%),
-    var(--bg);
+    radial-gradient(110% 90% at 100% 100%, color-mix(in oklab, var(--accent-strong), transparent 94%), transparent 70%), var(--bg);
 }
 
 .auth-resolving-card {
@@ -59,8 +58,7 @@
   justify-content: center;
   background:
     radial-gradient(95% 90% at 4% 6%, color-mix(in oklab, var(--accent), transparent 90%), transparent 66%),
-    radial-gradient(80% 70% at 100% 100%, color-mix(in oklab, var(--accent-strong), transparent 92%), transparent 70%),
-    var(--bg);
+    radial-gradient(80% 70% at 100% 100%, color-mix(in oklab, var(--accent-strong), transparent 92%), transparent 70%), var(--bg);
 }
 
 .access-gate-card {
@@ -518,8 +516,7 @@ h1 {
   padding: 0.23rem 0.5rem;
   border-radius: 999px;
   border: 1px solid color-mix(in oklab, var(--accent), transparent 70%);
-  background:
-    linear-gradient(130deg, color-mix(in oklab, var(--accent), transparent 62%), color-mix(in oklab, var(--panel-bg-strong), white 8%));
+  background: linear-gradient(130deg, color-mix(in oklab, var(--accent), transparent 62%), color-mix(in oklab, var(--panel-bg-strong), white 8%));
   color: color-mix(in oklab, var(--text), white 0%);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, white, transparent 55%),
@@ -1219,13 +1216,12 @@ h1 {
   display: block;
   height: 0.76rem;
   border-radius: 999px;
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--ghost-bg), white 18%) 0%,
-      color-mix(in oklab, var(--ghost-bg), white 42%) 50%,
-      color-mix(in oklab, var(--ghost-bg), white 18%) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--ghost-bg), white 18%) 0%,
+    color-mix(in oklab, var(--ghost-bg), white 42%) 50%,
+    color-mix(in oklab, var(--ghost-bg), white 18%) 100%
+  );
   background-size: 200% 100%;
   animation: car-history-skeleton-shimmer 1.35s ease-in-out infinite;
 }
@@ -1264,7 +1260,10 @@ h1 {
   opacity: 0;
   transform: translateY(4px);
   animation: car-history-fade-in 200ms ease-out forwards;
-  transition: opacity 280ms cubic-bezier(0.4, 0, 0.2, 1), transform 280ms cubic-bezier(0.4, 0, 0.2, 1), filter 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 280ms cubic-bezier(0.4, 0, 0.2, 1);
   filter: blur(0);
 }
 
@@ -1329,8 +1328,8 @@ h1 {
 .car-history-popup-row-body {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "client reservation"
-    "location location";
+    'client reservation'
+    'location location';
   color: var(--subtle-color);
   font-size: 0.8rem;
 }
@@ -1462,10 +1461,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding:
-    max(0.8rem, env(safe-area-inset-top, 0px))
-    max(0.8rem, env(safe-area-inset-right, 0px))
-    max(0.8rem, env(safe-area-inset-bottom, 0px))
+  padding: max(0.8rem, env(safe-area-inset-top, 0px)) max(0.8rem, env(safe-area-inset-right, 0px)) max(0.8rem, env(safe-area-inset-bottom, 0px))
     max(0.8rem, env(safe-area-inset-left, 0px));
 }
 
@@ -1574,7 +1570,9 @@ h1 {
   line-height: 20px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.14s ease, color 0.14s ease;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease;
 }
 
 .leaderboard-period-tab.is-active {
@@ -1615,7 +1613,10 @@ h1 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.14s ease;
 }
 
 .leaderboard-period-history-btn:hover {
@@ -1768,8 +1769,7 @@ h1 {
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.75);
-  background:
-    linear-gradient(135deg, #f59e0b 0%, #f97316 52%, #ef4444 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 52%, #ef4444 100%);
   color: #fffaf0;
   font-size: 11px;
   line-height: 1;
@@ -2132,7 +2132,12 @@ h1 {
 
 .leaderboard-skeleton-shimmer,
 .leaderboard-skeleton-line {
-  background: linear-gradient(90deg, color-mix(in oklab, var(--stroke), transparent 44%) 0%, rgba(255, 255, 255, 0.78) 50%, color-mix(in oklab, var(--stroke), transparent 44%) 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--stroke), transparent 44%) 0%,
+    rgba(255, 255, 255, 0.78) 50%,
+    color-mix(in oklab, var(--stroke), transparent 44%) 100%
+  );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.2s linear infinite;
 }
@@ -3145,10 +3150,57 @@ h1 {
 }
 
 .item-footer {
+  display: flex;
+  align-items: center;
+
   border-top: 1px dashed color-mix(in oklab, var(--accent), transparent 58%);
   padding-top: 0.17rem;
   font-size: 0.64rem;
   color: var(--item-footer);
+}
+
+.item-footer-updater {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.18rem;
+  margin: 0 1ch;
+}
+
+.item-footer-updater-name {
+  font-weight: 700;
+}
+
+.item-footer-winner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.26rem;
+  max-width: min(100%, 14rem);
+  padding: 0.16rem 0.48rem 0.16rem 0.36rem;
+  border: 1px solid rgba(146, 111, 34, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(244, 228, 182, 0.94) 0%, rgba(234, 212, 157, 0.98) 46%, rgba(214, 182, 97, 0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 229, 0.82),
+    0 1px 2px rgba(101, 76, 24, 0.12);
+  color: #6f4f10;
+  vertical-align: middle;
+}
+
+.item-footer-winner-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 0.72rem;
+  height: 0.72rem;
+  stroke-width: 2.15;
+}
+
+.item-footer-winner-pill-name {
+  min-width: 0;
+  font-weight: 700;
+  color: #7b5812;
 }
 
 .empty-state {
