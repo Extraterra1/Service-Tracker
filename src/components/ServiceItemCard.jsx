@@ -6,6 +6,7 @@ import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
 import { Check, Clock3, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { WebHaptics } from 'web-haptics';
 
 function getSharedMarker(markers, plateValue) {
@@ -385,8 +386,17 @@ function ServiceItemCard({
                 </span>
               ) : null}
               {phoneHref ? (
-                <a className="item-phone-link" href={phoneHref} target="_blank" rel="noreferrer">
-                  {phoneValue}
+                <a
+                  className="item-phone-link"
+                  href={phoneHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Abrir conversa no WhatsApp para ${phoneValue}`}
+                >
+                  <span className="item-phone-link-label">{phoneValue}</span>
+                  <span className="item-phone-link-icon" aria-hidden="true">
+                    <FaWhatsapp />
+                  </span>
                 </a>
               ) : (
                 <span>{phoneValue}</span>

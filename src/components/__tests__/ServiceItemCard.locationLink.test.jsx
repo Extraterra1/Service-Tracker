@@ -43,8 +43,18 @@ describe('ServiceItemCard location links', () => {
   it('renders a WhatsApp link for normalizable phone numbers', () => {
     renderCard(createItem({ phone: '+351 912 345 678' }));
 
-    const link = screen.getByRole('link', { name: '+351 912 345 678' });
+    const link = screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' });
     expect(link).toHaveAttribute('href', 'https://wa.me/351912345678');
+  });
+
+  it('defines a mobile-only WhatsApp icon treatment while keeping the flag visible', () => {
+    expect(appCss).toMatch(
+      /@media \(max-width: 780px\)\s*{[\s\S]*\.item-phone-link-label\s*{[\s\S]*display:\s*none;/
+    );
+    expect(appCss).toMatch(
+      /@media \(max-width: 780px\)\s*{[\s\S]*\.item-phone-link-icon\s*{[\s\S]*display:\s*inline-flex;/
+    );
+    expect(appCss).toMatch(/\.item-phone-flag\s*{[\s\S]*display:\s*inline-flex;/);
   });
 
   it('keeps non-normalizable phone numbers as plain text', () => {
@@ -79,6 +89,11 @@ describe('ServiceItemCard location links', () => {
 
   it('keeps the location row itself out of the shared line-through styling', () => {
     expect(appCss).toMatch(/\.service-item \.item-location\s*{[\s\S]*text-decoration-line:\s*none;/);
+  });
+
+  it('applies the shared line-through only to non-phone subline content', () => {
+    expect(appCss).toMatch(/\.service-item \.item-subline > :not\(\.item-phone-inline\),[\s\S]*text-decoration-line:\s*line-through;/);
+    expect(appCss).toMatch(/\.service-item \.item-phone-inline\s*{[\s\S]*text-decoration-line:\s*none;/);
   });
 
   it('keeps airport addresses as plain text', () => {
