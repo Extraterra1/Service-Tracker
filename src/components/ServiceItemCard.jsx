@@ -5,7 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
-import { Check, Clock3, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
+import { Check, Clock3, ExternalLink, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { WebHaptics } from 'web-haptics';
 
@@ -174,6 +174,8 @@ function ServiceItemCard({
   const originalTime = String(item.time ?? '').trim() || '--:--';
   const displayTime = getDisplayTime(item);
   const phoneValue = String(item.phone ?? '').trim();
+  const reservationId = String(item.id ?? '').trim();
+  const reservationUrl = String(item.reservationUrl ?? '').trim();
   const phoneCountryCode = useMemo(() => detectPhoneCountryCode(phoneValue), [phoneValue]);
   const phoneHref = useMemo(() => getWhatsAppHref(phoneValue), [phoneValue]);
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
@@ -377,7 +379,21 @@ function ServiceItemCard({
       <div className="item-identity-row">
         <p className="item-name">{clientDisplayName || 'Sem nome'}</p>
         <p className="item-subline">
-          <span>#{item.id || 'n/a'}</span>
+          {reservationUrl ? (
+            <a
+              className="item-reservation-link"
+              href={reservationUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Abrir reserva ${reservationId || 'n/a'} numa nova aba`}
+              title="Abrir reserva numa nova aba"
+            >
+              <span>#{reservationId || 'n/a'}</span>
+              <ExternalLink className="item-reservation-link-icon" aria-hidden="true" />
+            </a>
+          ) : (
+            <span>#{reservationId || 'n/a'}</span>
+          )}
           {phoneValue ? (
             <span className="item-phone-inline">
               {phoneCountryCode ? (

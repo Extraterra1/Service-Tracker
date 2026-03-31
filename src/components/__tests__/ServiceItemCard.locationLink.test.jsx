@@ -47,6 +47,25 @@ describe('ServiceItemCard location links', () => {
     expect(link).toHaveAttribute('href', 'https://wa.me/351912345678');
   });
 
+  it('renders the reservation number and popout icon as one external link when reservationUrl exists', () => {
+    const reservationUrl = 'https://example.com/reservations/0001';
+
+    renderCard(createItem({ reservationUrl }));
+
+    const link = screen.getByRole('link', { name: 'Abrir reserva 0001 numa nova aba' });
+    expect(link).toHaveAttribute('href', reservationUrl);
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveTextContent('#0001');
+    expect(link.querySelector('.item-reservation-link-icon')).not.toBeNull();
+  });
+
+  it('keeps reservation numbers as plain text when reservationUrl is missing', () => {
+    renderCard(createItem({ reservationUrl: '' }));
+
+    expect(screen.getByText('#0001')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Abrir reserva 0001 numa nova aba' })).not.toBeInTheDocument();
+  });
+
   it('defines a mobile-only WhatsApp icon treatment while keeping the flag visible', () => {
     expect(appCss).toMatch(
       /@media \(max-width: 780px\)\s*{[\s\S]*\.item-phone-link-label\s*{[\s\S]*display:\s*none;/
@@ -78,6 +97,11 @@ describe('ServiceItemCard location links', () => {
   it('styles location links without underline and with a small hover effect', () => {
     expect(appCss).toMatch(/\.item-location-link\s*{[\s\S]*text-decoration:\s*none;/);
     expect(appCss).toMatch(/\.item-location-link:hover\s*{[\s\S]*opacity:\s*0\.82;/);
+  });
+
+  it('styles reservation links like compact inline actions', () => {
+    expect(appCss).toMatch(/\.item-reservation-link\s*{[\s\S]*text-decoration:\s*none;/);
+    expect(appCss).toMatch(/\.item-reservation-link:hover\s*{[\s\S]*opacity:\s*0\.82;/);
   });
 
   it('clamps client names to first and last with middle initials', () => {
