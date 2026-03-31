@@ -96,12 +96,23 @@ describe('ServiceItemCard location links', () => {
 
   it('styles location links without underline and with a small hover effect', () => {
     expect(appCss).toMatch(/\.item-location-link\s*{[\s\S]*text-decoration:\s*none;/);
-    expect(appCss).toMatch(/\.item-location-link:hover\s*{[\s\S]*opacity:\s*0\.82;/);
+    expect(appCss).not.toMatch(/\.item-location-link:hover\s*{[^}]*opacity\s*:/);
   });
 
   it('styles reservation links like compact inline actions', () => {
     expect(appCss).toMatch(/\.item-reservation-link\s*{[\s\S]*text-decoration:\s*none;/);
-    expect(appCss).toMatch(/\.item-reservation-link:hover\s*{[\s\S]*opacity:\s*0\.82;/);
+    expect(appCss).not.toMatch(/\.item-reservation-link:hover\s*{[^}]*opacity\s*:/);
+  });
+
+  it('keeps phone link hover changes away from opacity-based repaints', () => {
+    expect(appCss).not.toMatch(/\.item-phone-link:hover\s*{[^}]*opacity\s*:/);
+  });
+
+  it('renders service-item svg icons as block-level boxes to reduce hover jitter', () => {
+    expect(appCss).toMatch(/\.item-flight-icon\s*{[\s\S]*display:\s*block;/);
+    expect(appCss).toMatch(/\.item-location-icon\s*{[\s\S]*display:\s*block;/);
+    expect(appCss).toMatch(/\.item-shared-plate-icon\s*{[\s\S]*display:\s*block;/);
+    expect(appCss).toMatch(/\.item-reservation-link-icon\s*{[\s\S]*display:\s*block;/);
   });
 
   it('clamps client names to first and last with middle initials', () => {
