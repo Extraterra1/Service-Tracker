@@ -324,6 +324,17 @@ function AppHeaderMenu({
                 {leaderboardLoading ? 'A carregar leaderboard...' : 'Leaderboard'}
               </summary>
             </details>
+
+            <div className="menu-section">
+              <a
+                className="menu-section-summary menu-section-summary--action"
+                href="https://fncfutures.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Aviability Lookup
+              </a>
+            </div>
           </div>
           <p className="menu-sync-footnote">{statusLine}</p>
         </div>

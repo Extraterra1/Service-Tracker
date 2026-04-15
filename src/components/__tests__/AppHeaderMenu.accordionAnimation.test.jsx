@@ -141,6 +141,16 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
   });
 
+  it('renders an aviability lookup link below leaderboard that opens in a new tab', () => {
+    render(<AppHeaderMenu {...createProps()} />);
+
+    const lookupLink = screen.getByRole('link', { name: 'Aviability Lookup' });
+
+    expect(lookupLink).toHaveAttribute('href', 'https://fncfutures.vercel.app');
+    expect(lookupLink).toHaveAttribute('target', '_blank');
+    expect(lookupLink).toHaveAttribute('rel', 'noreferrer');
+  });
+
   it('exposes a menu action to copy session diagnostics', async () => {
     const user = userEvent.setup();
     const onCopySessionDiagnostics = vi.fn();
