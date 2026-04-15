@@ -141,12 +141,25 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
   });
 
-  it('renders an aviability lookup link below leaderboard that opens in a new tab', () => {
-    render(<AppHeaderMenu {...createProps()} />);
+  it('renders an aviability lookup link with joined arrival flights and selected date params', () => {
+    render(
+      <AppHeaderMenu
+        {...createProps({
+          selectedDate: '2026-04-15',
+          allServiceItems: [
+            { itemId: 'pickup-1', serviceType: 'pickup', flightNumber: 'TP123' },
+            { itemId: 'pickup-2', serviceType: 'pickup', flightNumber: 'FR456' },
+            { itemId: 'pickup-3', serviceType: 'pickup', flightNumber: 'TP123' },
+            { itemId: 'return-1', serviceType: 'return', flightNumber: 'U27654' },
+            { itemId: 'pickup-4', serviceType: 'pickup', flightNumber: '   ' }
+          ]
+        })}
+      />
+    );
 
     const lookupLink = screen.getByRole('link', { name: 'Aviability Lookup' });
 
-    expect(lookupLink).toHaveAttribute('href', 'https://fncfutures.vercel.app');
+    expect(lookupLink).toHaveAttribute('href', 'https://fncfutures.vercel.app/?flights=TP123%2CFR456&date=2026-04-15');
     expect(lookupLink).toHaveAttribute('target', '_blank');
     expect(lookupLink).toHaveAttribute('rel', 'noreferrer');
   });
