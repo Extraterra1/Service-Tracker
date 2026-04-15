@@ -43,6 +43,26 @@ function getMenuItemLabel(item) {
   return `${displayTime} - ${serviceLabel} - ${itemName}`;
 }
 
+function getAviabilityLookupUrl(allServiceItems, selectedDate) {
+  const baseUrl = new URL('https://fncfutures.vercel.app');
+  const arrivalFlightNumbers = [...new Set(
+    allServiceItems
+      .filter((item) => item?.serviceType === 'pickup')
+      .map((item) => String(item?.flightNumber ?? '').trim())
+      .filter(Boolean)
+  )];
+
+  if (arrivalFlightNumbers.length > 0) {
+    baseUrl.searchParams.set('flights', arrivalFlightNumbers.join(','));
+  }
+
+  if (String(selectedDate ?? '').trim()) {
+    baseUrl.searchParams.set('date', String(selectedDate).trim());
+  }
+
+  return baseUrl.toString();
+}
+
 function AppHeaderMenu({
   menuPanelRef,
   theme,
@@ -79,11 +99,13 @@ function AppHeaderMenu({
   diagnosticsStatusMessage = '',
   leaderboardLoading,
   statusLine,
+  selectedDate,
   canMutateSelectedDate = true,
 }) {
   const [openSections, setOpenSections] = useState(() => createMenuSectionState());
   const [closingSections, setClosingSections] = useState(() => createMenuSectionState());
   const closingTimersRef = useRef({});
+  const aviabilityLookupUrl = getAviabilityLookupUrl(allServiceItems, selectedDate);
 
   useEffect(
     () => () => {
@@ -328,7 +350,7 @@ function AppHeaderMenu({
             <div className="menu-section">
               <a
                 className="menu-section-summary menu-section-summary--action"
-                href="https://fncfutures.vercel.app"
+                href={aviabilityLookupUrl}
                 target="_blank"
                 rel="noreferrer"
               >
