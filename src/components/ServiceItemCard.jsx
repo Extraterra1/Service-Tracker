@@ -402,13 +402,7 @@ function ServiceItemCard({
                 </span>
               ) : null}
               {phoneHref ? (
-                <a
-                  className="item-phone-link"
-                  href={phoneHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`Abrir conversa no WhatsApp para ${phoneValue}`}
-                >
+                <a className="item-phone-link" href={phoneHref} target="_blank" rel="noreferrer" aria-label={`Abrir conversa no WhatsApp para ${phoneValue}`}>
                   <span className="item-phone-link-label">{phoneValue}</span>
                   <span className="item-phone-link-icon" aria-hidden="true">
                     <FaWhatsapp />
@@ -422,10 +416,19 @@ function ServiceItemCard({
             <span>Sem telefone</span>
           )}
           {item.flightNumber ? (
-            <span className="item-flight-tag">
-              <Plane className="item-flight-icon" aria-hidden="true" />
-              <span>{item.flightNumber}</span>
-            </span>
+            <a
+              href={`https://www.flightradar24.com/${item.flightNumber}`}
+              target="_blank"
+              rel="noreferrer"
+              className="item-flight-link"
+              aria-label={`Ver voo ${item.flightNumber} no Flightradar`}
+              title="Ver voo no Flightradar"
+            >
+              <span className="item-flight-tag">
+                <Plane className="item-flight-icon" aria-hidden="true" />
+                <span>{item.flightNumber}</span>
+              </span>
+            </a>
           ) : null}
         </p>
       </div>
