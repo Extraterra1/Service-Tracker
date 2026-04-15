@@ -490,6 +490,7 @@ h1 {
   padding: 0.4rem 0.5rem;
   cursor: pointer;
   color: var(--menu-title-color);
+  text-decoration: none;
   font-size: 0.76rem;
   font-weight: 700;
   transition: background-color 130ms ease;
