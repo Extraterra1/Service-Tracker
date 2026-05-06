@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MoonStar, SunMedium } from 'lucide-react';
 import AuthPanel from './AuthPanel';
+import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
 
 const MENU_SECTION_CLOSE_ANIMATION_MS = 360;
 const MENU_SECTION_KEYS = {
@@ -157,9 +158,12 @@ function AppHeaderMenu({
 
   return (
     <header className="app-header app-header-compact">
-      <div className="title-block">
-        <p className="eyebrow">JustDrive</p>
-        <h1>Lista de Serviço</h1>
+      <div className="brand-block">
+        <img className="header-logo" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
+        <div className="title-block">
+          <p className="eyebrow">Operação diária</p>
+          <h1>Lista de Serviço</h1>
+        </div>
       </div>
 
       <details ref={menuPanelRef} className="menu-panel">
