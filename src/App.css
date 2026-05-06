@@ -3273,6 +3273,10 @@ h1 {
   white-space: pre-wrap;
 }
 
+.item-vehicle-row + .item-note {
+  margin-top: 0.08rem;
+}
+
 .item-note-highlight,
 .item-note-extra {
   display: inline-block;
