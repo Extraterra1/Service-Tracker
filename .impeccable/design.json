@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "title": "Design System: Service Tracker",
+  "extensions": {
+    "colorMeta": {
+      "daylight-bg": {
+        "role": "neutral",
+        "displayName": "Daylight Background",
+        "canonical": "#eef2f7",
+        "tonalRamp": ["oklch(18% 0.012 255)", "oklch(28% 0.012 255)", "oklch(40% 0.012 255)", "oklch(52% 0.012 255)", "oklch(64% 0.012 255)", "oklch(76% 0.012 255)", "oklch(88% 0.012 255)", "oklch(95% 0.012 255)"]
+      },
+      "service-red": {
+        "role": "primary",
+        "displayName": "Service Red",
+        "canonical": "#f83848",
+        "tonalRamp": ["oklch(18% 0.13 24)", "oklch(28% 0.16 24)", "oklch(40% 0.19 24)", "oklch(52% 0.21 24)", "oklch(64% 0.21 24)", "oklch(76% 0.16 24)", "oklch(88% 0.08 24)", "oklch(95% 0.035 24)"]
+      },
+      "return-teal": {
+        "role": "secondary",
+        "displayName": "Return Teal",
+        "canonical": "#1c7f92",
+        "tonalRamp": ["oklch(18% 0.08 210)", "oklch(28% 0.09 210)", "oklch(40% 0.1 210)", "oklch(52% 0.1 210)", "oklch(64% 0.09 210)", "oklch(76% 0.07 210)", "oklch(88% 0.04 210)", "oklch(95% 0.02 210)"]
+      },
+      "note-yellow": {
+        "role": "tertiary",
+        "displayName": "Note Yellow",
+        "canonical": "#ffe95f",
+        "tonalRamp": ["oklch(18% 0.06 95)", "oklch(28% 0.08 95)", "oklch(40% 0.1 95)", "oklch(52% 0.12 95)", "oklch(64% 0.13 95)", "oklch(76% 0.12 95)", "oklch(88% 0.08 95)", "oklch(95% 0.04 95)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Signed-out landing headlines only." },
+      "headline": { "displayName": "Headline", "purpose": "Popup titles and focused secondary surfaces." },
+      "title": { "displayName": "Title", "purpose": "Pane titles and compact section headers." },
+      "body": { "displayName": "Body", "purpose": "Dense row metadata and operational copy." },
+      "label": { "displayName": "Label", "purpose": "Uppercase service labels, status chips, and kickers." }
+    },
+    "shadows": [
+      { "name": "panel-shadow", "value": "0 12px 26px rgba(17, 24, 39, 0.12)", "purpose": "Default light-mode separation for app header, toolbar, panes, menus, banners, and status lines." },
+      { "name": "dark-panel-shadow", "value": "0 18px 38px rgba(6, 10, 16, 0.45)", "purpose": "Dark-mode structural surface separation." },
+      { "name": "dialog-shadow", "value": "0 16px 36px color-mix(in oklab, var(--shadow), transparent 30%)", "purpose": "Auth and access-gate emphasis." }
+    ],
+    "motion": [
+      { "name": "ease-out-strong", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Opening accordions and row completion response." },
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Closing and neutral state transitions." },
+      { "name": "ease-pop", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Large sign-in button hover response." }
+    ],
+    "breakpoints": [
+      { "name": "mobile-tight", "value": "780px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Committed compact action for saves, refreshes, and submit-style controls.",
+      "html": "<button class=\"ds-button-primary\">Atualizar lista</button>",
+      "css": ".ds-button-primary { min-height: 1.9rem; padding: 0 0.68rem; border: 1px solid transparent; border-radius: 7px; background: #b71d34; color: #ffffff; font-family: Urbanist, Segoe UI, sans-serif; font-size: 0.74rem; font-weight: 700; cursor: pointer; } .ds-button-primary:hover { background: #99182b; } .ds-button-primary:focus-visible { outline: 2px solid #d95f70; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary utility action that stays quiet until hover or focus.",
+      "html": "<button class=\"ds-button-ghost\">Histórico</button>",
+      "css": ".ds-button-ghost { min-height: 1.9rem; padding: 0 0.68rem; border: 1px solid rgba(17, 24, 39, 0.14); border-radius: 7px; background: rgba(255, 255, 255, 0.98); color: #1a2434; font-family: Urbanist, Segoe UI, sans-serif; font-size: 0.74rem; font-weight: 700; cursor: pointer; } .ds-button-ghost:hover { border-color: #f83848; } .ds-button-ghost:focus-visible { outline: 2px solid #fca5a5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Completion Pill",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Row-level completion control, compact enough to stay attached to the item.",
+      "html": "<label class=\"ds-completion-pill\"><span class=\"ds-completion-dot\"></span><span>Feito</span></label>",
+      "css": ".ds-completion-pill { display: inline-flex; align-items: center; gap: 0.3rem; border: 1px solid rgba(17, 24, 39, 0.12); border-radius: 999px; background: #fff4f5; color: #de4658; padding: 0.12rem 0.34rem 0.12rem 0.14rem; font-family: Urbanist, Segoe UI, sans-serif; font-size: 0.68rem; font-weight: 700; cursor: pointer; } .ds-completion-pill:hover { border-color: #f83848; } .ds-completion-pill:focus-visible { outline: 2px solid #fca5a5; outline-offset: 2px; } .ds-completion-dot { width: 0.95rem; height: 0.95rem; border-radius: 999px; background: #f83848; display: inline-block; box-shadow: inset 0 0 0 3px #ffffff; }"
+    },
+    {
+      "name": "Service Card",
+      "kind": "card",
+      "refersTo": "service-card",
+      "description": "The signature dense work row for a delivery or pickup.",
+      "html": "<article class=\"ds-service-card\"><div class=\"ds-card-head\"><span class=\"ds-time\">09:30</span><span class=\"ds-type\">ENTREGA</span><span class=\"ds-done\">Feito</span></div><strong class=\"ds-name\">Maria Silva</strong><p class=\"ds-meta\">#4821 · Fiat 500 · Aeroporto</p><p class=\"ds-footer\">Atualizado por Ana às 09:41</p></article>",
+      "css": ".ds-service-card { width: 280px; border: 1px solid rgba(17, 24, 39, 0.15); border-radius: 8px; background: rgba(255, 255, 255, 0.98); padding: 0.4rem 0.45rem; display: flex; flex-direction: column; gap: 0.18rem; font-family: Urbanist, Segoe UI, sans-serif; color: #0f172a; } .ds-card-head { display: flex; align-items: center; gap: 0.38rem; } .ds-time { font-size: 1rem; font-weight: 800; } .ds-type { color: #de4658; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; } .ds-done { margin-left: auto; border: 1px solid rgba(248, 56, 72, 0.2); border-radius: 999px; background: #fff4f5; color: #de4658; padding: 0.12rem 0.34rem; font-size: 0.68rem; font-weight: 700; } .ds-name { font-size: 0.91rem; line-height: 1.18; } .ds-meta { margin: 0; color: #2f3f59; font-size: 0.72rem; } .ds-footer { margin: 0; border-top: 1px dashed rgba(248, 56, 72, 0.42); padding-top: 0.17rem; color: #60708c; font-size: 0.64rem; }"
+    },
+    {
+      "name": "Service Pane",
+      "kind": "custom",
+      "refersTo": "service-pane",
+      "description": "Sticky-headed list column for Entregas or Recolhas.",
+      "html": "<section class=\"ds-service-pane\"><header><h2>Entregas</h2><span>12</span></header><div class=\"ds-pane-list\"><div class=\"ds-pane-row\">09:30 Maria Silva</div><div class=\"ds-pane-row\">10:15 Joao Freitas</div></div></section>",
+      "css": ".ds-service-pane { width: 260px; border: 1px solid rgba(17, 24, 39, 0.14); border-radius: 10px; background: rgba(255, 255, 255, 0.98); box-shadow: 0 12px 26px rgba(17, 24, 39, 0.12); overflow: hidden; font-family: Urbanist, Segoe UI, sans-serif; } .ds-service-pane header { padding: 0.46rem 0.52rem; border-bottom: 1px solid rgba(17, 24, 39, 0.14); background: rgba(247, 249, 255, 0.98); display: flex; align-items: center; justify-content: space-between; } .ds-service-pane h2 { margin: 0; font-family: Sora, Urbanist, sans-serif; font-size: 0.87rem; color: #111827; } .ds-service-pane header span { color: #d43a4c; font-size: 0.74rem; font-weight: 700; } .ds-pane-list { padding: 0.4rem; display: grid; gap: 0.34rem; } .ds-pane-row { border: 1px solid rgba(17, 24, 39, 0.15); border-radius: 8px; background: #ffffff; padding: 0.4rem 0.45rem; font-size: 0.74rem; font-weight: 700; color: #0f172a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Daylight Service Board",
+    "overview": "Service Tracker should feel like a clear operations board carried in a pocket: dense, practical, legible in daylight, and calm enough to live with for an entire shift. The current system uses a restrained light surface, a red service accent, compact rows, and small tactile controls to keep deliveries and pickups visible without turning the app into a dashboard spectacle.",
+    "keyCharacteristics": ["Compact two-column service board, even on mobile.", "Red accent reserved for service identity, primary actions, counts, and completion feedback.", "Borders plus soft shadows separate dense surfaces without visual drama.", "Typography favors quick recognition: time first, client second, metadata third.", "Interactions are tactile, small, and close to the row they affect."],
+    "rules": [
+      { "name": "The Red Means Work Rule", "body": "Red is not decorative. It identifies service state, primary actions, and row feedback; do not use it for ornamental flourishes.", "section": "colors" },
+      { "name": "The Daylight First Rule", "body": "Default new surfaces should be readable on phones in bright outdoor conditions before they are optimized for ambience.", "section": "colors" },
+      { "name": "The Time First Rule", "body": "In service rows, the time is the visual anchor. Do not let names, notes, badges, or actions outrank it.", "section": "typography" },
+      { "name": "The Small Type Is Still Working Type Rule", "body": "Compact text must stay high contrast and purposeful; never shrink copy to make room for decorative UI.", "section": "typography" },
+      { "name": "The Quiet Separation Rule", "body": "Use a border before adding more shadow. If a surface starts to feel floaty, the shadow is too loud.", "section": "elevation" }
+    ],
+    "dos": ["Do keep the service list as the dominant interface. New UI should support deliveries and pickups, not decorate around them.", "Do use Service Red for operational meaning: service identity, counts, primary actions, and completion feedback.", "Do maintain daylight readability with strong contrast, visible borders, and large enough tap targets.", "Do keep row actions close to the row content they affect.", "Do use icons for compact operational actions when the meaning is familiar, with accessible labels.", "Do preserve reduced-motion support for accordions, row animations, and loading states."],
+    "donts": ["Don't add clutter that makes the service list harder to scan.", "Don't create flashy SaaS dashboards, decorative marketing styling, oversized visual effects, or low-density card sprawl.", "Don't add toy-like gamification or celebratory UI that competes with service information.", "Don't use status treatments that rely on color alone or compete with delivery and pickup information.", "Don't inflate row padding, headings, or badges unless it makes the next service easier to recognize.", "Don't use side-stripe card accents, gradient text, glassmorphism, or nested cards."]
+  }
+}
