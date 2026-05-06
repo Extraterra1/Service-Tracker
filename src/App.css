@@ -319,11 +319,11 @@
 .app-header {
   position: relative;
   z-index: 60;
-  padding: 0.58rem 0.68rem;
+  padding: 0.5rem 0.58rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.58rem;
   background:
     linear-gradient(135deg, color-mix(in oklab, var(--panel-bg-strong), var(--bg) 18%), var(--panel-bg-strong) 62%),
     var(--panel-bg-strong);
@@ -338,6 +338,7 @@
   display: flex;
   align-items: center;
   gap: 0.72rem;
+  flex: 0 1 auto;
 }
 
 .header-logo {
@@ -353,6 +354,15 @@
   min-width: 0;
   padding-left: 0.68rem;
   border-left: 1px solid color-mix(in oklab, var(--stroke), var(--text) 10%);
+}
+
+.header-control-cluster {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.42rem;
+  flex: 1 1 auto;
 }
 
 .eyebrow {
@@ -878,6 +888,16 @@ h1 {
   border-color: color-mix(in oklab, var(--stroke), var(--text) 6%);
 }
 
+.app-header .toolbar {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  flex: 1 1 auto;
+}
+
 .toolbar-line {
   width: 100%;
   display: flex;
@@ -887,6 +907,10 @@ h1 {
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: thin;
+}
+
+.app-header .toolbar-line {
+  justify-content: flex-end;
 }
 
 .date-control-group {
@@ -921,12 +945,12 @@ h1 {
 }
 
 .refresh-btn {
-  min-height: 2.12rem;
+  min-height: 1.82rem;
   padding-inline: 0.78rem;
   display: inline-flex;
   align-items: center;
   gap: 0.36rem;
-  box-shadow: 0 4px 10px color-mix(in oklab, var(--accent), transparent 84%);
+  box-shadow: none;
 }
 
 .toolbar-icon {
@@ -3505,36 +3529,46 @@ h1 {
   }
 
   .app-header {
-    padding: 0.48rem 0.5rem;
-    gap: 0.46rem;
+    padding: 0.42rem 0.44rem;
+    gap: 0.28rem;
+    flex-wrap: nowrap;
   }
 
   .brand-block {
-    gap: 0.5rem;
+    gap: 0;
+    flex: 0 1 auto;
   }
 
   .header-logo {
-    height: 1.82rem;
-    max-width: min(42vw, 9.2rem);
+    height: 1.42rem;
+    max-width: min(24vw, 6.9rem);
   }
 
   .title-block {
-    padding-left: 0.5rem;
-  }
-
-  .eyebrow {
-    font-size: 0.57rem;
-    letter-spacing: 0.1em;
-  }
-
-  h1 {
-    font-size: 0.9rem;
+    display: none;
   }
 
   .menu-summary {
-    min-height: 2rem;
-    padding: 0 0.62rem;
-    font-size: 0.74rem;
+    min-height: 1.82rem;
+    padding: 0 0.48rem;
+    font-size: 0.68rem;
+  }
+
+  .header-control-cluster {
+    min-width: 0;
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 0.22rem;
+  }
+
+  .app-header .toolbar {
+    flex: 1 1 auto;
+  }
+
+  .app-header .toolbar-line {
+    justify-content: center;
+    gap: 0.24rem;
+    overflow-x: visible;
   }
 
   .menu-content {
@@ -3542,40 +3576,54 @@ h1 {
   }
 
   .toolbar {
-    padding: 0.28rem;
+    padding: 0;
   }
 
   .toolbar-line {
     justify-content: center;
-    gap: 0.28rem;
+    gap: 0.24rem;
   }
 
   .date-control-group {
-    gap: 0.12rem;
-    padding: 0.12rem;
+    gap: 0.14rem;
+    padding: 0;
+    background: transparent;
   }
 
   .compact-btn {
-    min-height: 1.76rem;
+    min-height: 1.72rem;
+    font-size: 0.66rem;
   }
 
   .date-step-btn {
-    min-width: 1.76rem;
-    padding: 0 0.36rem;
+    min-width: 1.54rem;
+    padding: 0 0.28rem;
   }
 
   .today-btn {
-    padding-inline: 0.5rem;
+    padding-inline: 0.38rem;
   }
 
   .field-inline-date input {
-    width: 7.45rem;
-    height: 1.76rem;
+    width: 6.9rem;
+    height: 1.72rem;
+    font-size: 0.68rem;
   }
 
   .refresh-btn {
-    min-height: 2rem;
-    padding-inline: 0.66rem;
+    min-height: 1.72rem;
+    min-width: 1.72rem;
+    padding-inline: 0.42rem;
+    justify-content: center;
+  }
+
+  .toolbar-icon {
+    width: 0.82rem;
+    height: 0.82rem;
+  }
+
+  .refresh-btn-label {
+    display: none;
   }
 
   .pane-list {

@@ -102,6 +102,7 @@ function AppHeaderMenu({
   statusLine,
   selectedDate,
   canMutateSelectedDate = true,
+  children,
 }) {
   const [openSections, setOpenSections] = useState(() => createMenuSectionState());
   const [closingSections, setClosingSections] = useState(() => createMenuSectionState());
@@ -165,6 +166,9 @@ function AppHeaderMenu({
           <h1>Lista de Serviço</h1>
         </div>
       </div>
+
+      <div className="header-control-cluster">
+        {children}
 
       <details ref={menuPanelRef} className="menu-panel">
         <summary className="ghost-btn menu-summary">Menu</summary>
@@ -365,6 +369,7 @@ function AppHeaderMenu({
           <p className="menu-sync-footnote">{statusLine}</p>
         </div>
       </details>
+      </div>
     </header>
   );
 }

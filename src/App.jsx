@@ -999,9 +999,9 @@ function App() {
         leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}
-      />
-
-      <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} />
+      >
+        <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} />
+      </AppHeaderMenu>
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
 

@@ -24,9 +24,9 @@ function DateNavigator({ date, onDateChange, onManualRefresh, loading }) {
           </button>
         </div>
 
-        <button type="button" className="primary-btn compact-btn refresh-btn" onClick={onManualRefresh} disabled={loading}>
+        <button type="button" className="primary-btn compact-btn refresh-btn" onClick={onManualRefresh} disabled={loading} aria-label={loading ? 'A atualizar lista' : 'Atualizar lista'}>
           <RefreshCw className={`toolbar-icon refresh-icon ${loading ? 'is-loading' : ''}`} aria-hidden="true" />
-          <span>{loading ? 'A atualizar...' : 'Atualizar'}</span>
+          <span className="refresh-btn-label">{loading ? 'A atualizar...' : 'Atualizar'}</span>
         </button>
       </div>
     </section>
