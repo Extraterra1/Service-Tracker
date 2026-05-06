@@ -461,7 +461,7 @@ function ServiceItemCard({
                   {isReady ? <span className="item-ready-dot" aria-hidden="true" /> : null}
                 </button>
               ) : (
-                <span>- {item.plate}</span>
+                <span className="item-plate-text">- {item.plate}</span>
               )}
               {sharedPlateMarker ? (
                 <button
