@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoonStar, SunMedium } from 'lucide-react';
+import { Menu, MoonStar, SunMedium } from 'lucide-react';
 import AuthPanel from './AuthPanel';
 import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
 
@@ -171,7 +171,10 @@ function AppHeaderMenu({
         {children}
 
       <details ref={menuPanelRef} className="menu-panel">
-        <summary className="ghost-btn menu-summary">Menu</summary>
+        <summary className="ghost-btn menu-summary">
+          <Menu className="toolbar-icon" aria-hidden="true" />
+          <span className="sr-only">Menu</span>
+        </summary>
         <div className="menu-content">
           <div className="menu-head">
             <div className="menu-head-copy">
