@@ -3137,13 +3137,25 @@ h1 {
 }
 
 .item-flight-link {
-  color: inherit;
+  color: var(--item-service);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
   text-decoration: none;
   border-radius: 2px;
+  transition:
+    color 140ms ease,
+    filter 140ms ease;
+}
+
+.item-flight-link:visited,
+.item-flight-link:active {
+  color: var(--item-service);
 }
 
 .item-flight-link:hover {
-  color: var(--item-primary);
+  color: var(--item-service);
+  filter: brightness(0.94);
 }
 
 .item-flight-link:focus-visible {

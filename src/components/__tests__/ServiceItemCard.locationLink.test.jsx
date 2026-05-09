@@ -140,6 +140,34 @@ describe('ServiceItemCard location links', () => {
     expect(container.querySelector('.item-location-icon.is-default')).not.toBeInTheDocument();
   });
 
+  it('links airport delivery flight numbers to Flightradar24 in a new tab', () => {
+    renderCard(createItem({ flightNumber: 'TP 1685', location: 'AEROPORTO DA MADEIRA', serviceType: 'pickup' }));
+
+    const link = screen.getByRole('link', { name: 'Abrir voo TP 1685 no Flightradar24 numa nova aba' });
+    expect(link).toHaveAttribute('href', 'https://www.flightradar24.com/TP1685');
+    expect(link).toHaveAttribute('target', '_blank');
+  });
+
+  it('keeps linked flight tags on the service color, including hover state', () => {
+    expect(appCss).toMatch(/\.item-flight-link\s*{[\s\S]*color:\s*var\(--item-service\);/);
+    expect(appCss).toMatch(/\.item-flight-link:visited,[\s\S]*\.item-flight-link:active\s*{[\s\S]*color:\s*var\(--item-service\);/);
+    expect(appCss).toMatch(/\.item-flight-link:hover\s*{[\s\S]*color:\s*var\(--item-service\);/);
+  });
+
+  it('keeps return flight numbers as plain text even at the airport', () => {
+    renderCard(createItem({ flightNumber: 'TP1685', location: 'AEROPORTO DA MADEIRA', serviceType: 'return' }));
+
+    expect(screen.getByText('TP1685')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Flightradar24/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps non-airport delivery flight numbers as plain text', () => {
+    renderCard(createItem({ flightNumber: 'TP1685', location: 'Rua do Castanheiro 12, Funchal', serviceType: 'pickup' }));
+
+    expect(screen.getByText('TP1685')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Flightradar24/ })).not.toBeInTheDocument();
+  });
+
   it('keeps escritorio addresses as plain text', () => {
     const { container } = renderCard(createItem({ location: 'Escritório Just Drive' }));
 

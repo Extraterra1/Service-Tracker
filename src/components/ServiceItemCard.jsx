@@ -95,6 +95,15 @@ function getGoogleMapsHref(location) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayLocation)}`;
 }
 
+function getFlightradar24Href(flightNumber) {
+  const normalizedFlightNumber = String(flightNumber ?? '').replace(/\s+/g, '').trim().toUpperCase();
+  if (!normalizedFlightNumber) {
+    return '';
+  }
+
+  return `https://www.flightradar24.com/${encodeURIComponent(normalizedFlightNumber)}`;
+}
+
 const doneCardVariants = {
   active: {
     opacity: 1
@@ -192,6 +201,14 @@ function ServiceItemCard({
   const accessibleClientName = clientDisplayName || item.id || item.itemId || 'Sem nome';
   const locationKind = getLocationKind(item.location);
   const locationHref = getGoogleMapsHref(item.location);
+  const flightNumber = String(item.flightNumber ?? '').trim();
+  const flightHref = isDelivery && locationKind === 'airport' ? getFlightradar24Href(flightNumber) : '';
+  const flightContent = flightNumber ? (
+    <>
+      <Plane className="item-flight-icon" aria-hidden="true" />
+      <span>{flightNumber}</span>
+    </>
+  ) : null;
   const locationIcon =
     locationKind === 'airport' ? (
       <TowerControl className="item-location-icon is-airport" aria-hidden="true" />
@@ -421,11 +438,21 @@ function ServiceItemCard({
           ) : (
             <span>Sem telefone</span>
           )}
-          {item.flightNumber ? (
-            <span className="item-flight-tag">
-              <Plane className="item-flight-icon" aria-hidden="true" />
-              <span>{item.flightNumber}</span>
-            </span>
+          {flightNumber ? (
+            flightHref ? (
+              <a
+                className="item-flight-tag item-flight-link"
+                href={flightHref}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Abrir voo ${flightNumber} no Flightradar24 numa nova aba`}
+                title="Abrir voo no Flightradar24"
+              >
+                {flightContent}
+              </a>
+            ) : (
+              <span className="item-flight-tag">{flightContent}</span>
+            )
           ) : null}
         </p>
       </div>
