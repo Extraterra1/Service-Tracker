@@ -40,6 +40,10 @@ function createProps(overrides = {}) {
     onOpenLeaderboardPopup: vi.fn(),
     onCopySessionDiagnostics: vi.fn(),
     diagnosticsStatusMessage: '',
+    pendingAccessRequests: [],
+    accessRequestDecisionUid: '',
+    onApproveAccessRequest: vi.fn(),
+    onDenyAccessRequest: vi.fn(),
     leaderboardLoading: false,
     statusLine: 'ok',
     canMutateSelectedDate: true,
@@ -187,6 +191,51 @@ describe('AppHeaderMenu accordion animations', () => {
 
     expect(onCopySessionDiagnostics).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Diagnóstico pronto a enviar.')).toBeInTheDocument();
+  });
+
+  it('shows an empty access request state in the menu', async () => {
+    const user = userEvent.setup();
+
+    render(<AppHeaderMenu {...createProps()} />);
+    await user.click(screen.getByText('Pedidos de Acesso'));
+
+    expect(screen.getByText('Sem pedidos pendentes.')).toBeInTheDocument();
+  });
+
+  it('renders pending access requests and calls approve or deny actions', async () => {
+    const user = userEvent.setup();
+    const onApproveAccessRequest = vi.fn();
+    const onDenyAccessRequest = vi.fn();
+    const pendingRequest = {
+      uid: 'uid-1',
+      displayName: 'New User',
+      email: 'new@example.com',
+      requestCount: 2,
+    };
+
+    render(
+      <AppHeaderMenu
+        {...createProps({
+          pendingAccessRequests: [pendingRequest],
+          onApproveAccessRequest,
+          onDenyAccessRequest,
+        })}
+      />
+    );
+
+    await user.click(screen.getByText('Pedidos de Acesso'));
+
+    const accessSection = screen.getByText('Pedidos de Acesso').closest('details');
+    expect(accessSection).not.toBeNull();
+    expect(within(accessSection).getByText('New User')).toBeInTheDocument();
+    expect(within(accessSection).getByText('new@example.com')).toBeInTheDocument();
+    expect(within(accessSection).getByText('2 pedidos')).toBeInTheDocument();
+
+    await user.click(within(accessSection).getByRole('button', { name: 'Aprovar New User' }));
+    await user.click(within(accessSection).getByRole('button', { name: 'Negar New User' }));
+
+    expect(onApproveAccessRequest).toHaveBeenCalledWith(pendingRequest);
+    expect(onDenyAccessRequest).toHaveBeenCalledWith(pendingRequest);
   });
 
   it('disables manual mutation controls when selected date is not current', async () => {

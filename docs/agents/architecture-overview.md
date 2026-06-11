@@ -16,7 +16,7 @@ Frontend stack:
 Backend surface in this repo:
 
 - Firestore rules and indexes
-- Cloud Functions for access approval and Telegram webhook handling
+- Firestore-only access approval through `access_requests` and `staff_allowlist`
 
 External dependency outside this repo:
 
@@ -169,34 +169,16 @@ Scoring rules:
 
 The leaderboard is not a separate persisted aggregate.
 
-## Cloud Functions architecture
+## Access approval architecture
 
-`functions/src/index.js` has two exported functions:
+The client and Firestore rules own the access approval workflow:
 
-### `requestAccessApproval`
+- signed-in non-staff users create or refresh `access_requests/{uid}`
+- active staff subscribe to pending requests in the app menu
+- approving a request writes `staff_allowlist/{uid}` and marks the request `approved`
+- denying a request marks the request `denied`
 
-Callable function used by the client when signed-in but not allowlisted.
-
-Responsibilities:
-
-- check if user is already active in `staff_allowlist`
-- check blocklists by UID/email
-- create or update `access_requests/{uid}`
-- enforce Telegram notification cooldown
-- send Telegram message with inline Approve / Deny / Block buttons
-
-### `telegramWebhook`
-
-HTTP function receiving Telegram callback actions.
-
-Responsibilities:
-
-- validate webhook secret
-- ensure callback came from the configured admin chat
-- update `access_requests/{uid}`
-- on approval, create/update `staff_allowlist/{uid}`
-- on block, write to blocklist collections
-- edit the original Telegram message to reflect the final state
+Security for this flow lives in `firestore.rules`. Non-staff users can only write their own `pending` request fields. Active staff can list requests and make constrained approve/deny writes.
 
 ## Performance and loading decisions
 

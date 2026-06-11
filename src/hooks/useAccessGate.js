@@ -182,7 +182,9 @@ export function useAccessGate() {
 
     try {
       const { resolveAccessState, pollApprovalState } = await loadAccessModule();
-      const result = accessState === 'pending' ? await pollApprovalState(user) : await resolveAccessState(user);
+      const result = accessState === 'pending'
+        ? await pollApprovalState(user)
+        : await resolveAccessState(user);
       applyAccessResult(result);
     } catch (nextError) {
       applyAccessResult({

@@ -64,10 +64,10 @@ Important groups:
   - `firebaseApp.js`
   - `firebaseAuth.js`
   - `firebaseDb.js`
-  - `firebaseFunctions.js`
 - access/auth:
   - `auth.js`
   - `access.js`
+  - `accessRequestStore.js`
 - day loading:
   - `api.js`
   - `scrapedDataStore.js`
@@ -102,7 +102,7 @@ Behavioral regression coverage across lib/hooks/components/features.
 
 Firebase Functions project.
 
-- `functions/src/index.js` - access approval callable + Telegram webhook
+- `src/lib/accessRequestStore.js` - Firestore-only access request creation and staff approve/deny writes
 - `functions/package.json` - functions runtime scripts
 - `functions/scripts/cleanup-out-of-day-writes.mjs` - admin/maintenance script for detecting and optionally deleting writes whose local write date does not match stored service date
 

@@ -5,11 +5,12 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { Timestamp, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { Timestamp, collection, doc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { addDays, getTodayServiceDate } from '../date';
 
 const PROJECT_ID = 'demo-service-tracker';
 const STAFF_UID = 'staff-user-1';
+const PENDING_UID = 'pending-user-1';
 const RULES_PATH = resolve(process.cwd(), 'firestore.rules');
 const hasFirestoreEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -18,6 +19,12 @@ let testEnv;
 function getAuthedDb() {
   return testEnv.authenticatedContext(STAFF_UID, {
     email: 'staff@example.com',
+  }).firestore();
+}
+
+function getUserDb(uid, email = `${uid}@example.com`) {
+  return testEnv.authenticatedContext(uid, {
+    email,
   }).firestore();
 }
 
@@ -97,6 +104,58 @@ function buildActivityPayload(date, actionType = 'status_toggle') {
   }
 
   return basePayload;
+}
+
+function buildPendingAccessRequestPayload(uid = PENDING_UID) {
+  const now = Timestamp.fromDate(new Date());
+
+  return {
+    uid,
+    email: `${uid}@example.com`,
+    emailNormalized: `${uid}@example.com`,
+    displayName: 'Pending User',
+    photoURL: '',
+    status: 'pending',
+    requestCount: 1,
+    createdAt: now,
+    updatedAt: now,
+    lastRequestedAt: now,
+    decisionType: '',
+    decisionAt: null,
+    decisionByUid: '',
+    decisionByName: '',
+    decisionByEmail: '',
+  };
+}
+
+function buildAccessDecisionPayload(status, decisionType) {
+  const pendingPayload = buildPendingAccessRequestPayload(PENDING_UID);
+  const now = Timestamp.fromDate(new Date());
+
+  return {
+    ...pendingPayload,
+    status,
+    updatedAt: now,
+    decisionType,
+    decisionAt: now,
+    decisionByUid: STAFF_UID,
+    decisionByName: 'Staff User',
+    decisionByEmail: 'staff@example.com',
+  };
+}
+
+function buildAllowlistApprovalPayload() {
+  return {
+    active: true,
+    role: 'staff',
+    uid: PENDING_UID,
+    email: `${PENDING_UID}@example.com`,
+    displayName: 'Pending User',
+    approvedAt: Timestamp.fromDate(new Date()),
+    approvedByUid: STAFF_UID,
+    approvedByName: 'Staff User',
+    approvedByEmail: 'staff@example.com',
+  };
 }
 
 beforeAll(async () => {
@@ -198,5 +257,55 @@ describeRules('firestore current-day write rules', () => {
     await expect(assertSucceeds(setDoc(doc(db, 'service_activity', today, 'entries', 'entry-today'), buildActivityPayload(today)))).resolves.toBeUndefined();
     await expect(assertFails(setDoc(doc(db, 'service_activity', past, 'entries', 'entry-past'), buildActivityPayload(past)))).resolves.toBeDefined();
     await expect(assertFails(setDoc(doc(db, 'service_activity', future, 'entries', 'entry-future'), buildActivityPayload(future)))).resolves.toBeDefined();
+  });
+});
+
+describeRules('firestore access request rules', () => {
+  it('allows a signed-in user to create their own pending access request', async () => {
+    const db = getUserDb(PENDING_UID);
+
+    await expect(assertSucceeds(setDoc(doc(db, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload()))).resolves.toBeUndefined();
+  });
+
+  it('blocks a signed-in user from approving themselves', async () => {
+    const db = getUserDb(PENDING_UID);
+
+    await expect(assertFails(setDoc(doc(db, 'staff_allowlist', PENDING_UID), buildAllowlistApprovalPayload()))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'access_requests', PENDING_UID), buildAccessDecisionPayload('approved', 'approve')))).resolves.toBeDefined();
+  });
+
+  it('allows active staff to list pending access requests', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
+    });
+
+    const db = getAuthedDb();
+    const pendingQuery = query(collection(db, 'access_requests'), where('status', '==', 'pending'));
+
+    await expect(assertSucceeds(getDocs(pendingQuery))).resolves.toBeDefined();
+  });
+
+  it('allows active staff to approve a pending access request', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
+    });
+
+    const db = getAuthedDb();
+
+    await expect(assertSucceeds(setDoc(doc(db, 'staff_allowlist', PENDING_UID), buildAllowlistApprovalPayload()))).resolves.toBeUndefined();
+    await expect(assertSucceeds(setDoc(doc(db, 'access_requests', PENDING_UID), buildAccessDecisionPayload('approved', 'approve')))).resolves.toBeUndefined();
+  });
+
+  it('allows active staff to deny a pending access request without allowlisting the user', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
+    });
+
+    const db = getAuthedDb();
+
+    await expect(assertSucceeds(setDoc(doc(db, 'access_requests', PENDING_UID), buildAccessDecisionPayload('denied', 'deny')))).resolves.toBeUndefined();
   });
 });

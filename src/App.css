@@ -731,6 +731,87 @@ h1 {
   border: 1px solid rgba(223, 54, 75, 0.38);
 }
 
+.access-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+}
+
+.access-request-row {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.48rem;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--panel-bg-strong), var(--panel-bg) 34%);
+}
+
+.access-request-copy {
+  min-width: 0;
+}
+
+.access-request-name,
+.access-request-email,
+.access-request-meta {
+  margin: 0;
+}
+
+.access-request-name {
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.access-request-email {
+  margin-top: 0.12rem;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.access-request-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.22rem 0.42rem;
+  margin-top: 0.24rem;
+  color: var(--subtle-color);
+  font-size: 0.64rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.access-request-actions {
+  display: flex;
+  gap: 0.34rem;
+  align-items: center;
+}
+
+.access-request-action {
+  flex: 1;
+  justify-content: center;
+  gap: 0.24rem;
+  padding-inline: 0.42rem;
+}
+
+.access-request-action-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.access-request-approve {
+  color: var(--ready-green);
+  border-color: color-mix(in oklab, var(--ready-green), transparent 62%);
+  background: color-mix(in oklab, var(--ready-green), transparent 90%);
+}
+
+.access-request-deny {
+  color: var(--action-red);
+  border-color: color-mix(in oklab, var(--action-red), transparent 64%);
+  background: color-mix(in oklab, var(--action-red), transparent 92%);
+}
+
 .manual-completed-controls {
   display: flex;
   gap: 0.35rem;
@@ -3711,6 +3792,11 @@ h1 {
   }
 
   .manual-completed-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .access-request-actions {
     flex-direction: column;
     align-items: stretch;
   }

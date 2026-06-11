@@ -2,7 +2,7 @@ const STATE_COPY = {
   pending: {
     eyebrow: 'Pedido enviado',
     title: 'Aguardando aprovação',
-    body: 'A tua conta está autenticada, mas ainda precisa de aprovação da equipa no Telegram.',
+    body: 'A tua conta está autenticada, mas ainda precisa de aprovação da equipa.',
   },
   denied: {
     eyebrow: 'Acesso recusado',

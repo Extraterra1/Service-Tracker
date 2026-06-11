@@ -25,7 +25,7 @@ Read/write model:
 
 - client can read only their own document
 - client cannot write
-- Cloud Functions/admin workflows manage it
+- active staff can create/update approval-shaped allowlist docs
 
 Important fields seen in repo:
 
@@ -33,7 +33,7 @@ Important fields seen in repo:
 - `displayName`
 - `email`
 - `role`
-- approval metadata when Telegram approves access
+- approval metadata when staff approve access in the app menu
 
 ### `staff_profiles/{uid}`
 
@@ -264,13 +264,13 @@ Fields:
 
 Purpose:
 
-- server-managed access request state
+- Firestore-only access request state
 
 Read/write model:
 
-- user can read only their own request doc
-- client cannot write directly
-- Cloud Functions manage lifecycle
+- user can read and write only their own pending request doc
+- active staff can list pending requests
+- active staff can mark requests `approved` or `denied`
 
 Observed states:
 

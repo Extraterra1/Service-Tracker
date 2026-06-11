@@ -10,7 +10,7 @@ Mobile-first PWA for daily rental-car workflow.
 - Manual force refresh button (**Atualizar lista**) remains available.
 - Team-shared realtime checklist state via Firestore listeners.
 - Google Sign-In and allowlist gate (`staff_allowlist` collection).
-- Telegram-based access approval queue (`access_requests` + Cloud Functions webhook).
+- Firestore-only access approval queue in the app menu (`access_requests` + `staff_allowlist`).
 - API PIN synced per Google account across devices (`user_settings` collection).
 - Installable PWA (manifest + service worker).
 
@@ -37,7 +37,6 @@ Required variables:
 - `VITE_FIREBASE_PROJECT_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID` (optional)
-- `VITE_FIREBASE_FUNCTIONS_REGION` (optional, default `europe-west9`)
 
 ## Run
 
@@ -53,38 +52,19 @@ npm run build
 npm run preview
 ```
 
-## Access approval backend (Telegram)
+## Access approval backend (Firestore-only)
 
-This repo now includes Firebase Cloud Functions under `functions/`:
+Access approval is handled directly through Firestore and guarded by `firestore.rules`:
 
-- `requestAccessApproval` (callable): user-side request trigger.
-- `telegramWebhook` (HTTPS): handles Telegram inline Approve / Deny / Block.
+- signed-in users create/update their own pending `access_requests/{uid}` document
+- active staff can read pending access requests in the app menu
+- active staff can approve by writing `staff_allowlist/{uid}` and marking the request `approved`
+- active staff can deny by marking the request `denied`
 
-### Configure secrets
-
-```bash
-firebase functions:secrets:set TELEGRAM_BOT_TOKEN
-firebase functions:secrets:set TELEGRAM_ADMIN_CHAT_ID
-firebase functions:secrets:set TELEGRAM_WEBHOOK_SECRET
-```
-
-### Deploy functions + rules
+### Deploy rules
 
 ```bash
-firebase deploy --only functions,firestore:rules
-```
-
-### Set Telegram webhook
-
-Replace `<REGION>`, `<PROJECT_ID>`, `<WEBHOOK_SECRET>`, `<BOT_TOKEN>`:
-
-```bash
-curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url":"https://<REGION>-<PROJECT_ID>.cloudfunctions.net/telegramWebhook",
-    "secret_token":"<WEBHOOK_SECRET>"
-  }'
+firebase deploy --only firestore:rules
 ```
 
 ## Firestore collections expected
@@ -129,7 +109,7 @@ Required Firestore rule behavior for this collection:
 - users can read/write only their own `user_settings/{uid}` document
 - `uid` must match `request.auth.uid`
 
-### `access_requests/{uid}` (server-managed)
+### `access_requests/{uid}`
 
 ```json
 {
@@ -142,7 +122,7 @@ Required Firestore rule behavior for this collection:
 }
 ```
 
-Client reads own document only. Writes are denied for clients.
+Signed-in users can create/update only their own pending request. Active staff can list pending requests and mark them approved or denied from the app menu.
 
 ### `service_refresh_locks/{date}` (client-coordinated auto-refresh lease)
 

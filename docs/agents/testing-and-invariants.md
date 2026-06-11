@@ -178,7 +178,7 @@ If you change one of these areas, add or update tests before trusting the change
 
 There are many good regression tests, but some areas are still mostly enforced by architecture rather than deep integration tests:
 
-- full sign-in to allowlist/Telegram flow end-to-end
+- full sign-in to allowlist/access-request flow end-to-end
 - service worker runtime behavior
 - broad end-to-end UI navigation across the whole app
 

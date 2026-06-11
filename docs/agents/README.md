@@ -65,7 +65,7 @@ If you only have a few minutes, inspect these files first:
 - `pickup` means a delivery-style outbound service shown under `Entregas`.
 - `return` means an inbound service shown under `Recolhas`.
 - Mutations are intentionally restricted to the current Madeira service day.
-- Access is not just Google sign-in; it is Google sign-in plus allowlist approval, with a Telegram approval workflow.
+- Access is not just Google sign-in; it is Google sign-in plus allowlist approval, with a Firestore-only access request workflow in the app menu.
 - The repo does not contain the source scraper. It consumes an existing API and stores the resulting day payload in Firestore.
 - There is no global state library. The app is mostly hook state plus Firestore subscriptions.
 

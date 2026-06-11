@@ -22,6 +22,7 @@ import {
 } from './lib/sessionDiagnostics';
 import { normalizePlate } from './lib/plates';
 import { useAccessGate } from './hooks/useAccessGate';
+import { useAccessRequests } from './hooks/useAccessRequests';
 import { useActivityEntries } from './hooks/useActivityEntries';
 import { useCarHistory } from './hooks/useCarHistory';
 import { useDateCollections } from './hooks/useDateCollections';
@@ -146,21 +147,16 @@ function App() {
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
   const [leaderboardAnchors, setLeaderboardAnchors] = useState(() => ({
     weekly: new Date(),
-    monthly: new Date(),
+    monthly: new Date()
   }));
   const [carHistoryInitialPlateKey, setCarHistoryInitialPlateKey] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
-  const {
-    user,
-    authHint,
+  const { user, authHint, accessState, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
+  const { pendingAccessRequests, accessRequestDecisionUid, accessRequestsError, approveAccessRequest, denyAccessRequest } = useAccessRequests({
     accessState,
-    checkingAccess,
-    accessGateMessage,
-    accessPollInFlight,
-    error: accessErrorMessage,
-    retryAccessCheck
-  } = useAccessGate();
+    user
+  });
   const canReadServiceData = accessState === 'allowed';
   const {
     pinSyncState,
@@ -241,10 +237,7 @@ function App() {
   const diagnosticsStatusTimeoutRef = useRef(0);
   const lastWeekLeaderboardAnchor = useMemo(() => shiftLeaderboardAnchor('weekly', new Date(), -1), []);
   const leaderboardAnchor = leaderboardAnchors[leaderboardPeriod] ?? new Date();
-  const leaderboardWindow = useMemo(
-    () => getLeaderboardPeriodWindow(leaderboardPeriod, leaderboardAnchor),
-    [leaderboardAnchor, leaderboardPeriod]
-  );
+  const leaderboardWindow = useMemo(() => getLeaderboardPeriodWindow(leaderboardPeriod, leaderboardAnchor), [leaderboardAnchor, leaderboardPeriod]);
   const canNavigateLeaderboardForward = useMemo(
     () => canNavigateLeaderboardPeriodForward(leaderboardPeriod, leaderboardAnchor),
     [leaderboardAnchor, leaderboardPeriod]
@@ -277,7 +270,7 @@ function App() {
 
     void loadLastWeekLeaderboard({
       period: 'weekly',
-      now: lastWeekLeaderboardAnchor,
+      now: lastWeekLeaderboardAnchor
     });
   }, [accessState, lastWeekLeaderboardAnchor, loadLastWeekLeaderboard, resetLastWeekLeaderboard]);
 
@@ -427,7 +420,7 @@ function App() {
     }
 
     if (accessState === 'denied') {
-      return 'Conta sem acesso. Pede ativação na allowlist.';
+      return 'Conta sem acesso. Pede aprovação à equipa.';
     }
 
     if (accessState === 'blocked') {
@@ -812,14 +805,17 @@ function App() {
     setActivityPopupOpen(false);
   }, []);
 
-  const handleOpenCarHistoryPopup = useCallback((initialPlate = '') => {
-    const nextPlateKey = normalizePlate(initialPlate);
+  const handleOpenCarHistoryPopup = useCallback(
+    (initialPlate = '') => {
+      const nextPlateKey = normalizePlate(initialPlate);
 
-    menuPanelRef.current?.removeAttribute('open');
-    setCarHistoryInitialPlateKey(nextPlateKey);
-    setCarHistoryPopupOpen(true);
-    void loadCarHistory();
-  }, [loadCarHistory]);
+      menuPanelRef.current?.removeAttribute('open');
+      setCarHistoryInitialPlateKey(nextPlateKey);
+      setCarHistoryPopupOpen(true);
+      void loadCarHistory();
+    },
+    [loadCarHistory]
+  );
 
   const handleOpenCarHistoryFromModel = useCallback(
     (plate) => {
@@ -842,7 +838,7 @@ function App() {
 
     void loadLeaderboard({
       period: leaderboardPeriod,
-      now: leaderboardAnchor,
+      now: leaderboardAnchor
     });
   }, [leaderboardAnchor, leaderboardPeriod, loadLeaderboard]);
 
@@ -865,11 +861,11 @@ function App() {
       const nextAnchor = new Date();
       setLeaderboardAnchors((current) => ({
         ...current,
-        [nextPeriod]: nextAnchor,
+        [nextPeriod]: nextAnchor
       }));
       void loadLeaderboard({
         period: nextPeriod,
-        now: nextAnchor,
+        now: nextAnchor
       });
     },
     [leaderboardPeriod, loadLeaderboard]
@@ -894,11 +890,11 @@ function App() {
 
       setLeaderboardAnchors((current) => ({
         ...current,
-        [leaderboardPeriod]: nextAnchor,
+        [leaderboardPeriod]: nextAnchor
       }));
       void loadLeaderboard({
         period: leaderboardPeriod,
-        now: nextAnchor,
+        now: nextAnchor
       });
     },
     [canNavigateLeaderboardForward, leaderboardAnchor, leaderboardPeriod, loadLeaderboard]
@@ -929,19 +925,11 @@ function App() {
     return `Ultima Atualização: ${formatted}`;
   }, [lastLoadAt, loadingServices, refreshSource]);
 
-  const showSignedOutLanding =
-    accessState === 'signed_out' ||
-    (checkingAccess && accessState === 'checking' && authHint !== 'signed_in');
+  const showSignedOutLanding = accessState === 'signed_out' || (checkingAccess && accessState === 'checking' && authHint !== 'signed_in');
   const showAccessGateScreen = !checkingAccess && (accessState === 'pending' || accessState === 'denied' || accessState === 'blocked');
 
   if (showSignedOutLanding) {
-    return (
-      <SignedOutLanding
-        onSignIn={handleSignIn}
-        errorMessage={errorMessage || accessErrorMessage}
-        signInDisabled={checkingAccess}
-      />
-    );
+    return <SignedOutLanding onSignIn={handleSignIn} errorMessage={errorMessage || accessErrorMessage} signInDisabled={checkingAccess} />;
   }
 
   if (showAccessGateScreen) {
@@ -996,6 +984,10 @@ function App() {
         onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
         onCopySessionDiagnostics={handleCopySessionDiagnostics}
         diagnosticsStatusMessage={diagnosticsStatusMessage}
+        pendingAccessRequests={pendingAccessRequests}
+        accessRequestDecisionUid={accessRequestDecisionUid}
+        onApproveAccessRequest={approveAccessRequest}
+        onDenyAccessRequest={denyAccessRequest}
         leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}
@@ -1007,9 +999,21 @@ function App() {
 
       {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
-      {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage || activityErrorMessage ? (
+      {errorMessage ||
+      accessErrorMessage ||
+      accessRequestsError ||
+      pinSyncErrorMessage ||
+      serviceDataErrorMessage ||
+      dateCollectionsErrorMessage ||
+      activityErrorMessage ? (
         <p className="error-banner">
-          {errorMessage || accessErrorMessage || pinSyncErrorMessage || serviceDataErrorMessage || dateCollectionsErrorMessage || activityErrorMessage}
+          {errorMessage ||
+            accessErrorMessage ||
+            accessRequestsError ||
+            pinSyncErrorMessage ||
+            serviceDataErrorMessage ||
+            dateCollectionsErrorMessage ||
+            activityErrorMessage}
         </p>
       ) : null}
 

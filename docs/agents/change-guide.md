@@ -7,16 +7,17 @@ This is the most action-oriented file in the set.
 Start here:
 
 - `src/hooks/useAccessGate.js`
+- `src/hooks/useAccessRequests.js`
 - `src/lib/access.js`
+- `src/lib/accessRequestStore.js`
 - `src/lib/auth.js`
-- `functions/src/index.js`
 - `firestore.rules`
 
 Watch for:
 
 - signed-out vs checking vs pending vs allowed vs denied vs blocked
-- callable request creation side effects
-- Telegram cooldown behavior
+- Firestore request creation side effects
+- staff approve/deny rule constraints
 - allowlist read restrictions
 
 Do not assume:

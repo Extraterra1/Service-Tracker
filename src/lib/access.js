@@ -1,21 +1,12 @@
 import { doc, getDoc } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
+import { createOwnAccessRequest } from './accessRequestStore'
 import { db } from './firebaseDb'
-import { functions } from './firebaseFunctions'
 
 const ACCESS_REQUEST_COLLECTION = 'access_requests'
 
 function normalizeRequestStatus(value) {
   const normalized = String(value ?? '').trim().toLowerCase()
   if (normalized === 'pending' || normalized === 'approved' || normalized === 'denied' || normalized === 'blocked') {
-    return normalized
-  }
-  return 'unknown'
-}
-
-function normalizeAccessState(value) {
-  const normalized = String(value ?? '').trim().toLowerCase()
-  if (normalized === 'allowed' || normalized === 'pending' || normalized === 'denied' || normalized === 'blocked') {
     return normalized
   }
   return 'unknown'
@@ -42,13 +33,13 @@ function requestStatusToState(status) {
   return 'denied'
 }
 
-function callableStateToState(callableState, requestStatus) {
-  const normalizedCallableState = normalizeAccessState(callableState)
-  if (normalizedCallableState !== 'unknown') {
-    return normalizedCallableState
+async function requestAccessApprovalState(user) {
+  const approvalResult = await requestAccessApproval(user)
+  return {
+    state: approvalResult.state,
+    reason: `request_${approvalResult.requestStatus}`,
+    message: approvalResult.message,
   }
-
-  return requestStatusToState(normalizeRequestStatus(requestStatus))
 }
 
 export async function checkAllowlist(uid) {
@@ -87,21 +78,8 @@ export async function getOwnAccessRequest(uid) {
   }
 }
 
-export async function requestAccessApproval() {
-  if (!functions) {
-    throw new Error('Firebase Functions não está configurado.')
-  }
-
-  const callable = httpsCallable(functions, 'requestAccessApproval')
-  const response = await callable()
-  const data = response?.data ?? {}
-  const requestStatus = normalizeRequestStatus(data.requestStatus ?? data.state)
-
-  return {
-    state: callableStateToState(data.state, requestStatus),
-    requestStatus,
-    message: String(data.message ?? '').trim(),
-  }
+export async function requestAccessApproval(user) {
+  return createOwnAccessRequest(user)
 }
 
 export async function resolveAccessState(user) {
@@ -122,7 +100,7 @@ export async function resolveAccessState(user) {
         return {
           state: 'pending',
           reason: `request_${request.status}`,
-          message: 'Pedido de acesso enviado. Aguarda aprovação no Telegram.',
+          message: 'Pedido de acesso enviado. Aguarda aprovação.',
         }
       }
 
@@ -142,12 +120,7 @@ export async function resolveAccessState(user) {
     }
   }
 
-  const approvalResult = await requestAccessApproval()
-  return {
-    state: approvalResult.state,
-    reason: `callable_${approvalResult.requestStatus}`,
-    message: approvalResult.message,
-  }
+  return requestAccessApprovalState(user)
 }
 
 export async function pollApprovalState(user) {
@@ -162,11 +135,7 @@ export async function pollApprovalState(user) {
 
   const request = await getOwnAccessRequest(user.uid)
   if (!request.exists) {
-    return {
-      state: 'denied',
-      reason: 'request_missing',
-      message: 'Pedido não encontrado. Contacta o administrador.',
-    }
+    return requestAccessApprovalState(user)
   }
 
   const nextState = requestStatusToState(request.status)
@@ -174,7 +143,7 @@ export async function pollApprovalState(user) {
     return {
       state: 'pending',
       reason: 'request_pending',
-      message: 'Pedido de acesso enviado. Aguarda aprovação no Telegram.',
+      message: 'Pedido de acesso enviado. Aguarda aprovação.',
     }
   }
 

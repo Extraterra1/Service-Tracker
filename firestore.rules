@@ -228,9 +228,110 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp;
     }
 
+    function isValidNullableTimestamp(value) {
+      return value == null || value is timestamp;
+    }
+
+    function isValidAccessRequestBase(uid) {
+      return request.resource.data.keys().hasOnly([
+          'uid',
+          'email',
+          'emailNormalized',
+          'displayName',
+          'photoURL',
+          'status',
+          'requestCount',
+          'createdAt',
+          'updatedAt',
+          'lastRequestedAt',
+          'decisionType',
+          'decisionAt',
+          'decisionByUid',
+          'decisionByName',
+          'decisionByEmail'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.email is string
+        && request.resource.data.emailNormalized is string
+        && request.resource.data.displayName is string
+        && request.resource.data.photoURL is string
+        && request.resource.data.requestCount is number
+        && request.resource.data.requestCount >= 1
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && isValidNullableTimestamp(request.resource.data.lastRequestedAt)
+        && isValidNullableTimestamp(request.resource.data.decisionAt)
+        && request.resource.data.decisionType is string
+        && request.resource.data.decisionByUid is string
+        && request.resource.data.decisionByName is string
+        && request.resource.data.decisionByEmail is string;
+    }
+
+    function isValidOwnPendingAccessRequest(uid) {
+      return isSignedIn()
+        && request.auth.uid == uid
+        && isValidAccessRequestBase(uid)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.lastRequestedAt is timestamp
+        && request.resource.data.decisionType == ''
+        && request.resource.data.decisionAt == null
+        && request.resource.data.decisionByUid == ''
+        && request.resource.data.decisionByName == ''
+        && request.resource.data.decisionByEmail == '';
+    }
+
+    function isValidOwnAccessRequestCreate(uid) {
+      return isValidOwnPendingAccessRequest(uid)
+        && request.resource.data.requestCount == 1;
+    }
+
+    function isValidOwnAccessRequestUpdate(uid) {
+      return isValidOwnPendingAccessRequest(uid)
+        && resource.data.status == 'pending';
+    }
+
+    function isValidStaffAccessDecision(uid) {
+      return isActiveStaff()
+        && resource.data.status == 'pending'
+        && isValidAccessRequestBase(uid)
+        && (
+          (request.resource.data.status == 'approved' && request.resource.data.decisionType == 'approve')
+          || (request.resource.data.status == 'denied' && request.resource.data.decisionType == 'deny')
+        )
+        && request.resource.data.decisionAt is timestamp
+        && request.resource.data.decisionByUid == request.auth.uid
+        && request.resource.data.decisionByName is string
+        && request.resource.data.decisionByEmail is string;
+    }
+
+    function isValidStaffAllowlistApproval(uid) {
+      return isActiveStaff()
+        && request.resource.data.keys().hasOnly([
+          'active',
+          'role',
+          'uid',
+          'email',
+          'displayName',
+          'approvedAt',
+          'approvedByUid',
+          'approvedByName',
+          'approvedByEmail'
+        ])
+        && request.resource.data.active == true
+        && request.resource.data.role == 'staff'
+        && request.resource.data.uid == uid
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string
+        && request.resource.data.approvedAt is timestamp
+        && request.resource.data.approvedByUid == request.auth.uid
+        && request.resource.data.approvedByName is string
+        && request.resource.data.approvedByEmail is string;
+    }
+
     match /staff_allowlist/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
-      allow write: if false;
+      allow create, update: if isValidStaffAllowlistApproval(uid);
+      allow delete: if false;
     }
 
     match /staff_profiles/{uid} {
@@ -318,8 +419,10 @@ service cloud.firestore {
     }
 
     match /access_requests/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow write: if false;
+      allow read: if isActiveStaff() || (isSignedIn() && request.auth.uid == uid);
+      allow create: if isValidOwnAccessRequestCreate(uid);
+      allow update: if isValidOwnAccessRequestUpdate(uid) || isValidStaffAccessDecision(uid);
+      allow delete: if false;
     }
 
     match /access_blocks_uid/{uid} {

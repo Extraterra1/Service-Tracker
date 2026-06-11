@@ -41,7 +41,7 @@ Main files:
 Notes:
 
 - pending users poll every 20 seconds
-- access approval is not just a read of `staff_allowlist`; it can trigger request creation through the callable function
+- access approval is not just a read of `staff_allowlist`; it can create a Firestore `access_requests/{uid}` document
 - approval is not considered complete until allowlist actually becomes active
 
 ## Header menu

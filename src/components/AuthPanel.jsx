@@ -38,7 +38,7 @@ function AuthPanel({ user, accessState, checkingAccess, pin, pinSyncState, onPin
       {checkingAccess ? <p className="helper-text">A validar acesso...</p> : null}
       {pinSyncState === 'syncing' ? <p className="helper-text">A sincronizar PIN da conta...</p> : null}
       {pinSyncState === 'synced' && pin ? <p className="helper-text">PIN sincronizado com a conta Google.</p> : null}
-      {accessState === 'denied' ? <p className="error-banner">Conta sem acesso. Adicione na allowlist.</p> : null}
+      {accessState === 'denied' ? <p className="error-banner">Conta sem acesso. Pede aprovação à equipa.</p> : null}
     </section>
   );
 }
