@@ -61,6 +61,31 @@ function normalizeAccessRequest(id, data = {}) {
   }
 }
 
+function normalizeStaffRole(role) {
+  const normalized = normalizeText(role).toLowerCase()
+  return normalized === 'admin' ? 'admin' : 'staff'
+}
+
+function normalizeManagedAccessUser(id, data = {}) {
+  const uid = normalizeText(data.uid) || id
+
+  return {
+    uid,
+    email: normalizeText(data.email),
+    displayName: normalizeText(data.displayName),
+    role: normalizeStaffRole(data.role),
+    active: data.active === true,
+    approvedAt: data.approvedAt ?? null,
+    approvedByUid: normalizeText(data.approvedByUid),
+    approvedByName: normalizeText(data.approvedByName),
+    approvedByEmail: normalizeText(data.approvedByEmail),
+    revokedAt: data.revokedAt ?? null,
+    revokedByUid: normalizeText(data.revokedByUid),
+    revokedByName: normalizeText(data.revokedByName),
+    revokedByEmail: normalizeText(data.revokedByEmail),
+  }
+}
+
 function buildPendingRequestPayload(user, existingData = null) {
   const uid = normalizeText(user?.uid)
   const email = normalizeText(user?.email)
@@ -116,6 +141,44 @@ function buildAllowlistPayload({ request, user }) {
     approvedByUid: normalizeText(user?.uid),
     approvedByName: getActorName(user),
     approvedByEmail: normalizeText(user?.email),
+  }
+}
+
+function buildRevokedAllowlistPayload({ target, user }) {
+  return {
+    active: false,
+    role: normalizeStaffRole(target.role),
+    uid: target.uid,
+    email: normalizeText(target.email),
+    displayName: normalizeText(target.displayName),
+    approvedAt: target.approvedAt ?? null,
+    approvedByUid: normalizeText(target.approvedByUid),
+    approvedByName: normalizeText(target.approvedByName),
+    approvedByEmail: normalizeText(target.approvedByEmail),
+    revokedAt: serverTimestamp(),
+    revokedByUid: normalizeText(user?.uid),
+    revokedByName: getActorName(user),
+    revokedByEmail: normalizeText(user?.email),
+  }
+}
+
+function buildBlockedRequestPayload({ target, user }) {
+  return {
+    uid: target.uid,
+    email: normalizeText(target.email),
+    emailNormalized: normalizeEmail(target.email),
+    displayName: normalizeText(target.displayName),
+    photoURL: normalizeText(target.photoURL),
+    status: 'blocked',
+    requestCount: Number(target.requestCount ?? 1) || 1,
+    createdAt: target.createdAt ?? serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastRequestedAt: target.lastRequestedAt ?? null,
+    decisionType: 'revoke',
+    decisionAt: serverTimestamp(),
+    decisionByUid: normalizeText(user?.uid),
+    decisionByName: getActorName(user),
+    decisionByEmail: normalizeText(user?.email),
   }
 }
 
@@ -180,6 +243,37 @@ export function subscribeToPendingAccessRequests(callback, errorCallback) {
   )
 }
 
+export function subscribeToManagedAccessUsers(callback, errorCallback) {
+  if (!db) {
+    callback([])
+    return () => {}
+  }
+
+  return onSnapshot(
+    collection(db, 'staff_allowlist'),
+    (snapshot) => {
+      const users = snapshot.docs
+        .map((staffDoc) => normalizeManagedAccessUser(staffDoc.id, staffDoc.data()))
+        .sort((left, right) => {
+          if (left.active !== right.active) {
+            return left.active ? -1 : 1
+          }
+
+          const leftLabel = getActorName(left) || left.uid
+          const rightLabel = getActorName(right) || right.uid
+          return leftLabel.localeCompare(rightLabel, 'pt', { sensitivity: 'base' })
+        })
+
+      callback(users)
+    },
+    (error) => {
+      if (typeof errorCallback === 'function') {
+        errorCallback(error)
+      }
+    }
+  )
+}
+
 export async function approveAccessRequest({ request, user }) {
   assertConfigured()
 
@@ -221,6 +315,25 @@ export async function denyAccessRequest({ request, user }) {
       decisionType: 'deny',
     })
   )
+
+  await batch.commit()
+}
+
+export async function revokeAccessUser({ target, user }) {
+  assertConfigured()
+
+  const uid = normalizeText(target?.uid)
+  assertUid(uid, 'Access user uid is required.')
+
+  if (uid === normalizeText(user?.uid)) {
+    throw new Error('You cannot revoke your own access.')
+  }
+
+  const normalizedTarget = normalizeManagedAccessUser(uid, target)
+  const batch = writeBatch(db)
+
+  batch.set(getAllowlistRef(uid), buildRevokedAllowlistPayload({ target: normalizedTarget, user }))
+  batch.set(getRequestRef(uid), buildBlockedRequestPayload({ target: normalizedTarget, user }))
 
   await batch.commit()
 }

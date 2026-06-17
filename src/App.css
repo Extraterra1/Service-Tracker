@@ -737,6 +737,40 @@ h1 {
   gap: 0.42rem;
 }
 
+.access-management-body,
+.access-management-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.menu-section[open] .access-management-body {
+  max-height: min(26rem, calc(100vh - 9rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.menu-section.is-closing .access-management-body,
+.menu-section:not([open]) .access-management-body {
+  overflow: hidden;
+}
+
+.access-management-group + .access-management-group {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--stroke);
+}
+
+.access-management-heading {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .access-request-row {
   display: grid;
   gap: 0.42rem;
@@ -744,6 +778,43 @@ h1 {
   border: 1px solid var(--stroke);
   border-radius: 8px;
   background: color-mix(in oklab, var(--panel-bg-strong), var(--panel-bg) 34%);
+}
+
+.access-user-list {
+  max-height: min(16rem, calc(100vh - 18rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 0.08rem;
+}
+
+.access-user-row {
+  gap: 0.22rem;
+  padding: 0.34rem 0.4rem;
+  border-left-width: 3px;
+}
+
+.access-user-row.is-active {
+  border-left-color: color-mix(in oklab, var(--ready-green), transparent 22%);
+  background:
+    linear-gradient(90deg, color-mix(in oklab, var(--ready-green), transparent 91%), transparent 38%),
+    color-mix(in oklab, var(--panel-bg-strong), var(--panel-bg) 34%);
+}
+
+.access-user-row.is-inactive {
+  border-left-color: color-mix(in oklab, var(--action-red), transparent 22%);
+  background:
+    linear-gradient(90deg, color-mix(in oklab, var(--action-red), transparent 92%), transparent 38%),
+    color-mix(in oklab, var(--panel-bg-strong), var(--panel-bg) 34%);
+}
+
+.access-user-top-row,
+.access-user-bottom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 0;
 }
 
 .access-request-copy {
@@ -763,12 +834,42 @@ h1 {
   font-weight: 800;
 }
 
+.access-user-row .access-request-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.access-user-row .access-request-name span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.access-admin-icon {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  color: color-mix(in oklab, var(--note-yellow), #9a6200 32%);
+  fill: currentColor;
+}
+
 .access-request-email {
   margin-top: 0.12rem;
   color: var(--text-muted);
   font-size: 0.7rem;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+.access-user-row .access-request-email {
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .access-request-meta {
@@ -782,16 +883,52 @@ h1 {
   font-weight: 700;
 }
 
+.access-user-row .access-request-meta {
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+.access-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.1rem;
+  padding: 0.08rem 0.34rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.access-status-pill.is-active {
+  color: var(--ready-green);
+  background: color-mix(in oklab, var(--ready-green), transparent 88%);
+}
+
+.access-status-pill.is-inactive {
+  color: var(--action-red);
+  background: color-mix(in oklab, var(--action-red), transparent 90%);
+}
+
 .access-request-actions {
   display: flex;
   gap: 0.34rem;
   align-items: center;
 }
 
+.access-user-row .access-request-actions {
+  justify-content: flex-end;
+}
+
 .access-request-action {
   flex: 1;
   justify-content: center;
   gap: 0.24rem;
+  padding-inline: 0.42rem;
+}
+
+.access-user-row .access-request-action {
+  flex: 0 0 auto;
+  min-height: 1.55rem;
   padding-inline: 0.42rem;
 }
 
@@ -3799,6 +3936,12 @@ h1 {
   .access-request-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .access-user-row .access-request-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .menu-time-row {

@@ -136,6 +136,43 @@ describe('accessRequestStore', () => {
     expect(result).toBe(unsubscribe)
   })
 
+  it('subscribes to managed access users and sorts active users first', async () => {
+    const unsubscribe = vi.fn()
+    firestoreMocks.onSnapshot.mockImplementation((_queryRef, next) => {
+      next({
+        docs: [
+          createRequestDoc('inactive-1', {
+            uid: 'inactive-1',
+            email: 'inactive@example.com',
+            displayName: 'Inactive User',
+            role: 'staff',
+            active: false,
+          }),
+          createRequestDoc('active-1', {
+            uid: 'active-1',
+            email: 'active@example.com',
+            displayName: 'Active User',
+            role: 'admin',
+            active: true,
+          }),
+        ],
+      })
+      return unsubscribe
+    })
+
+    const { subscribeToManagedAccessUsers } = await import('../accessRequestStore')
+    const callback = vi.fn()
+
+    const result = subscribeToManagedAccessUsers(callback)
+
+    expect(firestoreMocks.collection).toHaveBeenCalledWith(firestoreMocks.db, 'staff_allowlist')
+    expect(callback).toHaveBeenCalledWith([
+      expect.objectContaining({ uid: 'active-1', displayName: 'Active User', role: 'admin', active: true }),
+      expect.objectContaining({ uid: 'inactive-1', displayName: 'Inactive User', role: 'staff', active: false }),
+    ])
+    expect(result).toBe(unsubscribe)
+  })
+
   it('approves an access request by writing allowlist and request decision docs in one batch', async () => {
     const batchSet = vi.fn()
     const batchCommit = vi.fn().mockResolvedValue(undefined)
@@ -225,5 +262,69 @@ describe('accessRequestStore', () => {
       })
     )
     expect(batchCommit).toHaveBeenCalledTimes(1)
+  })
+
+  it('revokes access by deactivating the allowlist user and blocking future requests', async () => {
+    const batchSet = vi.fn()
+    const batchCommit = vi.fn().mockResolvedValue(undefined)
+    firestoreMocks.writeBatch.mockReturnValue({
+      set: batchSet,
+      commit: batchCommit,
+    })
+
+    const { revokeAccessUser } = await import('../accessRequestStore')
+
+    await revokeAccessUser({
+      target: {
+        uid: 'uid-4',
+        email: 'revoked@example.com',
+        displayName: 'Revoked User',
+        role: 'admin',
+        active: true,
+        approvedAt: { toMillis: () => 1000 },
+        approvedByUid: 'admin-0',
+        approvedByName: 'Admin Zero',
+        approvedByEmail: 'admin0@example.com',
+      },
+      user: {
+        uid: 'staff-1',
+        email: 'staff@example.com',
+        displayName: 'Staff One',
+      },
+    })
+
+    expect(batchSet).toHaveBeenCalledWith(
+      { collectionName: 'staff_allowlist', id: 'uid-4' },
+      expect.objectContaining({
+        uid: 'uid-4',
+        active: false,
+        role: 'admin',
+        email: 'revoked@example.com',
+        displayName: 'Revoked User',
+        approvedByUid: 'admin-0',
+        revokedByUid: 'staff-1',
+      })
+    )
+    expect(batchSet).toHaveBeenCalledWith(
+      { collectionName: 'access_requests', id: 'uid-4' },
+      expect.objectContaining({
+        uid: 'uid-4',
+        status: 'blocked',
+        decisionType: 'revoke',
+        decisionByUid: 'staff-1',
+      })
+    )
+    expect(batchCommit).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not allow a user to revoke their own access', async () => {
+    const { revokeAccessUser } = await import('../accessRequestStore')
+
+    await expect(
+      revokeAccessUser({
+        target: { uid: 'staff-1', email: 'staff@example.com' },
+        user: { uid: 'staff-1', email: 'staff@example.com' },
+      })
+    ).rejects.toThrow('You cannot revoke your own access.')
   })
 })

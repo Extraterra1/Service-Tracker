@@ -40,10 +40,13 @@ function createProps(overrides = {}) {
     onOpenLeaderboardPopup: vi.fn(),
     onCopySessionDiagnostics: vi.fn(),
     diagnosticsStatusMessage: '',
+    canManageAccess: false,
     pendingAccessRequests: [],
+    managedAccessUsers: [],
     accessRequestDecisionUid: '',
     onApproveAccessRequest: vi.fn(),
     onDenyAccessRequest: vi.fn(),
+    onRevokeAccessUser: vi.fn(),
     leaderboardLoading: false,
     statusLine: 'ok',
     canMutateSelectedDate: true,
@@ -193,32 +196,66 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.getByText('Diagnóstico pronto a enviar.')).toBeInTheDocument();
   });
 
-  it('shows an empty access request state in the menu', async () => {
-    const user = userEvent.setup();
+  it('hides access management from non-admin users', () => {
+    render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
 
-    render(<AppHeaderMenu {...createProps()} />);
-    await user.click(screen.getByText('Pedidos de Acesso'));
-
-    expect(screen.getByText('Sem pedidos pendentes.')).toBeInTheDocument();
+    expect(screen.queryByText('Pedidos de Acesso')).not.toBeInTheDocument();
   });
 
-  it('renders pending access requests and calls approve or deny actions', async () => {
+  it('hides the pending request group when admins have no pending requests', async () => {
+    const user = userEvent.setup();
+
+    render(<AppHeaderMenu {...createProps({ canManageAccess: true })} />);
+    await user.click(screen.getByText('Pedidos de Acesso'));
+
+    expect(screen.queryByText('Pedidos pendentes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sem pedidos pendentes.')).not.toBeInTheDocument();
+    expect(screen.getByText('Utilizadores')).toBeInTheDocument();
+    expect(screen.getByText('Sem utilizadores registados.')).toBeInTheDocument();
+  });
+
+  it('renders pending access requests and managed users for admins', async () => {
     const user = userEvent.setup();
     const onApproveAccessRequest = vi.fn();
     const onDenyAccessRequest = vi.fn();
+    const onRevokeAccessUser = vi.fn();
     const pendingRequest = {
       uid: 'uid-1',
       displayName: 'New User',
       email: 'new@example.com',
       requestCount: 2,
     };
+    const activeUser = {
+      uid: 'staff-2',
+      displayName: 'Staff Two',
+      email: 'staff2@example.com',
+      role: 'staff',
+      active: true,
+    };
+    const inactiveUser = {
+      uid: 'staff-3',
+      displayName: 'Staff Three',
+      email: 'staff3@example.com',
+      role: 'admin',
+      active: false,
+    };
+    const adminUser = {
+      uid: 'staff-4',
+      displayName: 'Admin User',
+      email: 'admin@example.com',
+      role: 'admin',
+      active: true,
+    };
 
     render(
       <AppHeaderMenu
         {...createProps({
+          canManageAccess: true,
           pendingAccessRequests: [pendingRequest],
+          managedAccessUsers: [activeUser, inactiveUser, adminUser],
           onApproveAccessRequest,
           onDenyAccessRequest,
+          onRevokeAccessUser,
         })}
       />
     );
@@ -230,12 +267,43 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(within(accessSection).getByText('New User')).toBeInTheDocument();
     expect(within(accessSection).getByText('new@example.com')).toBeInTheDocument();
     expect(within(accessSection).getByText('2 pedidos')).toBeInTheDocument();
+    expect(within(accessSection).getByText('Staff Two')).toBeInTheDocument();
+    expect(within(accessSection).getByText('staff2@example.com')).toBeInTheDocument();
+    expect(within(accessSection).getByText('Staff Three')).toBeInTheDocument();
+    expect(within(accessSection).getByText('Inativo')).toBeInTheDocument();
+    expect(within(accessSection).getByText('Admin User')).toBeInTheDocument();
+    expect(within(accessSection).queryByText('UID staff-2')).not.toBeInTheDocument();
+    expect(within(accessSection).queryByText('UID staff-3')).not.toBeInTheDocument();
+
+    const staffTwoRow = within(accessSection).getByText('Staff Two').closest('article');
+    expect(staffTwoRow).not.toBeNull();
+    const staffTwoTopRow = staffTwoRow.querySelector('.access-user-top-row');
+    const staffTwoBottomRow = staffTwoRow.querySelector('.access-user-bottom-row');
+    expect(staffTwoTopRow).not.toBeNull();
+    expect(staffTwoBottomRow).not.toBeNull();
+    expect(within(staffTwoTopRow).getByText('Staff Two')).toBeInTheDocument();
+    expect(within(staffTwoTopRow).getByText('Ativo')).toBeInTheDocument();
+    expect(within(staffTwoBottomRow).getByText('staff2@example.com')).toBeInTheDocument();
+    expect(within(staffTwoBottomRow).getByRole('button', { name: 'Revogar acesso de Staff Two' })).toBeInTheDocument();
+    expect(staffTwoRow.closest('.access-user-list')).not.toBeNull();
+    expect(staffTwoRow).toHaveClass('is-active');
+
+    const staffThreeRow = within(accessSection).getByText('Staff Three').closest('article');
+    expect(staffThreeRow).toHaveClass('is-inactive');
+
+    const adminRow = within(accessSection).getByText('Admin User').closest('article');
+    expect(adminRow).not.toBeNull();
+    expect(adminRow).toHaveClass('is-admin');
+    expect(within(adminRow).getByLabelText('Admin')).toBeInTheDocument();
+    expect(within(adminRow).queryByRole('button', { name: 'Revogar acesso de Admin User' })).not.toBeInTheDocument();
 
     await user.click(within(accessSection).getByRole('button', { name: 'Aprovar New User' }));
     await user.click(within(accessSection).getByRole('button', { name: 'Negar New User' }));
+    await user.click(within(accessSection).getByRole('button', { name: 'Revogar acesso de Staff Two' }));
 
     expect(onApproveAccessRequest).toHaveBeenCalledWith(pendingRequest);
     expect(onDenyAccessRequest).toHaveBeenCalledWith(pendingRequest);
+    expect(onRevokeAccessUser).toHaveBeenCalledWith(activeUser);
   });
 
   it('disables manual mutation controls when selected date is not current', async () => {

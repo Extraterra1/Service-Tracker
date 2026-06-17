@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Menu, MoonStar, SunMedium, X } from 'lucide-react';
+import { Check, Menu, MoonStar, Star, SunMedium, UserX, X } from 'lucide-react';
 import AuthPanel from './AuthPanel';
 import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
 
@@ -53,6 +53,14 @@ function getAccessRequestLabel(request) {
 function getAccessRequestCountLabel(requestCount) {
   const count = Number(requestCount ?? 0) || 1;
   return count === 1 ? '1 pedido' : `${count} pedidos`;
+}
+
+function getAccessUserLabel(accessUser) {
+  return accessUser.displayName || accessUser.email || accessUser.uid || 'Utilizador';
+}
+
+function getAccessStatusLabel(active) {
+  return active ? 'Ativo' : 'Inativo';
 }
 
 function getAviabilityLookupUrl(allServiceItems, selectedDate) {
@@ -109,10 +117,13 @@ function AppHeaderMenu({
   onOpenLeaderboardPopup,
   onCopySessionDiagnostics,
   diagnosticsStatusMessage = '',
+  canManageAccess = false,
   pendingAccessRequests = [],
+  managedAccessUsers = [],
   accessRequestDecisionUid = '',
   onApproveAccessRequest,
   onDenyAccessRequest,
+  onRevokeAccessUser,
   leaderboardLoading,
   statusLine,
   selectedDate,
@@ -235,67 +246,125 @@ function AppHeaderMenu({
               </div>
             </details>
 
-            <details
-              className={`menu-section ${closingSections[MENU_SECTION_KEYS.accessRequests] ? 'is-closing' : ''}`}
-              open={openSections[MENU_SECTION_KEYS.accessRequests] || closingSections[MENU_SECTION_KEYS.accessRequests]}
-            >
-              <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.accessRequests)}>
-                <span>Pedidos de Acesso</span>
-                {pendingAccessRequests.length > 0 ? (
-                  <span className="menu-section-count-pill" aria-label={`${pendingAccessRequests.length} pedidos pendentes`}>
-                    <span className="menu-section-count-pulse" aria-hidden="true" />
-                    {pendingAccessRequests.length}
-                  </span>
-                ) : null}
-              </summary>
-              <div className="menu-section-body">
-                {pendingAccessRequests.length === 0 ? (
-                  <p className="subtle-text">Sem pedidos pendentes.</p>
-                ) : (
-                  <div className="access-request-list">
-                    {pendingAccessRequests.map((request) => {
-                      const requestLabel = getAccessRequestLabel(request);
-                      const isDeciding = accessRequestDecisionUid === request.uid;
+            {canManageAccess ? (
+              <details
+                className={`menu-section ${closingSections[MENU_SECTION_KEYS.accessRequests] ? 'is-closing' : ''}`}
+                open={openSections[MENU_SECTION_KEYS.accessRequests] || closingSections[MENU_SECTION_KEYS.accessRequests]}
+              >
+                <summary className="menu-section-summary" onClick={handleSectionSummaryClick(MENU_SECTION_KEYS.accessRequests)}>
+                  <span>Pedidos de Acesso</span>
+                  {pendingAccessRequests.length > 0 ? (
+                    <span className="menu-section-count-pill" aria-label={`${pendingAccessRequests.length} pedidos pendentes`}>
+                      <span className="menu-section-count-pulse" aria-hidden="true" />
+                      {pendingAccessRequests.length}
+                    </span>
+                  ) : null}
+                </summary>
+                <div className="menu-section-body access-management-body">
+                  {pendingAccessRequests.length > 0 ? (
+                    <div className="access-management-group">
+                      <p className="access-management-heading">Pedidos pendentes</p>
+                      <div className="access-request-list">
+                        {pendingAccessRequests.map((request) => {
+                          const requestLabel = getAccessRequestLabel(request);
+                          const isDeciding = accessRequestDecisionUid === request.uid;
 
-                      return (
-                        <article className="access-request-row" key={request.uid}>
-                          <div className="access-request-copy">
-                            <p className="access-request-name">{requestLabel}</p>
-                            {request.email ? <p className="access-request-email">{request.email}</p> : null}
-                            <p className="access-request-meta">
-                              <span>{getAccessRequestCountLabel(request.requestCount)}</span>
-                              {request.uid ? <span>UID {request.uid}</span> : null}
-                            </p>
-                          </div>
-                          <div className="access-request-actions">
-                            <button
-                              type="button"
-                              className="ghost-btn compact-btn access-request-action access-request-approve"
-                              onClick={() => onApproveAccessRequest?.(request)}
-                              disabled={isDeciding}
-                              aria-label={`Aprovar ${requestLabel}`}
+                          return (
+                            <article className="access-request-row" key={request.uid}>
+                              <div className="access-request-copy">
+                                <p className="access-request-name">{requestLabel}</p>
+                                {request.email ? <p className="access-request-email">{request.email}</p> : null}
+                                <p className="access-request-meta">
+                                  <span>{getAccessRequestCountLabel(request.requestCount)}</span>
+                                  {request.uid ? <span>UID {request.uid}</span> : null}
+                                </p>
+                              </div>
+                              <div className="access-request-actions">
+                                <button
+                                  type="button"
+                                  className="ghost-btn compact-btn access-request-action access-request-approve"
+                                  onClick={() => onApproveAccessRequest?.(request)}
+                                  disabled={isDeciding}
+                                  aria-label={`Aprovar ${requestLabel}`}
+                                >
+                                  <Check className="access-request-action-icon" aria-hidden="true" />
+                                  Aprovar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ghost-btn compact-btn access-request-action access-request-deny"
+                                  onClick={() => onDenyAccessRequest?.(request)}
+                                  disabled={isDeciding}
+                                  aria-label={`Negar ${requestLabel}`}
+                                >
+                                  <X className="access-request-action-icon" aria-hidden="true" />
+                                  Negar
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="access-management-group">
+                    <p className="access-management-heading">Utilizadores</p>
+                    {managedAccessUsers.length === 0 ? (
+                      <p className="subtle-text">Sem utilizadores registados.</p>
+                    ) : (
+                      <div className="access-request-list access-user-list">
+                        {managedAccessUsers.map((accessUser) => {
+                          const accessUserLabel = getAccessUserLabel(accessUser);
+                          const isDeciding = accessRequestDecisionUid === accessUser.uid;
+                          const isSelf = accessUser.uid && accessUser.uid === user?.uid;
+                          const isAdmin = accessUser.role === 'admin';
+                          const canRevokeUser = accessUser.active && !isSelf && !isAdmin;
+
+                          return (
+                            <article
+                              className={`access-request-row access-user-row ${accessUser.active ? 'is-active' : 'is-inactive'} ${isAdmin ? 'is-admin' : ''}`}
+                              key={accessUser.uid}
                             >
-                              <Check className="access-request-action-icon" aria-hidden="true" />
-                              Aprovar
-                            </button>
-                            <button
-                              type="button"
-                              className="ghost-btn compact-btn access-request-action access-request-deny"
-                              onClick={() => onDenyAccessRequest?.(request)}
-                              disabled={isDeciding}
-                              aria-label={`Negar ${requestLabel}`}
-                            >
-                              <X className="access-request-action-icon" aria-hidden="true" />
-                              Negar
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
+                              <div className="access-user-top-row">
+                                <p className="access-request-name">
+                                  <span>{accessUserLabel}</span>
+                                  {isAdmin ? <Star className="access-admin-icon" aria-label="Admin" /> : null}
+                                </p>
+                                <p className="access-request-meta">
+                                  <span className={`access-status-pill ${accessUser.active ? 'is-active' : 'is-inactive'}`}>
+                                    {getAccessStatusLabel(accessUser.active)}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="access-user-bottom-row">
+                                {accessUser.email ? <p className="access-request-email">{accessUser.email}</p> : <span aria-hidden="true" />}
+                                {canRevokeUser ? (
+                                  <div className="access-request-actions">
+                                    <button
+                                      type="button"
+                                      className="ghost-btn compact-btn access-request-action access-request-deny"
+                                      onClick={() => onRevokeAccessUser?.(accessUser)}
+                                      disabled={isDeciding}
+                                      aria-label={`Revogar acesso de ${accessUserLabel}`}
+                                    >
+                                      <UserX className="access-request-action-icon" aria-hidden="true" />
+                                      Revogar
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span aria-hidden="true" />
+                                )}
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </details>
+                </div>
+              </details>
+            ) : null}
 
             <details
               className={`menu-section ${closingSections[MENU_SECTION_KEYS.completed] ? 'is-closing' : ''}`}

@@ -11,6 +11,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/staff_allowlist/$(request.auth.uid)).data.active == true;
     }
 
+    function isAdminStaff() {
+      return isActiveStaff()
+        && get(/databases/$(database)/documents/staff_allowlist/$(request.auth.uid)).data.role == 'admin';
+    }
+
     function isValidDateString(value) {
       return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
     }
@@ -291,7 +296,7 @@ service cloud.firestore {
     }
 
     function isValidStaffAccessDecision(uid) {
-      return isActiveStaff()
+      return isAdminStaff()
         && resource.data.status == 'pending'
         && isValidAccessRequestBase(uid)
         && (
@@ -304,8 +309,24 @@ service cloud.firestore {
         && request.resource.data.decisionByEmail is string;
     }
 
+    function isValidAdminBlockedAccessDecision(uid) {
+      return isAdminStaff()
+        && uid != request.auth.uid
+        && isValidAccessRequestBase(uid)
+        && request.resource.data.status == 'blocked'
+        && request.resource.data.decisionType == 'revoke'
+        && request.resource.data.decisionAt is timestamp
+        && request.resource.data.decisionByUid == request.auth.uid
+        && request.resource.data.decisionByName is string
+        && request.resource.data.decisionByEmail is string;
+    }
+
+    function isValidStaffRole(value) {
+      return value == 'staff' || value == 'admin';
+    }
+
     function isValidStaffAllowlistApproval(uid) {
-      return isActiveStaff()
+      return isAdminStaff()
         && request.resource.data.keys().hasOnly([
           'active',
           'role',
@@ -328,9 +349,45 @@ service cloud.firestore {
         && request.resource.data.approvedByEmail is string;
     }
 
+    function isValidStaffAllowlistRevocation(uid) {
+      return isAdminStaff()
+        && uid != request.auth.uid
+        && resource.data.active == true
+        && request.resource.data.keys().hasOnly([
+          'active',
+          'role',
+          'uid',
+          'email',
+          'displayName',
+          'approvedAt',
+          'approvedByUid',
+          'approvedByName',
+          'approvedByEmail',
+          'revokedAt',
+          'revokedByUid',
+          'revokedByName',
+          'revokedByEmail'
+        ])
+        && request.resource.data.active == false
+        && isValidStaffRole(request.resource.data.role)
+        && request.resource.data.uid == uid
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string
+        && isValidNullableTimestamp(request.resource.data.approvedAt)
+        && request.resource.data.approvedByUid is string
+        && request.resource.data.approvedByName is string
+        && request.resource.data.approvedByEmail is string
+        && request.resource.data.revokedAt is timestamp
+        && request.resource.data.revokedByUid == request.auth.uid
+        && request.resource.data.revokedByName is string
+        && request.resource.data.revokedByEmail is string;
+    }
+
     match /staff_allowlist/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow create, update: if isValidStaffAllowlistApproval(uid);
+      allow get: if (isSignedIn() && request.auth.uid == uid) || isAdminStaff();
+      allow list: if isAdminStaff();
+      allow create: if isValidStaffAllowlistApproval(uid);
+      allow update: if isValidStaffAllowlistApproval(uid) || isValidStaffAllowlistRevocation(uid);
       allow delete: if false;
     }
 
@@ -419,9 +476,10 @@ service cloud.firestore {
     }
 
     match /access_requests/{uid} {
-      allow read: if isActiveStaff() || (isSignedIn() && request.auth.uid == uid);
-      allow create: if isValidOwnAccessRequestCreate(uid);
-      allow update: if isValidOwnAccessRequestUpdate(uid) || isValidStaffAccessDecision(uid);
+      allow get: if isAdminStaff() || (isSignedIn() && request.auth.uid == uid);
+      allow list: if isAdminStaff();
+      allow create: if isValidOwnAccessRequestCreate(uid) || isValidAdminBlockedAccessDecision(uid);
+      allow update: if isValidOwnAccessRequestUpdate(uid) || isValidStaffAccessDecision(uid) || isValidAdminBlockedAccessDecision(uid);
       allow delete: if false;
     }
 

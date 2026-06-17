@@ -44,6 +44,7 @@ export function useAccessGate() {
   const [authHint, setAuthHint] = useState(getStoredAuthHint);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [accessState, setAccessState] = useState('checking');
+  const [accessProfile, setAccessProfile] = useState(null);
   const [accessGateMessage, setAccessGateMessage] = useState('');
   const [accessPollInFlight, setAccessPollInFlight] = useState(false);
   const [error, setError] = useState('');
@@ -54,6 +55,7 @@ export function useAccessGate() {
   const applyAccessResult = useCallback((accessResult) => {
     const nextState = String(accessResult?.state ?? 'denied');
     setAccessState(nextState);
+    setAccessProfile(nextState === 'allowed' ? accessResult?.profile ?? null : null);
 
     if (nextState === 'allowed' || nextState === 'signed_out' || nextState === 'checking') {
       setAccessGateMessage('');
@@ -249,6 +251,7 @@ export function useAccessGate() {
     user,
     authHint,
     accessState,
+    accessProfile,
     checkingAccess,
     accessGateMessage,
     accessPollInFlight,

@@ -10,6 +10,7 @@ import { addDays, getTodayServiceDate } from '../date';
 
 const PROJECT_ID = 'demo-service-tracker';
 const STAFF_UID = 'staff-user-1';
+const ADMIN_UID = 'admin-user-1';
 const PENDING_UID = 'pending-user-1';
 const RULES_PATH = resolve(process.cwd(), 'firestore.rules');
 const hasFirestoreEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
@@ -19,6 +20,12 @@ let testEnv;
 function getAuthedDb() {
   return testEnv.authenticatedContext(STAFF_UID, {
     email: 'staff@example.com',
+  }).firestore();
+}
+
+function getAdminDb() {
+  return testEnv.authenticatedContext(ADMIN_UID, {
+    email: 'admin@example.com',
   }).firestore();
 }
 
@@ -138,9 +145,9 @@ function buildAccessDecisionPayload(status, decisionType) {
     updatedAt: now,
     decisionType,
     decisionAt: now,
-    decisionByUid: STAFF_UID,
-    decisionByName: 'Staff User',
-    decisionByEmail: 'staff@example.com',
+    decisionByUid: ADMIN_UID,
+    decisionByName: 'Admin User',
+    decisionByEmail: 'admin@example.com',
   };
 }
 
@@ -152,9 +159,51 @@ function buildAllowlistApprovalPayload() {
     email: `${PENDING_UID}@example.com`,
     displayName: 'Pending User',
     approvedAt: Timestamp.fromDate(new Date()),
-    approvedByUid: STAFF_UID,
-    approvedByName: 'Staff User',
-    approvedByEmail: 'staff@example.com',
+    approvedByUid: ADMIN_UID,
+    approvedByName: 'Admin User',
+    approvedByEmail: 'admin@example.com',
+  };
+}
+
+function buildRevokedAllowlistPayload(uid = PENDING_UID) {
+  const now = Timestamp.fromDate(new Date());
+
+  return {
+    active: false,
+    role: 'staff',
+    uid,
+    email: `${uid}@example.com`,
+    displayName: 'Revoked User',
+    approvedAt: now,
+    approvedByUid: ADMIN_UID,
+    approvedByName: 'Admin User',
+    approvedByEmail: 'admin@example.com',
+    revokedAt: now,
+    revokedByUid: ADMIN_UID,
+    revokedByName: 'Admin User',
+    revokedByEmail: 'admin@example.com',
+  };
+}
+
+function buildBlockedAccessRequestPayload(uid = PENDING_UID) {
+  const now = Timestamp.fromDate(new Date());
+
+  return {
+    uid,
+    email: `${uid}@example.com`,
+    emailNormalized: `${uid}@example.com`,
+    displayName: 'Revoked User',
+    photoURL: '',
+    status: 'blocked',
+    requestCount: 1,
+    createdAt: now,
+    updatedAt: now,
+    lastRequestedAt: null,
+    decisionType: 'revoke',
+    decisionAt: now,
+    decisionByUid: ADMIN_UID,
+    decisionByName: 'Admin User',
+    decisionByEmail: 'admin@example.com',
   };
 }
 
@@ -193,6 +242,17 @@ beforeEach(async () => {
       email: 'staff@example.com',
       displayName: 'Staff User',
       role: 'staff',
+    });
+    await setDoc(doc(db, 'staff_allowlist', ADMIN_UID), {
+      active: true,
+      uid: ADMIN_UID,
+      email: 'admin@example.com',
+      displayName: 'Admin User',
+      role: 'admin',
+      approvedAt: Timestamp.fromDate(new Date()),
+      approvedByUid: ADMIN_UID,
+      approvedByName: 'Admin User',
+      approvedByEmail: 'admin@example.com',
     });
   });
 });
@@ -274,7 +334,7 @@ describeRules('firestore access request rules', () => {
     await expect(assertFails(setDoc(doc(db, 'access_requests', PENDING_UID), buildAccessDecisionPayload('approved', 'approve')))).resolves.toBeDefined();
   });
 
-  it('allows active staff to list pending access requests', async () => {
+  it('blocks non-admin staff from listing pending access requests', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const adminDb = context.firestore();
       await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
@@ -283,29 +343,79 @@ describeRules('firestore access request rules', () => {
     const db = getAuthedDb();
     const pendingQuery = query(collection(db, 'access_requests'), where('status', '==', 'pending'));
 
-    await expect(assertSucceeds(getDocs(pendingQuery))).resolves.toBeDefined();
+    await expect(assertFails(getDocs(pendingQuery))).resolves.toBeDefined();
   });
 
-  it('allows active staff to approve a pending access request', async () => {
+  it('allows admins to list pending access requests', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const adminDb = context.firestore();
       await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
     });
 
-    const db = getAuthedDb();
+    const db = getAdminDb();
+    const pendingQuery = query(collection(db, 'access_requests'), where('status', '==', 'pending'));
+
+    await expect(assertSucceeds(getDocs(pendingQuery))).resolves.toBeDefined();
+  });
+
+  it('allows admins to approve a pending access request', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
+    });
+
+    const db = getAdminDb();
 
     await expect(assertSucceeds(setDoc(doc(db, 'staff_allowlist', PENDING_UID), buildAllowlistApprovalPayload()))).resolves.toBeUndefined();
     await expect(assertSucceeds(setDoc(doc(db, 'access_requests', PENDING_UID), buildAccessDecisionPayload('approved', 'approve')))).resolves.toBeUndefined();
   });
 
-  it('allows active staff to deny a pending access request without allowlisting the user', async () => {
+  it('allows admins to deny a pending access request without allowlisting the user', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const adminDb = context.firestore();
       await setDoc(doc(adminDb, 'access_requests', PENDING_UID), buildPendingAccessRequestPayload());
     });
 
-    const db = getAuthedDb();
+    const db = getAdminDb();
 
     await expect(assertSucceeds(setDoc(doc(db, 'access_requests', PENDING_UID), buildAccessDecisionPayload('denied', 'deny')))).resolves.toBeUndefined();
+  });
+
+  it('blocks non-admin staff from listing staff allowlist users or revoking access', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'staff_allowlist', PENDING_UID), {
+        active: true,
+        uid: PENDING_UID,
+        email: `${PENDING_UID}@example.com`,
+        displayName: 'Active User',
+        role: 'staff',
+      });
+    });
+
+    const db = getAuthedDb();
+
+    await expect(assertFails(getDocs(collection(db, 'staff_allowlist')))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'staff_allowlist', PENDING_UID), buildRevokedAllowlistPayload()))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'access_requests', PENDING_UID), buildBlockedAccessRequestPayload()))).resolves.toBeDefined();
+  });
+
+  it('allows admins to list all staff allowlist users and revoke a user into blocked state', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'staff_allowlist', PENDING_UID), {
+        active: true,
+        uid: PENDING_UID,
+        email: `${PENDING_UID}@example.com`,
+        displayName: 'Active User',
+        role: 'staff',
+      });
+    });
+
+    const db = getAdminDb();
+
+    await expect(assertSucceeds(getDocs(collection(db, 'staff_allowlist')))).resolves.toBeDefined();
+    await expect(assertSucceeds(setDoc(doc(db, 'staff_allowlist', PENDING_UID), buildRevokedAllowlistPayload()))).resolves.toBeUndefined();
+    await expect(assertSucceeds(setDoc(doc(db, 'access_requests', PENDING_UID), buildBlockedAccessRequestPayload()))).resolves.toBeUndefined();
   });
 });

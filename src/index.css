@@ -4,6 +4,9 @@
   --text-muted: #5a657d;
   --accent: #f83848;
   --accent-strong: #db243b;
+  --ready-green: #16833a;
+  --action-red: #d93647;
+  --note-yellow: #f2b632;
   --stroke: rgba(17, 24, 39, 0.14);
   --shadow: 0 12px 26px rgba(17, 24, 39, 0.12);
 
@@ -63,6 +66,9 @@
   --text-muted: #a7b2c7;
   --accent: #f83848;
   --accent-strong: #db243b;
+  --ready-green: #66c786;
+  --action-red: #ff6b7a;
+  --note-yellow: #ffd166;
   --stroke: rgba(255, 255, 255, 0.13);
   --shadow: 0 18px 38px rgba(6, 10, 16, 0.45);
 

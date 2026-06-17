@@ -152,10 +152,20 @@ function App() {
   const [carHistoryInitialPlateKey, setCarHistoryInitialPlateKey] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
-  const { user, authHint, accessState, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
-  const { pendingAccessRequests, accessRequestDecisionUid, accessRequestsError, approveAccessRequest, denyAccessRequest } = useAccessRequests({
+  const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
+  const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
+  const {
+    pendingAccessRequests,
+    managedAccessUsers,
+    accessRequestDecisionUid,
+    accessRequestsError,
+    approveAccessRequest,
+    denyAccessRequest,
+    revokeAccessUser,
+  } = useAccessRequests({
     accessState,
-    user
+    user,
+    canManageAccess
   });
   const canReadServiceData = accessState === 'allowed';
   const {
@@ -984,10 +994,13 @@ function App() {
         onOpenLeaderboardPopup={handleOpenLeaderboardPopup}
         onCopySessionDiagnostics={handleCopySessionDiagnostics}
         diagnosticsStatusMessage={diagnosticsStatusMessage}
+        canManageAccess={canManageAccess}
         pendingAccessRequests={pendingAccessRequests}
+        managedAccessUsers={managedAccessUsers}
         accessRequestDecisionUid={accessRequestDecisionUid}
         onApproveAccessRequest={approveAccessRequest}
         onDenyAccessRequest={denyAccessRequest}
+        onRevokeAccessUser={revokeAccessUser}
         leaderboardLoading={leaderboardLoading}
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}

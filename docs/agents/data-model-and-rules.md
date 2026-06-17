@@ -25,7 +25,8 @@ Read/write model:
 
 - client can read only their own document
 - client cannot write
-- active staff can create/update approval-shaped allowlist docs
+- active admins can create/update approval-shaped allowlist docs
+- active admins can list staff allowlist docs and revoke users
 
 Important fields seen in repo:
 
@@ -33,6 +34,7 @@ Important fields seen in repo:
 - `displayName`
 - `email`
 - `role`
+- revocation metadata when admins revoke access in the app menu
 - approval metadata when staff approve access in the app menu
 
 ### `staff_profiles/{uid}`
@@ -269,8 +271,8 @@ Purpose:
 Read/write model:
 
 - user can read and write only their own pending request doc
-- active staff can list pending requests
-- active staff can mark requests `approved` or `denied`
+- active admins can list pending requests
+- active admins can mark requests `approved`, `denied`, or `blocked`
 
 Observed states:
 
@@ -284,6 +286,7 @@ Observed states:
 Purpose:
 
 - blocklists for denied access escalation
+- app-menu revocation marks `access_requests/{uid}.status` as `blocked`
 
 Read/write model:
 

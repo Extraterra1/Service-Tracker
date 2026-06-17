@@ -57,9 +57,11 @@ npm run preview
 Access approval is handled directly through Firestore and guarded by `firestore.rules`:
 
 - signed-in users create/update their own pending `access_requests/{uid}` document
-- active staff can read pending access requests in the app menu
-- active staff can approve by writing `staff_allowlist/{uid}` and marking the request `approved`
-- active staff can deny by marking the request `denied`
+- active admins (`staff_allowlist/{uid}.role == "admin"`) can read pending access requests in the app menu
+- active admins can list active/inactive staff allowlist users
+- active admins can approve by writing `staff_allowlist/{uid}` and marking the request `approved`
+- active admins can deny by marking the request `denied`
+- active admins can revoke an existing user by setting their allowlist record inactive and marking their request `blocked`
 
 ### Deploy rules
 
@@ -79,6 +81,8 @@ firebase deploy --only firestore:rules
   "role": "staff"
 }
 ```
+
+Use `"role": "admin"` for users who can manage access requests and revoke users.
 
 ### `service_status/{date}_{itemId}`
 
@@ -122,7 +126,7 @@ Required Firestore rule behavior for this collection:
 }
 ```
 
-Signed-in users can create/update only their own pending request. Active staff can list pending requests and mark them approved or denied from the app menu.
+Signed-in users can create/update only their own pending request. Active admins can list pending requests, mark them approved or denied, and block revoked users from the app menu.
 
 ### `service_refresh_locks/{date}` (client-coordinated auto-refresh lease)
 

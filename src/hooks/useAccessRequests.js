@@ -2,20 +2,25 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   approveAccessRequest as approveAccessRequestDoc,
   denyAccessRequest as denyAccessRequestDoc,
+  revokeAccessUser as revokeAccessUserDoc,
+  subscribeToManagedAccessUsers,
   subscribeToPendingAccessRequests,
 } from '../lib/accessRequestStore'
 
-export function useAccessRequests({ accessState, user }) {
+export function useAccessRequests({ accessState, user, canManageAccess = false }) {
   const [requests, setRequests] = useState([])
+  const [managedUsers, setManagedUsers] = useState([])
   const [error, setError] = useState('')
   const [accessRequestDecisionUid, setAccessRequestDecisionUid] = useState('')
 
   useEffect(() => {
-    if (accessState !== 'allowed') {
+    if (accessState !== 'allowed' || !canManageAccess) {
+      setRequests([])
+      setManagedUsers([])
       return () => {}
     }
 
-    return subscribeToPendingAccessRequests(
+    const unsubscribeRequests = subscribeToPendingAccessRequests(
       (nextRequests) => {
         setRequests(nextRequests)
         setError('')
@@ -24,12 +29,35 @@ export function useAccessRequests({ accessState, user }) {
         setError(nextError.message)
       }
     )
-  }, [accessState])
+
+    const unsubscribeUsers = subscribeToManagedAccessUsers(
+      (nextUsers) => {
+        setManagedUsers(nextUsers)
+        setError('')
+      },
+      (nextError) => {
+        setError(nextError.message)
+      }
+    )
+
+    return () => {
+      if (typeof unsubscribeRequests === 'function') {
+        unsubscribeRequests()
+      }
+      if (typeof unsubscribeUsers === 'function') {
+        unsubscribeUsers()
+      }
+    }
+  }, [accessState, canManageAccess])
 
   const approveAccessRequest = useCallback(
     async (request) => {
       const uid = String(request?.uid ?? '').trim()
       if (!uid) {
+        return
+      }
+
+      if (!canManageAccess) {
         return
       }
 
@@ -44,13 +72,17 @@ export function useAccessRequests({ accessState, user }) {
         setAccessRequestDecisionUid('')
       }
     },
-    [user]
+    [canManageAccess, user]
   )
 
   const denyAccessRequest = useCallback(
     async (request) => {
       const uid = String(request?.uid ?? '').trim()
       if (!uid) {
+        return
+      }
+
+      if (!canManageAccess) {
         return
       }
 
@@ -65,14 +97,41 @@ export function useAccessRequests({ accessState, user }) {
         setAccessRequestDecisionUid('')
       }
     },
-    [user]
+    [canManageAccess, user]
+  )
+
+  const revokeAccessUser = useCallback(
+    async (target) => {
+      const uid = String(target?.uid ?? '').trim()
+      if (!uid) {
+        return
+      }
+
+      if (!canManageAccess) {
+        return
+      }
+
+      setAccessRequestDecisionUid(uid)
+      setError('')
+
+      try {
+        await revokeAccessUserDoc({ target, user })
+      } catch (nextError) {
+        setError(nextError.message)
+      } finally {
+        setAccessRequestDecisionUid('')
+      }
+    },
+    [canManageAccess, user]
   )
 
   return {
-    pendingAccessRequests: accessState === 'allowed' ? requests : [],
+    pendingAccessRequests: accessState === 'allowed' && canManageAccess ? requests : [],
+    managedAccessUsers: accessState === 'allowed' && canManageAccess ? managedUsers : [],
     accessRequestDecisionUid,
-    accessRequestsError: accessState === 'allowed' ? error : '',
+    accessRequestsError: accessState === 'allowed' && canManageAccess ? error : '',
     approveAccessRequest,
     denyAccessRequest,
+    revokeAccessUser,
   }
 }
