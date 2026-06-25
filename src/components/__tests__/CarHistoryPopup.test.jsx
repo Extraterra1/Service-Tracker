@@ -1,8 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import CarHistoryPopup from '../CarHistoryPopup';
-import { getTodayDate } from '../../lib/date';
+import { addDays, getTodayDate } from '../../lib/date';
 
 function createProps(overrides = {}) {
   return {
@@ -15,6 +15,15 @@ function createProps(overrides = {}) {
     entriesByPlate: {
       AA00AA: [
         {
+          id: 'entry-yesterday',
+          date: addDays(getTodayDate(), -1),
+          serviceType: 'return',
+          clientName: 'Ana Costa',
+          reservationId: 'RET-099',
+          effectiveTime: '17:45',
+          location: 'Hotel Savoy'
+        },
+        {
           id: 'entry-1',
           date: getTodayDate(),
           serviceType: 'pickup',
@@ -22,6 +31,15 @@ function createProps(overrides = {}) {
           reservationId: 'RES-001',
           effectiveTime: '09:30',
           location: 'Hotel Pestana'
+        },
+        {
+          id: 'entry-tomorrow',
+          date: addDays(getTodayDate(), 1),
+          serviceType: 'pickup',
+          clientName: 'Rui Martins',
+          reservationId: 'RES-002',
+          effectiveTime: '11:00',
+          location: 'Porto Santo'
         }
       ],
       BB11BB: [
@@ -93,6 +111,85 @@ describe('CarHistoryPopup', () => {
     await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
 
     expect(screen.getByText('Hoje')).toBeInTheDocument();
+  });
+
+  it('highlights rows for the day before and day after today', async () => {
+    const user = userEvent.setup();
+    render(<CarHistoryPopup {...createProps()} />);
+
+    await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
+    await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
+
+    expect(screen.getByText('Ontem')).toBeInTheDocument();
+    expect(screen.getByText('Hoje')).toBeInTheDocument();
+    expect(screen.getByText('Amanhã')).toBeInTheDocument();
+    expect(document.querySelectorAll('.car-history-popup-item.is-today')).toHaveLength(1);
+    expect(document.querySelectorAll('.car-history-popup-item.is-near-today')).toHaveLength(2);
+  });
+
+  it('auto-scrolls to the last today row when opening a car history', async () => {
+    const user = userEvent.setup();
+    const scrolledElements = [];
+    Element.prototype.scrollIntoView = vi.fn();
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function scrollMock() {
+      scrolledElements.push(this);
+    });
+
+    render(
+      <CarHistoryPopup
+        {...createProps({
+          entriesByPlate: {
+            AA00AA: [
+              {
+                id: 'entry-yesterday',
+                date: addDays(getTodayDate(), -1),
+                serviceType: 'return',
+                clientName: 'Ana Costa',
+                reservationId: 'RET-099',
+                effectiveTime: '17:45',
+                location: 'Hotel Savoy'
+              },
+              {
+                id: 'entry-today-first',
+                date: getTodayDate(),
+                serviceType: 'pickup',
+                clientName: 'Maria Da Silva',
+                reservationId: 'RES-001',
+                effectiveTime: '09:30',
+                location: 'Hotel Pestana'
+              },
+              {
+                id: 'entry-tomorrow',
+                date: addDays(getTodayDate(), 1),
+                serviceType: 'pickup',
+                clientName: 'Rui Martins',
+                reservationId: 'RES-002',
+                effectiveTime: '11:00',
+                location: 'Porto Santo'
+              },
+              {
+                id: 'entry-today-last',
+                date: getTodayDate(),
+                serviceType: 'return',
+                clientName: 'Last Today Client',
+                reservationId: 'RET-300',
+                effectiveTime: '18:20',
+                location: 'Funchal'
+              }
+            ]
+          }
+        })}
+      />
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
+    await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
+
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+
+    expect(scrolledElements.at(-1)).toContainElement(screen.getByText('Last Today Client'));
+
+    scrollIntoView.mockRestore();
   });
 
   it('supports fuzzy searching plates before selecting another history list', async () => {

@@ -1,9 +1,14 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { normalizePlate } from '../lib/plates';
-import { getTodayDate } from '../lib/date';
+import { addDays, getTodayDate } from '../lib/date';
 
 const HISTORY_SKELETON_ROWS = [0, 1, 2];
 const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_HIGHLIGHT_PRIORITY = {
+  today: 0,
+  tomorrow: 1,
+  yesterday: 2
+};
 
 function getServiceLabel(serviceType) {
   return serviceType === 'return' ? 'Recolha' : 'Entrega';
@@ -34,6 +39,22 @@ function isCompleteDateValue(value) {
   return DATE_VALUE_PATTERN.test(String(value ?? '').trim());
 }
 
+function getRelativeDateHighlight(date, todayDate = getTodayDate()) {
+  if (date === addDays(todayDate, -1)) {
+    return { className: ' is-near-today', label: 'Ontem', priorityKey: 'yesterday' };
+  }
+
+  if (date === todayDate) {
+    return { className: ' is-today', label: 'Hoje', priorityKey: 'today' };
+  }
+
+  if (date === addDays(todayDate, 1)) {
+    return { className: ' is-near-today', label: 'Amanhã', priorityKey: 'tomorrow' };
+  }
+
+  return null;
+}
+
 function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onClose, initialPlateKey = '' }) {
   const [selectedPlateKeyState, setSelectedPlateKeyState] = useState('');
   const [searchValueState, setSearchValueState] = useState('');
@@ -49,6 +70,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     rangeEnd: ''
   });
   const pickerRef = useRef(null);
+  const historyItemRefs = useRef(new Map());
   const listboxId = useId();
   const appliedRangeKey = `${rangeStart}:${rangeEnd}`;
   const selectedPlateKey = useMemo(() => {
@@ -156,6 +178,39 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
       window.clearTimeout(timeoutId);
     };
   }, [canAutoApplyDateRange, draftRange.rangeEnd, draftRange.rangeStart, onApplyDateRange]);
+
+  useEffect(() => {
+    if (!animatedPlateKeyState || selectedEntries.length === 0) {
+      return;
+    }
+
+    const targetEntry = selectedEntries.reduce((bestEntry, entry) => {
+      const highlight = getRelativeDateHighlight(entry.date);
+      if (!highlight) {
+        return bestEntry;
+      }
+
+      if (!bestEntry) {
+        return entry;
+      }
+
+      const currentPriority = DATE_HIGHLIGHT_PRIORITY[highlight.priorityKey];
+      const bestPriority = DATE_HIGHLIGHT_PRIORITY[getRelativeDateHighlight(bestEntry.date).priorityKey];
+
+      return currentPriority <= bestPriority ? entry : bestEntry;
+    }, null);
+
+    if (!targetEntry) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      historyItemRefs.current.get(targetEntry.id)?.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth'
+      });
+    });
+  }, [animatedPlateKeyState, selectedEntries]);
 
   function openPicker() {
     setIsPickerOpen(true);
@@ -365,17 +420,28 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                 {animatedPlateKeyState ? (
                   <ul key={animatedPlateKeyState} className={`car-history-popup-list${isPlateSwitchingState ? ' is-fading' : ''}`}>
                     {selectedEntries.map((entry) => {
-                      const isToday = entry.date === getTodayDate();
+                      const dateHighlight = getRelativeDateHighlight(entry.date);
 
                       return (
-                        <li key={entry.id} className={`car-history-popup-item${isToday ? ' is-today' : ''}`}>
+                        <li
+                          key={entry.id}
+                          ref={(node) => {
+                            if (node) {
+                              historyItemRefs.current.set(entry.id, node);
+                              return;
+                            }
+
+                            historyItemRefs.current.delete(entry.id);
+                          }}
+                          className={`car-history-popup-item${dateHighlight?.className ?? ''}`}
+                        >
                           <div className="car-history-popup-row car-history-popup-row-head">
                             <span className="car-history-popup-date">{entry.date}</span>
                             <span className="car-history-popup-pill-group">
                               <span className={`car-history-popup-service is-${entry.serviceType === 'return' ? 'return' : 'pickup'}`}>
                                 {getServiceLabel(entry.serviceType)}
                               </span>
-                              {isToday ? <span className="car-history-popup-today-pill">Hoje</span> : null}
+                              {dateHighlight ? <span className="car-history-popup-date-pill">{dateHighlight.label}</span> : null}
                             </span>
                             <span className="car-history-popup-time">{entry.effectiveTime}</span>
                           </div>

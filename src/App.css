@@ -1640,6 +1640,12 @@ h1 {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 84%);
 }
 
+.car-history-popup-item.is-near-today {
+  border-color: color-mix(in oklab, var(--accent), white 50%);
+  background: color-mix(in oklab, var(--panel-bg), var(--accent) 6%);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 92%);
+}
+
 .car-history-popup-row {
   display: grid;
   align-items: center;
@@ -1698,7 +1704,7 @@ h1 {
   color: #165f6d;
 }
 
-.car-history-popup-today-pill {
+.car-history-popup-date-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1715,7 +1721,7 @@ h1 {
   text-transform: uppercase;
 }
 
-.car-history-popup-today-pill::before {
+.car-history-popup-date-pill::before {
   content: '';
   width: 0.34rem;
   height: 0.34rem;
