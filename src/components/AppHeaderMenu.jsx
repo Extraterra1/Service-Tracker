@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Menu, MoonStar, Star, SunMedium, UserX, X } from 'lucide-react';
+import { CalendarDays, Check, ListChecks, Menu, MoonStar, Star, SunMedium, UserX, X } from 'lucide-react';
 import AuthPanel from './AuthPanel';
 import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
 
@@ -118,6 +118,8 @@ function AppHeaderMenu({
   onCopySessionDiagnostics,
   diagnosticsStatusMessage = '',
   canManageAccess = false,
+  activeWorkspace = 'services',
+  onWorkspaceChange,
   pendingAccessRequests = [],
   managedAccessUsers = [],
   accessRequestDecisionUid = '',
@@ -189,7 +191,7 @@ function AppHeaderMenu({
         <img className="header-logo" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
         <div className="title-block">
           <p className="eyebrow">Operação diária</p>
-          <h1>Lista de Serviço</h1>
+          <h1>{activeWorkspace === 'reservations' ? 'Reservas' : 'Lista de Serviço'}</h1>
         </div>
       </div>
 
@@ -219,6 +221,18 @@ function AppHeaderMenu({
           </div>
 
           <div className="menu-sections">
+            {canManageAccess ? (
+              <div className="menu-section">
+                <button
+                  type="button"
+                  className="menu-section-summary menu-section-summary--action menu-workspace-action"
+                  onClick={() => onWorkspaceChange?.(activeWorkspace === 'reservations' ? 'services' : 'reservations')}
+                >
+                  {activeWorkspace === 'reservations' ? <ListChecks aria-hidden="true" /> : <CalendarDays aria-hidden="true" />}
+                  {activeWorkspace === 'reservations' ? 'Lista de Serviço' : 'Reservas'}
+                </button>
+              </div>
+            ) : null}
             <details
               className={`menu-section ${closingSections[MENU_SECTION_KEYS.account] ? 'is-closing' : ''}`}
               open={openSections[MENU_SECTION_KEYS.account] || closingSections[MENU_SECTION_KEYS.account]}

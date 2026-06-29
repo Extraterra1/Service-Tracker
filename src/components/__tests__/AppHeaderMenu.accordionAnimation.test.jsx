@@ -41,6 +41,8 @@ function createProps(overrides = {}) {
     onCopySessionDiagnostics: vi.fn(),
     diagnosticsStatusMessage: '',
     canManageAccess: false,
+    activeWorkspace: 'services',
+    onWorkspaceChange: vi.fn(),
     pendingAccessRequests: [],
     managedAccessUsers: [],
     accessRequestDecisionUid: '',
@@ -200,6 +202,35 @@ describe('AppHeaderMenu accordion animations', () => {
     render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
 
     expect(screen.queryByText('Pedidos de Acesso')).not.toBeInTheDocument();
+  });
+
+  it('shows the reservations workspace action only to admins', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    const { rerender } = render(
+      <AppHeaderMenu {...createProps({ canManageAccess: false, onWorkspaceChange })} />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Reservas' })).not.toBeInTheDocument();
+
+    rerender(<AppHeaderMenu {...createProps({ canManageAccess: true, onWorkspaceChange })} />);
+    await user.click(screen.getByRole('button', { name: 'Reservas' }));
+
+    expect(onWorkspaceChange).toHaveBeenCalledWith('reservations');
+  });
+
+  it('offers Lista de Serviço and updates the title in the reservations workspace', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(
+      <AppHeaderMenu
+        {...createProps({ canManageAccess: true, activeWorkspace: 'reservations', onWorkspaceChange })}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: 'Reservas' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
   });
 
   it('hides the pending request group when admins have no pending requests', async () => {

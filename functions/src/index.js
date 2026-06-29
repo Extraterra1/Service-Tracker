@@ -3,6 +3,7 @@ import { Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { defineSecret } from 'firebase-functions/params'
 import { logger, setGlobalOptions } from 'firebase-functions/v2'
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https'
+import { createReservationsHandler } from './reservations.js'
 
 initializeApp()
 
@@ -16,6 +17,7 @@ setGlobalOptions({
 const TELEGRAM_BOT_TOKEN = defineSecret('TELEGRAM_BOT_TOKEN')
 const TELEGRAM_ADMIN_CHAT_ID = defineSecret('TELEGRAM_ADMIN_CHAT_ID')
 const TELEGRAM_WEBHOOK_SECRET = defineSecret('TELEGRAM_WEBHOOK_SECRET')
+const SERVICE_TRACKER_RESERVATION_KEY = defineSecret('SERVICE_TRACKER_RESERVATION_KEY')
 
 const TELEGRAM_NOTIFICATION_COOLDOWN_MS = 15 * 60 * 1000
 const CALLBACK_PREFIX = 'apr'
@@ -30,6 +32,15 @@ const REQUEST_STATUS = {
   DENIED: 'denied',
   BLOCKED: 'blocked',
 }
+
+export const getReservations = onCall(
+  { secrets: [SERVICE_TRACKER_RESERVATION_KEY] },
+  createReservationsHandler({
+    db,
+    getServiceKey: () => SERVICE_TRACKER_RESERVATION_KEY.value(),
+    apiBaseUrl: 'https://api.justdrivemadeira.com',
+  }),
+)
 
 function normalizeEmail(email) {
   return String(email ?? '').trim().toLowerCase()

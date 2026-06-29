@@ -18,7 +18,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     globals: true,
-    exclude: [...configDefaults.exclude, '**/.worktrees/**'],
+    exclude: [...configDefaults.exclude, '**/.worktrees/**', 'functions/**'],
   },
   build: {
     rollupOptions: {
