@@ -30,8 +30,10 @@ import { useLeaderboardData } from './hooks/useLeaderboardData';
 import { usePinSync } from './hooks/usePinSync';
 import { useServiceDayData } from './hooks/useServiceDayData';
 import { toDateValue } from './lib/timestamp';
+import { resolveWorkspace } from './lib/workspaceNavigation';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
+const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
@@ -134,7 +136,9 @@ function ServiceWorkspaceLocked({ lockedMessage }) {
 }
 
 function App() {
+  const menuPanelRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [requestedWorkspace, setRequestedWorkspace] = useState(() => (window.location.hash === '#reservas' ? 'reservations' : 'services'));
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
   const [updatingItemId, setUpdatingItemId] = useState('');
@@ -154,6 +158,31 @@ function App() {
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
   const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
+  const activeWorkspace = resolveWorkspace(requestedWorkspace === 'reservations' ? '#reservas' : '', canManageAccess);
+
+  useEffect(() => {
+    const handleHashChange = () => setRequestedWorkspace(window.location.hash === '#reservas' ? 'reservations' : 'services');
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (accessState === 'allowed' && requestedWorkspace === 'reservations' && !canManageAccess) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      setRequestedWorkspace('services');
+    }
+  }, [accessState, canManageAccess, requestedWorkspace]);
+
+  const handleWorkspaceChange = useCallback((workspace) => {
+    const nextWorkspace = workspace === 'reservations' && canManageAccess ? 'reservations' : 'services';
+    menuPanelRef.current?.removeAttribute('open');
+    setRequestedWorkspace(nextWorkspace);
+    if (nextWorkspace === 'reservations') {
+      window.history.pushState(null, '', '#reservas');
+    } else {
+      window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
+  }, [canManageAccess]);
   const {
     pendingAccessRequests,
     managedAccessUsers,
@@ -242,7 +271,6 @@ function App() {
     minimumLoadingMs: 0
   });
 
-  const menuPanelRef = useRef(null);
   const lastSyncedProfileRef = useRef('');
   const diagnosticsStatusTimeoutRef = useRef(0);
   const lastWeekLeaderboardAnchor = useMemo(() => shiftLeaderboardAnchor('weekly', new Date(), -1), []);
@@ -995,6 +1023,8 @@ function App() {
         onCopySessionDiagnostics={handleCopySessionDiagnostics}
         diagnosticsStatusMessage={diagnosticsStatusMessage}
         canManageAccess={canManageAccess}
+        activeWorkspace={activeWorkspace}
+        onWorkspaceChange={handleWorkspaceChange}
         pendingAccessRequests={pendingAccessRequests}
         managedAccessUsers={managedAccessUsers}
         accessRequestDecisionUid={accessRequestDecisionUid}
@@ -1005,12 +1035,12 @@ function App() {
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}
       >
-        <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} />
+        {activeWorkspace === 'services' ? <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} /> : null}
       </AppHeaderMenu>
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
 
-      {staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
+      {activeWorkspace === 'services' && staleWarning ? <p className="warning-banner">{staleWarning}</p> : null}
 
       {errorMessage ||
       accessErrorMessage ||
@@ -1030,7 +1060,11 @@ function App() {
         </p>
       ) : null}
 
-      {paneLoading ? (
+      {activeWorkspace === 'reservations' ? (
+        <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
+          <ReservationsWorkspace />
+        </Suspense>
+      ) : paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
       ) : canReadServiceData ? (
         <Suspense fallback={<ServiceWorkspaceLoadingFallback />}>

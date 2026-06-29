@@ -13,6 +13,7 @@ Mobile-first PWA for daily rental-car workflow.
 - Firestore-only access approval queue in the app menu (`access_requests` + `staff_allowlist`).
 - API PIN synced per Google account across devices (`user_settings` collection).
 - Installable PWA (manifest + service worker).
+- Admin-only reservation lookup backed by the live cPanel database.
 
 ## Stack
 
@@ -127,6 +128,22 @@ Required Firestore rule behavior for this collection:
 ```
 
 Signed-in users can create/update only their own pending request. Active admins can list pending requests, mark them approved or denied, and block revoked users from the app menu.
+
+## Reservation bridge
+
+The `getReservations` callable function verifies Firebase authentication and requires an active `admin` profile in `staff_allowlist/{uid}` before forwarding a validated query to the cPanel API. Reservation data is returned directly to the caller and is never stored in Firestore.
+
+Configure the same random value, at least 32 characters long, as:
+
+- Firebase Functions secret `SERVICE_TRACKER_RESERVATION_KEY`
+- cPanel API variable `SERVICE_TRACKER_PROXY_SECRET`
+
+Set the Firebase secret and deploy the function with:
+
+```bash
+firebase functions:secrets:set SERVICE_TRACKER_RESERVATION_KEY
+firebase deploy --only functions:getReservations
+```
 
 ### `service_refresh_locks/{date}` (client-coordinated auto-refresh lease)
 
