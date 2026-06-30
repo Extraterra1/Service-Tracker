@@ -3,15 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
 import { fetchReservations } from '../../lib/reservationsApi'
 import ReservationDetailsPopup from './ReservationDetailsPopup'
+import { formatReservationField, RESERVATION_STATUS_LABELS } from './reservationDisplay'
 
 const STATUS_OPTIONS = ['confirmed', 'pending', 'collected', 'completed', 'cancelled']
-const STATUS_LABELS = {
-  confirmed: 'Confirmada',
-  pending: 'Pendente',
-  collected: 'Recolhida',
-  completed: 'Concluída',
-  cancelled: 'Cancelada',
-}
 const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' })
 
 function useDebouncedValue(value, delay) {
@@ -98,7 +92,7 @@ export default function ReservationsWorkspace() {
         <div className="reservations-status-summary" aria-label="Contagens por estado">
           {statusEntries.map(([status, count]) => (
             <span key={status} className={`reservation-status is-${status}`}>
-              {STATUS_LABELS[status] ?? status}: {Number(count).toLocaleString('pt-PT')}
+              {RESERVATION_STATUS_LABELS[status] ?? formatReservationField('status', status)}: {Number(count).toLocaleString('pt-PT')}
             </span>
           ))}
         </div>
@@ -144,7 +138,7 @@ export default function ReservationsWorkspace() {
               aria-pressed={selectedStatuses.includes(status)}
               onClick={() => toggleStatus(status)}
             >
-              {STATUS_LABELS[status]}
+              {RESERVATION_STATUS_LABELS[status]}
             </button>
           ))}
         </div>
@@ -204,10 +198,10 @@ export default function ReservationsWorkspace() {
                   {countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryName} /> : null}
                   <strong>{displayValue(reservation.customer)}</strong>
                 </span>
-                <span className={`reservation-status is-${reservation.status}`}>{STATUS_LABELS[reservation.status] ?? displayValue(reservation.status)}</span>
+                <span className={`reservation-status is-${reservation.status}`}>{formatReservationField('status', reservation.status) || '-'}</span>
                 <span className="reservation-item-datetime"><small>Entrega</small>{displayValue(reservation.pickupAt)}</span>
                 <span className="reservation-item-datetime"><small>Recolha</small>{displayValue(reservation.returnAt)}</span>
-                <span className="reservation-item-vehicle"><small>Grupo</small>{displayValue(reservation.vehicleGroup)}</span>
+                <span className="reservation-item-vehicle"><small>Grupo</small>{formatReservationField('vehicleGroup', reservation.vehicleGroup) || '-'}</span>
                 <span className="reservation-plate"><small>Matrícula</small>{displayValue(reservation.licensePlate)}</span>
                 <ChevronRight className="reservation-item-chevron" size={17} aria-hidden="true" />
                 </button>

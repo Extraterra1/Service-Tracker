@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
+import { formatReservationField } from './reservationDisplay'
 
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
 
@@ -47,7 +48,7 @@ function hasValue(value) {
 function formatValue(key, value) {
   if (key === 'manualValue') return currency.format(Number(value || 0))
   if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
+  return String(formatReservationField(key, value))
 }
 
 function humanizeKey(key) {
