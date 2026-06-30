@@ -199,8 +199,8 @@ export default function ReservationsWorkspace() {
                   <strong>{displayValue(reservation.customer)}</strong>
                 </span>
                 <span className={`reservation-status is-${reservation.status}`}>{formatReservationField('status', reservation.status) || '-'}</span>
-                <span className="reservation-item-datetime"><small>Entrega</small>{displayValue(reservation.pickupAt)}</span>
-                <span className="reservation-item-datetime"><small>Recolha</small>{displayValue(reservation.returnAt)}</span>
+                <span className="reservation-item-datetime"><small>Entrega</small>{formatReservationField('pickupAt', reservation.pickupAt) || '-'}</span>
+                <span className="reservation-item-datetime"><small>Recolha</small>{formatReservationField('returnAt', reservation.returnAt) || '-'}</span>
                 <span className="reservation-item-vehicle"><small>Grupo</small>{formatReservationField('vehicleGroup', reservation.vehicleGroup) || '-'}</span>
                 <span className="reservation-plate"><small>Matrícula</small>{displayValue(reservation.licensePlate)}</span>
                 <ChevronRight className="reservation-item-chevron" size={17} aria-hidden="true" />

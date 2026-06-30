@@ -119,6 +119,7 @@
 }
 
 .reservations-search {
+  grid-column: 1 / -1;
   min-width: 0;
   min-height: 2.4rem;
   padding: 0 0.55rem;
@@ -159,7 +160,7 @@
 }
 
 .reservations-status-filters {
-  grid-column: 1 / -1;
+  grid-column: 1;
 }
 
 .reservations-status-filters button {
@@ -180,6 +181,7 @@
 }
 
 .reservations-pager {
+  grid-column: 2;
   display: flex;
   align-items: center;
   justify-content: flex-end;
