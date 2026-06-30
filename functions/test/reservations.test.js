@@ -72,8 +72,8 @@ test('forwards normalized filters and the private service key', async () => {
   let capturedOptions
   const payload = {
     page: 2,
-    pageSize: 25,
-    totalPages: 4,
+    pageSize: 10,
+    totalPages: 8,
     totalRows: 80,
     statusCounts: { confirmed: 80 },
     reservations: [{ id: '1', reference: '000123' }],
@@ -91,14 +91,14 @@ test('forwards normalized filters and the private service key', async () => {
 
   const result = await handler({
     auth: { uid: 'admin-1' },
-    data: { page: 2, pageSize: 25, q: '  ABC  ', status: ['confirmed', 'confirmed'] },
+    data: { page: 2, pageSize: 10, q: '  ABC  ', status: ['confirmed', 'confirmed'] },
   })
 
   assert.deepEqual(result, payload)
   assert.equal(capturedUrl.origin, 'https://api.justdrivemadeira.com')
   assert.equal(capturedUrl.pathname, '/api/internal/reservations')
   assert.equal(capturedUrl.searchParams.get('page'), '2')
-  assert.equal(capturedUrl.searchParams.get('pageSize'), '25')
+  assert.equal(capturedUrl.searchParams.get('pageSize'), '10')
   assert.equal(capturedUrl.searchParams.get('q'), 'ABC')
   assert.equal(capturedUrl.searchParams.get('status'), 'confirmed')
   assert.equal(capturedOptions.headers['X-JD-Service-Tracker-Key'], 'service-tracker-secret-at-least-32-characters')
