@@ -1,7 +1,7 @@
 import { HttpsError } from 'firebase-functions/v2/https'
 
 const ALLOWED_STATUSES = new Set(['confirmed', 'cancelled', 'pending', 'collected', 'completed'])
-const ALLOWED_PAGE_SIZES = new Set([25, 50, 100, 200])
+const ALLOWED_PAGE_SIZES = new Set([10, 25, 50, 100, 200])
 const ALLOWED_KEYS = new Set(['page', 'pageSize', 'q', 'status'])
 
 function invalidFilters() {

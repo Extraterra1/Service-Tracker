@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight, RotateCw, Search, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import ReactCountryFlag from 'react-country-flag'
 import { fetchReservations } from '../../lib/reservationsApi'
+import ReservationDetailsPopup from './ReservationDetailsPopup'
 
 const STATUS_OPTIONS = ['confirmed', 'pending', 'collected', 'completed', 'cancelled']
 const STATUS_LABELS = {
@@ -10,7 +12,7 @@ const STATUS_LABELS = {
   completed: 'Concluída',
   cancelled: 'Cancelada',
 }
-const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
+const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' })
 
 function useDebouncedValue(value, delay) {
   const [debounced, setDebounced] = useState(value)
@@ -28,13 +30,20 @@ function displayValue(value) {
   return text || '-'
 }
 
+function getCountryCode(reservation) {
+  const value = String(reservation.countryCode ?? reservation.country ?? '').trim().toUpperCase()
+  return /^[A-Z]{2}$/.test(value) ? value : ''
+}
+
 export default function ReservationsWorkspace() {
   const [query, setQuery] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState([])
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(50)
+  const [pageSize, setPageSize] = useState(10)
   const [requestVersion, setRequestVersion] = useState(0)
   const [requestState, setRequestState] = useState({ key: '', payload: null, error: '' })
+  const [selectedReservation, setSelectedReservation] = useState(null)
+  const openerRef = useRef(null)
   const debouncedQuery = useDebouncedValue(query.trim(), 250)
   const requestKey = JSON.stringify([page, pageSize, debouncedQuery, selectedStatuses, requestVersion])
 
@@ -73,6 +82,11 @@ export default function ReservationsWorkspace() {
       current.includes(status) ? current.filter((entry) => entry !== status) : [...current, status]
     ))
   }
+
+  const closeDetails = useCallback(() => {
+    setSelectedReservation(null)
+    openerRef.current?.focus()
+  }, [])
 
   return (
     <main className="reservations-workspace">
@@ -145,7 +159,7 @@ export default function ReservationsWorkspace() {
             }}
             aria-label="Reservas por página"
           >
-            {[25, 50, 100, 200].map((size) => <option key={size} value={size}>{size}</option>)}
+            {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
           </select>
           <button type="button" onClick={() => setPage((value) => Math.max(value - 1, 1))} disabled={page <= 1} aria-label="Página anterior">
             <ChevronLeft size={17} aria-hidden="true" />
@@ -168,37 +182,42 @@ export default function ReservationsWorkspace() {
       ) : null}
 
       <section className={`reservations-table-wrap ${loading ? 'is-loading' : ''}`} aria-label="Reservas" aria-busy={loading}>
-        <table className="reservations-table">
-          <thead>
-            <tr>
-              <th>Referência</th><th>Cliente</th><th>Telefone</th><th>Email</th><th>Estado</th><th>Grupo</th><th>Matrícula</th>
-              <th>Entrega</th><th>Recolha</th><th>Origem</th><th>Valor manual</th><th>Comentários entrega</th>
-              <th>Comentários recolha</th><th>Voo chegada</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reservations.map((reservation) => (
-              <tr key={`${reservation.reference}-${reservation.id}`}>
-                <td className="reservation-reference">{displayValue(reservation.reference)}</td>
-                <td>{displayValue(reservation.customer)}</td>
-                <td>{displayValue(reservation.clientPhone)}</td>
-                <td>{displayValue(reservation.clientEmail)}</td>
-                <td><span className={`reservation-status is-${reservation.status}`}>{STATUS_LABELS[reservation.status] ?? displayValue(reservation.status)}</span></td>
-                <td>{displayValue(reservation.vehicleGroup)}</td>
-                <td className="reservation-plate">{displayValue(reservation.licensePlate)}</td>
-                <td><span>{displayValue(reservation.pickupAt)}</span><small>{displayValue(reservation.pickupStation)}</small></td>
-                <td><span>{displayValue(reservation.returnAt)}</span><small>{displayValue(reservation.returnStation)}</small></td>
-                <td>{displayValue(reservation.origin)}</td>
-                <td className="reservation-money">{currency.format(Number(reservation.manualValue || 0))}</td>
-                <td className="reservation-comments">{displayValue(reservation.deliveryComments)}</td>
-                <td className="reservation-comments">{displayValue(reservation.returnComments)}</td>
-                <td>{displayValue(reservation.arrivalFlight)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="reservations-list">
+          {loading ? Array.from({ length: 10 }, (_, index) => (
+            <li key={`skeleton-${index}`} className="reservation-item-skeleton" data-testid="reservation-skeleton" aria-hidden="true" />
+          )) : null}
+          {reservations.map((reservation) => {
+            const countryCode = getCountryCode(reservation)
+            const countryName = countryCode ? countryNames.of(countryCode) : ''
+            return (
+              <li key={`${reservation.reference}-${reservation.id}`}>
+                <button
+                  className="reservation-item"
+                  type="button"
+                  aria-label={`Abrir reserva de ${displayValue(reservation.customer)}`}
+                  onClick={(event) => {
+                    openerRef.current = event.currentTarget
+                    setSelectedReservation(reservation)
+                  }}
+                >
+                <span className="reservation-item-client">
+                  {countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryName} /> : null}
+                  <strong>{displayValue(reservation.customer)}</strong>
+                </span>
+                <span className={`reservation-status is-${reservation.status}`}>{STATUS_LABELS[reservation.status] ?? displayValue(reservation.status)}</span>
+                <span className="reservation-item-datetime"><small>Entrega</small>{displayValue(reservation.pickupAt)}</span>
+                <span className="reservation-item-datetime"><small>Recolha</small>{displayValue(reservation.returnAt)}</span>
+                <span className="reservation-item-vehicle"><small>Grupo</small>{displayValue(reservation.vehicleGroup)}</span>
+                <span className="reservation-plate"><small>Matrícula</small>{displayValue(reservation.licensePlate)}</span>
+                <ChevronRight className="reservation-item-chevron" size={17} aria-hidden="true" />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
         {!loading && !error && reservations.length === 0 ? <p className="reservations-empty">Sem reservas correspondentes.</p> : null}
       </section>
+      {selectedReservation ? <ReservationDetailsPopup reservation={selectedReservation} onClose={closeDetails} /> : null}
     </main>
   )
 }
