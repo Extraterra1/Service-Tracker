@@ -23,7 +23,7 @@ const payload = {
   statusCounts: { confirmed: 50, cancelled: 1 },
   reservations: [
     {
-      id: '1',
+      id: '11190',
       reference: '000123',
       customer: 'Maria Silva',
       country: 'PT',
@@ -100,6 +100,14 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText('Aeroporto')).toBeInTheDocument()
     expect(details.getByText('Sede')).toBeInTheDocument()
     expect(details.getByText('Confirmada')).toBeInTheDocument()
+    const publicIdLabel = details.getByText('ID')
+    expect(publicIdLabel.nextElementSibling).toHaveTextContent('000123')
+    expect(details.queryByText('11190')).not.toBeInTheDocument()
+    expect(details.getByRole('link', { name: 'Reservations' })).toHaveAttribute(
+      'href',
+      'https://reservations.justdrivemadeira.com/index.php?controller=pjAdminBookings&action=pjActionUpdate&id=11190',
+    )
+    expect(details.getByRole('link', { name: 'Reservations' })).toHaveAttribute('target', '_blank')
     expect(details.getByText('01/07/2026 09:00')).toBeInTheDocument()
     expect(details.getByText('05/07/2026 10:00')).toBeInTheDocument()
     expect(details.getByText(/125,50/)).toBeInTheDocument()

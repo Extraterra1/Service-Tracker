@@ -15,7 +15,7 @@ const FIELD_GROUPS = [
   {
     title: 'Reserva',
     fields: [
-      ['reference', 'Referência'], ['id', 'ID'], ['status', 'Estado'], ['origin', 'Origem'],
+      ['reference', 'ID'], ['origin', 'Origem'], ['status', 'Estado'],
     ],
   },
   {
@@ -39,7 +39,7 @@ const FIELD_GROUPS = [
   },
 ]
 
-const KNOWN_FIELDS = new Set(FIELD_GROUPS.flatMap((group) => group.fields.map(([key]) => key)))
+const KNOWN_FIELDS = new Set(['id', ...FIELD_GROUPS.flatMap((group) => group.fields.map(([key]) => key))])
 
 function hasValue(value) {
   return value !== null && value !== undefined && String(value).trim() !== ''
@@ -58,7 +58,7 @@ function humanizeKey(key) {
     .replace(/^./, (letter) => letter.toUpperCase())
 }
 
-function DetailGroup({ title, fields }) {
+function DetailGroup({ title, fields, action = null }) {
   if (!fields.length) return null
   return (
     <section className="reservation-details-group">
@@ -71,6 +71,7 @@ function DetailGroup({ title, fields }) {
           </div>
         ))}
       </dl>
+      {action}
     </section>
   )
 }
@@ -86,6 +87,10 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
   const extraFields = useMemo(() => Object.entries(reservation)
     .filter(([key, value]) => !KNOWN_FIELDS.has(key) && hasValue(value))
     .map(([key, value]) => ({ key, label: humanizeKey(key), value })), [reservation])
+  const legacyReservationId = String(reservation.id ?? '').trim()
+  const legacyReservationUrl = legacyReservationId
+    ? `https://reservations.justdrivemadeira.com/index.php?controller=pjAdminBookings&action=pjActionUpdate&id=${encodeURIComponent(legacyReservationId)}`
+    : ''
 
   useEffect(() => {
     closeButtonRef.current?.focus()
@@ -116,7 +121,22 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
           </button>
         </header>
         <div className="reservation-details-content">
-          {groups.map((group) => <DetailGroup key={group.title} {...group} />)}
+          {groups.map((group) => (
+            <DetailGroup
+              key={group.title}
+              {...group}
+              action={group.title === 'Reserva' && legacyReservationUrl ? (
+                <a
+                  className="reservation-details-legacy-link"
+                  href={legacyReservationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Reservations
+                </a>
+              ) : null}
+            />
+          ))}
           <DetailGroup title="Informação adicional" fields={extraFields} />
         </div>
       </article>
