@@ -1,15 +1,16 @@
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
-import { formatReservationField } from './reservationDisplay'
+import ReactCountryFlag from 'react-country-flag'
+import { formatReservationField, getReservationCountryCode } from './reservationDisplay'
 
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
+const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' })
 
 const FIELD_GROUPS = [
   {
     title: 'Cliente',
     fields: [
-      ['customer', 'Nome'], ['country', 'País'], ['countryCode', 'Código do país'],
-      ['clientPhone', 'Telefone'], ['clientEmail', 'Email'],
+      ['customer', 'Nome'], ['clientPhone', 'Telefone'], ['clientEmail', 'Email'],
     ],
   },
   {
@@ -39,7 +40,7 @@ const FIELD_GROUPS = [
   },
 ]
 
-const KNOWN_FIELDS = new Set(['id', ...FIELD_GROUPS.flatMap((group) => group.fields.map(([key]) => key))])
+const KNOWN_FIELDS = new Set(['id', 'country', 'countryCode', ...FIELD_GROUPS.flatMap((group) => group.fields.map(([key]) => key))])
 
 function hasValue(value) {
   return value !== null && value !== undefined && String(value).trim() !== ''
@@ -58,7 +59,7 @@ function humanizeKey(key) {
     .replace(/^./, (letter) => letter.toUpperCase())
 }
 
-function DetailGroup({ title, fields, action = null }) {
+function DetailGroup({ title, fields, action = null, countryCode = '', countryName = '' }) {
   if (!fields.length) return null
   return (
     <section className="reservation-details-group">
@@ -67,7 +68,14 @@ function DetailGroup({ title, fields, action = null }) {
         {fields.map(({ key, label, value }) => (
           <div key={key}>
             <dt>{label}</dt>
-            <dd>{formatValue(key, value)}</dd>
+            <dd>
+              {key === 'customer' && countryCode ? (
+                <span className="reservation-details-client-name">
+                  <ReactCountryFlag countryCode={countryCode} svg title={countryName} />
+                  <span>{formatValue(key, value)}</span>
+                </span>
+              ) : formatValue(key, value)}
+            </dd>
           </div>
         ))}
       </dl>
@@ -91,6 +99,8 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
   const legacyReservationUrl = legacyReservationId
     ? `https://reservations.justdrivemadeira.com/index.php?controller=pjAdminBookings&action=pjActionUpdate&id=${encodeURIComponent(legacyReservationId)}`
     : ''
+  const countryCode = getReservationCountryCode(reservation)
+  const countryName = countryCode ? countryNames.of(countryCode) : ''
 
   useEffect(() => {
     closeButtonRef.current?.focus()
@@ -125,6 +135,8 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
             <DetailGroup
               key={group.title}
               {...group}
+              countryCode={countryCode}
+              countryName={countryName}
               action={group.title === 'Reserva' && legacyReservationUrl ? (
                 <a
                   className="reservation-details-legacy-link"

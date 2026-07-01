@@ -26,6 +26,10 @@ export function formatReservationField(key, value) {
     return RESERVATION_STATUS_LABELS[value] ?? toTitleCase(value)
   }
 
+  if ((key === 'pickupStation' || key === 'returnStation') && String(value ?? '').trim().toLocaleLowerCase('pt-PT') === 'sede') {
+    return 'Office'
+  }
+
   if (key === 'vehicleGroup' || key === 'pickupStation' || key === 'returnStation') {
     return toTitleCase(value)
   }
@@ -35,4 +39,9 @@ export function formatReservationField(key, value) {
   }
 
   return value
+}
+
+export function getReservationCountryCode(reservation) {
+  const value = String(reservation?.countryCode ?? reservation?.country ?? '').trim().toUpperCase()
+  return /^[A-Z]{2}$/.test(value) ? value : ''
 }

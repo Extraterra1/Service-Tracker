@@ -468,6 +468,19 @@
   white-space: pre-wrap;
 }
 
+.reservation-details-client-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.reservation-details-client-name img {
+  width: 1.25rem !important;
+  height: 0.94rem !important;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--stroke), transparent 20%);
+}
+
 .reservation-details-legacy-link {
   width: fit-content;
   min-height: 2rem;

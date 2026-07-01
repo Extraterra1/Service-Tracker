@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
 import { fetchReservations } from '../../lib/reservationsApi'
 import ReservationDetailsPopup from './ReservationDetailsPopup'
-import { formatReservationField, RESERVATION_STATUS_LABELS } from './reservationDisplay'
+import { formatReservationField, getReservationCountryCode, RESERVATION_STATUS_LABELS } from './reservationDisplay'
 
 const STATUS_OPTIONS = ['confirmed', 'pending', 'collected', 'completed', 'cancelled']
 const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' })
@@ -22,11 +22,6 @@ function useDebouncedValue(value, delay) {
 function displayValue(value) {
   const text = String(value ?? '').trim()
   return text || '-'
-}
-
-function getCountryCode(reservation) {
-  const value = String(reservation.countryCode ?? reservation.country ?? '').trim().toUpperCase()
-  return /^[A-Z]{2}$/.test(value) ? value : ''
 }
 
 export default function ReservationsWorkspace() {
@@ -181,7 +176,7 @@ export default function ReservationsWorkspace() {
             <li key={`skeleton-${index}`} className="reservation-item-skeleton" data-testid="reservation-skeleton" aria-hidden="true" />
           )) : null}
           {reservations.map((reservation) => {
-            const countryCode = getCountryCode(reservation)
+            const countryCode = getReservationCountryCode(reservation)
             const countryName = countryCode ? countryNames.of(countryCode) : ''
             return (
               <li key={`${reservation.reference}-${reservation.id}`}>
