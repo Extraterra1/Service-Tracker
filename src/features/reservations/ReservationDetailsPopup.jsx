@@ -142,7 +142,7 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
       <article className="reservation-details-popup" role="dialog" aria-modal="true" aria-labelledby="reservation-details-title">
         <header className="reservation-details-header">
           <div>
-            <span>Ficha completa</span>
+            <span>Ficha</span>
             <h2 id="reservation-details-title">Reserva {reservation.reference || reservation.id || ''}</h2>
           </div>
           <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Fechar detalhes da reserva">
@@ -159,7 +159,7 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
               action={
                 group.title === 'Reserva' && legacyReservationUrl ? (
                   <a className="reservation-details-legacy-link" href={legacyReservationUrl} target="_blank" rel="noreferrer">
-                  Ver no Reservations
+                    Ver no Reservations
                   </a>
                 ) : null
               }
