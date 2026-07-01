@@ -185,5 +185,6 @@ describe('ReservationsWorkspace', () => {
     expect(appCss).toMatch(/\.reservations-status-filters\s*{[^}]*grid-column:\s*1/s)
     expect(appCss).toMatch(/\.reservations-pager\s*{[^}]*grid-column:\s*2/s)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservations-toolbar\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+    expect(appCss).toMatch(/\.reservation-details-group h3\s*{[^}]*font-weight:\s*800/s)
   })
 })
