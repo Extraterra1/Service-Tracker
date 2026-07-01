@@ -452,10 +452,11 @@
 
 .reservation-details-group h3 {
   margin: 0 0 0.4rem;
-  color: var(--text-muted);
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
+  color: var(--text);
+  font-family: 'Sora', 'Urbanist', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.055em;
   text-transform: uppercase;
 }
 
