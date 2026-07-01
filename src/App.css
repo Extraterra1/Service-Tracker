@@ -104,11 +104,22 @@
   white-space: nowrap;
 }
 
-.reservation-status.is-confirmed { border-color: rgba(22, 131, 58, 0.45); color: var(--ready-green); }
-.reservation-status.is-cancelled { border-color: var(--error-border); color: var(--error-text); }
-.reservation-status.is-pending { border-color: rgba(242, 182, 50, 0.65); color: color-mix(in oklab, var(--note-yellow), black 35%); }
+.reservation-status.is-confirmed {
+  border-color: rgba(22, 131, 58, 0.45);
+  color: var(--ready-green);
+}
+.reservation-status.is-cancelled {
+  border-color: var(--error-border);
+  color: var(--error-text);
+}
+.reservation-status.is-pending {
+  border-color: rgba(242, 182, 50, 0.65);
+  color: color-mix(in oklab, var(--note-yellow), black 35%);
+}
 .reservation-status.is-collected,
-.reservation-status.is-completed { border-color: rgba(75, 96, 128, 0.45); }
+.reservation-status.is-completed {
+  border-color: rgba(75, 96, 128, 0.45);
+}
 
 .reservations-toolbar {
   padding: 0.55rem;
@@ -216,7 +227,9 @@
   gap: 0.75rem;
 }
 
-.reservations-error p { margin: 0; }
+.reservations-error p {
+  margin: 0;
+}
 .reservations-error button {
   min-height: 2rem;
   padding: 0.3rem 0.55rem;
@@ -260,7 +273,9 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 180ms cubic-bezier(0.25, 1, 0.5, 1), transform 180ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition:
+    background-color 180ms cubic-bezier(0.25, 1, 0.5, 1),
+    transform 180ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .reservation-item:hover {
@@ -326,7 +341,9 @@
 
 .reservation-item-chevron {
   color: var(--text-muted);
-  transition: transform 180ms cubic-bezier(0.25, 1, 0.5, 1), color 180ms ease;
+  transition:
+    transform 180ms cubic-bezier(0.25, 1, 0.5, 1),
+    color 180ms ease;
 }
 
 .reservation-item:hover .reservation-item-chevron {
@@ -343,7 +360,9 @@
 }
 
 @keyframes reservation-skeleton-pulse {
-  to { opacity: 0.42; }
+  to {
+    opacity: 0.42;
+  }
 }
 
 .reservations-empty {
@@ -451,7 +470,7 @@
   display: grid;
   grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1fr);
   gap: 0.65rem;
-  align-items: baseline;
+  align-items: center;
 }
 
 .reservation-details-group dt {
@@ -482,7 +501,7 @@
 }
 
 .reservation-details-legacy-link {
-  width: fit-content;
+  width: 100%;
   min-height: 2rem;
   margin-top: 0.55rem;
   padding: 0.35rem 0.65rem;
@@ -495,7 +514,9 @@
   font-size: 0.72rem;
   font-weight: 800;
   text-decoration: none;
-  transition: background-color 160ms ease-out, transform 160ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition:
+    background-color 160ms ease-out,
+    transform 160ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .reservation-details-legacy-link:hover {
@@ -509,11 +530,16 @@
 }
 
 @keyframes reservation-backdrop-in {
-  from { opacity: 0; }
+  from {
+    opacity: 0;
+  }
 }
 
 @keyframes reservation-popup-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
 }
 
 @media (max-width: 760px) {
@@ -551,13 +577,27 @@
     gap: 0.48rem 0.65rem;
   }
 
-  .reservation-item-client { grid-area: client; }
-  .reservation-item > .reservation-status { grid-area: status; }
-  .reservation-item-datetime:nth-of-type(3) { grid-area: pickup; }
-  .reservation-item-datetime:nth-of-type(4) { grid-area: dropoff; }
-  .reservation-item-vehicle { grid-area: group; }
-  .reservation-item > .reservation-plate { grid-area: plate; }
-  .reservation-item-chevron { grid-area: chevron; }
+  .reservation-item-client {
+    grid-area: client;
+  }
+  .reservation-item > .reservation-status {
+    grid-area: status;
+  }
+  .reservation-item-datetime:nth-of-type(3) {
+    grid-area: pickup;
+  }
+  .reservation-item-datetime:nth-of-type(4) {
+    grid-area: dropoff;
+  }
+  .reservation-item-vehicle {
+    grid-area: group;
+  }
+  .reservation-item > .reservation-plate {
+    grid-area: plate;
+  }
+  .reservation-item-chevron {
+    grid-area: chevron;
+  }
 
   .reservation-details-content {
     grid-template-columns: minmax(0, 1fr);
@@ -891,9 +931,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.58rem;
-  background:
-    linear-gradient(135deg, color-mix(in oklab, var(--panel-bg-strong), var(--bg) 18%), var(--panel-bg-strong) 62%),
-    var(--panel-bg-strong);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--panel-bg-strong), var(--bg) 18%), var(--panel-bg-strong) 62%), var(--panel-bg-strong);
   border-color: color-mix(in oklab, var(--stroke), var(--text) 8%);
   box-shadow:
     0 14px 30px color-mix(in oklab, var(--shadow), transparent 22%),
@@ -1674,9 +1712,7 @@ h1 {
   padding: 0.32rem 0.38rem;
   display: flex;
   justify-content: center;
-  background:
-    linear-gradient(135deg, color-mix(in oklab, var(--panel-bg-strong), var(--bg) 16%), var(--panel-bg) 64%),
-    var(--panel-bg);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--panel-bg-strong), var(--bg) 16%), var(--panel-bg) 64%), var(--panel-bg);
   border-color: color-mix(in oklab, var(--stroke), var(--text) 6%);
 }
 
