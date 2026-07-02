@@ -131,19 +131,12 @@ Signed-in users can create/update only their own pending request. Active admins 
 
 ## Reservation bridge
 
-The `getReservations` callable function verifies Firebase authentication and requires an active `admin` profile in `staff_allowlist/{uid}` before forwarding a validated query to the cPanel API. Reservation data is returned directly to the caller and is never stored in Firestore.
+Reservation requests go directly from the browser to `api.justdrivemadeira.com` with the signed-in user's Firebase ID token. The cPanel API verifies the token, checks `staff_allowlist/{uid}`, and reads the private MySQL database. Reservation data is never stored in Firestore or browser caches.
 
-Configure the same random value, at least 32 characters long, as:
-
-- Firebase Functions secret `SERVICE_TRACKER_RESERVATION_KEY`
-- cPanel API variable `SERVICE_TRACKER_PROXY_SECRET`
-
-Set the Firebase secret and deploy the function with:
-
-```bash
-firebase functions:secrets:set SERVICE_TRACKER_RESERVATION_KEY
-firebase deploy --only functions:getReservations
-```
+- The reservation list requires an active `admin` profile.
+- Reservation details opened from service cards require any active staff profile.
+- cPanel CORS allows only the configured Service Tracker production origin and local development origin.
+- No Firebase Cloud Function or shared browser-visible API secret is used.
 
 ### `service_refresh_locks/{date}` (client-coordinated auto-refresh lease)
 
