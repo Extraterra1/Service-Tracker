@@ -85,7 +85,7 @@ describe('ServiceWorkspace', () => {
       <ServiceWorkspace
         serviceData={{
           pickups: [{
-            itemId: 'pickup-1', serviceType: 'pickup', time: '09:00', name: 'Maria', id: '10787',
+            itemId: 'pickup-1', serviceType: 'pickup', time: '09:00', name: 'Maria', id: '20787',
             phone: '', car: 'Fiat Panda', plate: 'AA-00-AA', location: 'AEROPORTO DA MADEIRA', extras: [], notes: ''
           }],
           returns: []
@@ -103,12 +103,49 @@ describe('ServiceWorkspace', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: 'Ver detalhes da reserva 10787' }));
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes da reserva 20787' }));
     expect(await screen.findByText('Não foi possível carregar a reserva.')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     expect(await screen.findByRole('dialog', { name: 'Reserva 010787' })).toBeInTheDocument();
     expect(fetchReservationDetails).toHaveBeenCalledTimes(2);
+  });
+
+  it('reuses reservation details after the popup is closed and reopened', async () => {
+    const user = userEvent.setup();
+    fetchReservationDetails.mockResolvedValue({ id: '31190', reference: '030787', customer: 'Maria' });
+
+    render(
+      <ServiceWorkspace
+        serviceData={{
+          pickups: [{
+            itemId: 'pickup-cache', serviceType: 'pickup', time: '09:00', name: 'Maria', id: '30787',
+            phone: '', car: 'Fiat Panda', plate: 'AA-00-AA', location: 'AEROPORTO DA MADEIRA', extras: [], notes: ''
+          }],
+          returns: []
+        }}
+        statusMap={{}}
+        readyMap={{}}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        updatingItemId=""
+        disabled={false}
+        loading={false}
+        canShowEmptyState
+        lockedMessage=""
+      />
+    );
+
+    const reservationButton = screen.getByRole('button', { name: 'Ver detalhes da reserva 30787' });
+    await user.click(reservationButton);
+    expect(await screen.findByRole('dialog', { name: 'Reserva 030787' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar detalhes da reserva' }));
+    await user.click(reservationButton);
+
+    expect(screen.getByRole('dialog', { name: 'Reserva 030787' })).toBeInTheDocument();
+    expect(fetchReservationDetails).toHaveBeenCalledTimes(1);
   });
 
   it('shows a completed shared-plate marker on entrega cards when the paired recolha is done', () => {

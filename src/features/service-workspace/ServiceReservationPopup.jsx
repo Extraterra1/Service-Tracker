@@ -3,8 +3,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchReservationDetails } from '../../lib/reservationsApi';
 import ReservationDetailsPopup from '../reservations/ReservationDetailsPopup';
 
+const reservationDetailsCache = new Map();
+
+function getCacheKey(reference) {
+  return String(reference ?? '').trim().replace(/^0+(?=\d)/, '');
+}
+
 export default function ServiceReservationPopup({ reference, onClose }) {
-  const [state, setState] = useState({ status: 'loading', reservation: null });
+  const cacheKey = getCacheKey(reference);
+  const cachedReservation = reservationDetailsCache.get(cacheKey) ?? null;
+  const [state, setState] = useState(() => (
+    cachedReservation
+      ? { status: 'success', reservation: cachedReservation }
+      : { status: 'loading', reservation: null }
+  ));
   const requestIdRef = useRef(0);
 
   const loadReservation = useCallback(async () => {
@@ -15,6 +27,7 @@ export default function ServiceReservationPopup({ reference, onClose }) {
     try {
       const reservation = await fetchReservationDetails(reference);
       if (requestIdRef.current === requestId) {
+        reservationDetailsCache.set(cacheKey, reservation);
         setState({ status: 'success', reservation });
       }
     } catch {
@@ -22,15 +35,18 @@ export default function ServiceReservationPopup({ reference, onClose }) {
         setState({ status: 'error', reservation: null });
       }
     }
-  }, [reference]);
+  }, [cacheKey, reference]);
 
   useEffect(() => {
+    if (cachedReservation) return undefined;
+
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
 
     fetchReservationDetails(reference)
       .then((reservation) => {
         if (requestIdRef.current === requestId) {
+          reservationDetailsCache.set(cacheKey, reservation);
           setState({ status: 'success', reservation });
         }
       })
@@ -43,7 +59,7 @@ export default function ServiceReservationPopup({ reference, onClose }) {
     return () => {
       requestIdRef.current += 1;
     };
-  }, [reference]);
+  }, [cacheKey, cachedReservation, reference]);
 
   if (state.status === 'success') {
     return <ReservationDetailsPopup reservation={state.reservation} onClose={onClose} />;
