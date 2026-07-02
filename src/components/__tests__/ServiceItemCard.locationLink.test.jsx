@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceItemCard from '../ServiceItemCard';
 
@@ -22,7 +23,7 @@ function createItem(overrides = {}) {
   };
 }
 
-function renderCard(item = createItem()) {
+function renderCard(item = createItem(), props = {}) {
   return render(
     <ServiceItemCard
       item={item}
@@ -35,6 +36,7 @@ function renderCard(item = createItem()) {
       onSharedPlateTap={vi.fn()}
       disabled={false}
       isUpdating={false}
+      {...props}
     />
   );
 }
@@ -47,16 +49,19 @@ describe('ServiceItemCard location links', () => {
     expect(link).toHaveAttribute('href', 'https://wa.me/351912345678');
   });
 
-  it('renders the reservation number and popout icon as one external link when reservationUrl exists', () => {
+  it('opens reservation details instead of navigating directly to the legacy website', async () => {
+    const user = userEvent.setup();
     const reservationUrl = 'https://example.com/reservations/0001';
+    const onOpenReservation = vi.fn();
 
-    renderCard(createItem({ reservationUrl }));
+    renderCard(createItem({ reservationUrl }), { onOpenReservation });
 
-    const link = screen.getByRole('link', { name: 'Abrir reserva 0001 numa nova aba' });
-    expect(link).toHaveAttribute('href', reservationUrl);
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveTextContent('#0001');
-    expect(link.querySelector('.item-reservation-link-icon')).not.toBeNull();
+    const button = screen.getByRole('button', { name: 'Ver detalhes da reserva 0001' });
+    await user.click(button);
+
+    expect(onOpenReservation).toHaveBeenCalledWith('0001');
+    expect(screen.queryByRole('link', { name: 'Abrir reserva 0001 numa nova aba' })).not.toBeInTheDocument();
+    expect(button).toHaveTextContent('#0001');
   });
 
   it('keeps reservation numbers as plain text when reservationUrl is missing', () => {

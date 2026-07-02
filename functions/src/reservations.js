@@ -85,3 +85,65 @@ export function createReservationsHandler({ db, getServiceKey, apiBaseUrl, fetch
     }
   }
 }
+
+function normalizeReference(value) {
+  return String(value ?? '').trim().replace(/^0+(?=\d)/, '')
+}
+
+export function createReservationDetailsHandler({ db, getServiceKey, apiBaseUrl, fetchImpl = fetch }) {
+  return async function getReservationDetails(request) {
+    const uid = request.auth?.uid
+    if (!uid) throw new HttpsError('unauthenticated', 'Inicia sessão para continuar.')
+
+    const profileSnapshot = await db.doc(`staff_allowlist/${uid}`).get()
+    const profile = profileSnapshot.exists ? profileSnapshot.data() : null
+    if (profile?.active !== true) {
+      throw new HttpsError('permission-denied', 'Acesso de equipa ativo necessário.')
+    }
+
+    const data = request.data
+    if (!data || typeof data !== 'object' || Array.isArray(data) || Object.keys(data).some((key) => key !== 'reference')) {
+      throw invalidFilters()
+    }
+    const reference = String(data.reference ?? '').trim()
+    if (!/^\d{1,20}$/.test(reference)) throw invalidFilters()
+
+    const url = new URL('/api/internal/reservations', apiBaseUrl)
+    url.searchParams.set('page', '1')
+    url.searchParams.set('pageSize', '10')
+    url.searchParams.set('q', reference)
+
+    let response
+    try {
+      response = await fetchImpl(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-JD-Service-Tracker-Key': getServiceKey(),
+        },
+        redirect: 'error',
+        signal: AbortSignal.timeout(15_000),
+      })
+    } catch {
+      throw new HttpsError('unavailable', 'O serviço de reservas está indisponível.')
+    }
+
+    if (!response.ok) throw upstreamError(response.status)
+    let payload
+    try {
+      payload = await response.json()
+    } catch {
+      throw new HttpsError('internal', 'Resposta inválida do serviço de reservas.')
+    }
+    if (!payload || typeof payload !== 'object' || !Array.isArray(payload.reservations)) {
+      throw new HttpsError('internal', 'Resposta inválida do serviço de reservas.')
+    }
+
+    const normalizedReference = normalizeReference(reference)
+    const reservation = payload.reservations.find(
+      (entry) => normalizeReference(entry?.reference) === normalizedReference,
+    )
+    if (!reservation) throw new HttpsError('not-found', 'Reserva não encontrada.')
+    return reservation
+  }
+}

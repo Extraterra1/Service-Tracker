@@ -2,8 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 let createReservationsHandler
+let createReservationDetailsHandler
 try {
-  ;({ createReservationsHandler } = await import('../src/reservations.js'))
+  ;({ createReservationsHandler, createReservationDetailsHandler } = await import('../src/reservations.js'))
 } catch {
   // The first TDD run intentionally happens before the bridge exists.
 }
@@ -26,6 +27,15 @@ function makeDb(profile) {
 
 function makeHandler({ profile = { active: true, role: 'admin' }, fetchImpl } = {}) {
   return createReservationsHandler({
+    db: makeDb(profile),
+    getServiceKey: () => 'service-tracker-secret-at-least-32-characters',
+    apiBaseUrl: 'https://api.justdrivemadeira.com',
+    fetchImpl,
+  })
+}
+
+function makeDetailsHandler({ profile = { active: true, role: 'staff' }, fetchImpl } = {}) {
+  return createReservationDetailsHandler({
     db: makeDb(profile),
     getServiceKey: () => 'service-tracker-secret-at-least-32-characters',
     apiBaseUrl: 'https://api.justdrivemadeira.com',
@@ -119,4 +129,43 @@ test('maps cPanel failures to stable callable errors', async () => {
     () => unavailable({ auth: { uid: 'admin-1' }, data: {} }),
     { code: 'unavailable' },
   )
+})
+
+test('exports a staff-safe exact reservation details handler', () => {
+  assert.equal(typeof createReservationDetailsHandler, 'function')
+})
+
+test('reservation details require an active staff profile and a numeric reference', async () => {
+  const noFetch = async () => assert.fail('fetch should not run')
+
+  await assert.rejects(
+    () => makeDetailsHandler({ profile: { active: false, role: 'staff' }, fetchImpl: noFetch })({ auth: { uid: 'staff-1' }, data: { reference: '10787' } }),
+    { code: 'permission-denied' },
+  )
+  await assert.rejects(
+    () => makeDetailsHandler({ fetchImpl: noFetch })({ auth: { uid: 'staff-1' }, data: { reference: 'abc' } }),
+    { code: 'invalid-argument' },
+  )
+})
+
+test('reservation details return only the exact normalized reference match', async () => {
+  let capturedUrl
+  const handler = makeDetailsHandler({
+    fetchImpl: async (url) => {
+      capturedUrl = new URL(url)
+      return new Response(JSON.stringify({
+        reservations: [
+          { id: '11191', reference: '00107870' },
+          { id: '11190', reference: '010787', customer: 'Maria' },
+        ],
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    },
+  })
+
+  const result = await handler({ auth: { uid: 'staff-1' }, data: { reference: '10787' } })
+
+  assert.deepEqual(result, { id: '11190', reference: '010787', customer: 'Maria' })
+  assert.equal(capturedUrl.searchParams.get('page'), '1')
+  assert.equal(capturedUrl.searchParams.get('pageSize'), '10')
+  assert.equal(capturedUrl.searchParams.get('q'), '10787')
 })

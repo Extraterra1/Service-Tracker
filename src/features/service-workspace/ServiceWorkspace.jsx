@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import ServicePane from '../../components/ServicePane';
 import { normalizePlate } from '../../lib/plates';
+import ServiceReservationPopup from './ServiceReservationPopup';
 
 function getPlateColor(index) {
   const hue = Math.round((index * 137.508) % 360);
@@ -44,6 +45,7 @@ function ServiceWorkspace({
   lockedMessage = ''
 }) {
   const [plateInfoPopup, setPlateInfoPopup] = useState(null);
+  const [reservationPopupReference, setReservationPopupReference] = useState('');
 
   const sharedPlateMarkers = useMemo(() => {
     const pickupByPlate = new Map();
@@ -122,6 +124,14 @@ function ServiceWorkspace({
     setPlateInfoPopup(null);
   }, []);
 
+  const handleOpenReservation = useCallback((reference) => {
+    setReservationPopupReference(String(reference ?? '').trim());
+  }, []);
+
+  const handleCloseReservation = useCallback(() => {
+    setReservationPopupReference('');
+  }, []);
+
   return (
     <>
       <main className="service-grid">
@@ -137,6 +147,7 @@ function ServiceWorkspace({
           onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
           onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
+          onOpenReservation={handleOpenReservation}
           updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
@@ -156,6 +167,7 @@ function ServiceWorkspace({
           onToggleReady={onToggleReady}
           onSaveTimeOverride={onSaveTimeOverride}
           onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
+          onOpenReservation={handleOpenReservation}
           updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
@@ -163,6 +175,10 @@ function ServiceWorkspace({
           lockedMessage={lockedMessage}
         />
       </main>
+
+      {reservationPopupReference ? (
+        <ServiceReservationPopup reference={reservationPopupReference} onClose={handleCloseReservation} />
+      ) : null}
 
       {activePlateInfoPopup ? (
         <div

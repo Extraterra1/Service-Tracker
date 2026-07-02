@@ -5,7 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { toTimestampMs } from '../lib/timestamp';
-import { Check, Clock3, ExternalLink, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
+import { Check, Clock3, ExternalLink, Eye, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { WebHaptics } from 'web-haptics';
 
@@ -144,6 +144,7 @@ function ServiceItemCard({
   onToggleReady,
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
+  onOpenReservation,
   isUpdating = false,
   disabled
 }) {
@@ -396,7 +397,18 @@ function ServiceItemCard({
       <div className="item-identity-row">
         <p className="item-name">{clientDisplayName || 'Sem nome'}</p>
         <p className="item-subline">
-          {reservationUrl ? (
+          {reservationId && typeof onOpenReservation === 'function' ? (
+            <button
+              className="item-reservation-link"
+              type="button"
+              onClick={() => onOpenReservation(reservationId)}
+              aria-label={`Ver detalhes da reserva ${reservationId}`}
+              title="Ver detalhes da reserva"
+            >
+              <span>#{reservationId}</span>
+              <Eye className="item-reservation-link-icon" aria-hidden="true" />
+            </button>
+          ) : reservationUrl ? (
             <a
               className="item-reservation-link"
               href={reservationUrl}

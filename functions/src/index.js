@@ -3,7 +3,7 @@ import { Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { defineSecret } from 'firebase-functions/params'
 import { logger, setGlobalOptions } from 'firebase-functions/v2'
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https'
-import { createReservationsHandler } from './reservations.js'
+import { createReservationDetailsHandler, createReservationsHandler } from './reservations.js'
 
 initializeApp()
 
@@ -36,6 +36,15 @@ const REQUEST_STATUS = {
 export const getReservations = onCall(
   { secrets: [SERVICE_TRACKER_RESERVATION_KEY] },
   createReservationsHandler({
+    db,
+    getServiceKey: () => SERVICE_TRACKER_RESERVATION_KEY.value(),
+    apiBaseUrl: 'https://api.justdrivemadeira.com',
+  }),
+)
+
+export const getReservationDetails = onCall(
+  { secrets: [SERVICE_TRACKER_RESERVATION_KEY] },
+  createReservationDetailsHandler({
     db,
     getServiceKey: () => SERVICE_TRACKER_RESERVATION_KEY.value(),
     apiBaseUrl: 'https://api.justdrivemadeira.com',
