@@ -24,6 +24,15 @@ function displayValue(value) {
   return text || '-'
 }
 
+function displayVehicle(reservation) {
+  const vehicle = [reservation.carMake, reservation.carModel]
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean)
+    .join(' ')
+  const plate = displayValue(reservation.licensePlate)
+  return vehicle ? `${vehicle} - ${plate}` : plate
+}
+
 export default function ReservationsWorkspace() {
   const [query, setQuery] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState([])
@@ -197,7 +206,7 @@ export default function ReservationsWorkspace() {
                 <span className="reservation-item-datetime"><small>Entrega</small>{formatReservationField('pickupAt', reservation.pickupAt) || '-'}</span>
                 <span className="reservation-item-datetime"><small>Recolha</small>{formatReservationField('returnAt', reservation.returnAt) || '-'}</span>
                 <span className="reservation-item-vehicle"><small>Grupo</small>{formatReservationField('vehicleGroup', reservation.vehicleGroup) || '-'}</span>
-                <span className="reservation-plate"><small>Matrícula</small>{displayValue(reservation.licensePlate)}</span>
+                <span className="reservation-plate"><small>Viatura</small>{displayVehicle(reservation)}</span>
                 <ChevronRight className="reservation-item-chevron" size={17} aria-hidden="true" />
                 </button>
               </li>

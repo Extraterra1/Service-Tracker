@@ -30,6 +30,7 @@ const FIELD_GROUPS = [
       ['pickupStation', 'Local de entrega'],
       ['returnAt', 'Recolha'],
       ['returnStation', 'Local de recolha'],
+      ['durationDays', 'Duração'],
       ['arrivalFlight', 'Voo de chegada']
     ]
   },
@@ -37,12 +38,18 @@ const FIELD_GROUPS = [
     title: 'Viatura',
     fields: [
       ['vehicleGroup', 'Grupo'],
+      ['carMake', 'Marca'],
+      ['carModel', 'Modelo'],
       ['licensePlate', 'Matrícula']
     ]
   },
   {
     title: 'Comercial',
-    fields: [['manualValue', 'Valor']]
+    fields: [
+      ['baseValue', 'Valor base'],
+      ['usageFee', 'Taxa'],
+      ['manualValue', 'Valor total']
+    ]
   },
   {
     title: 'Notas',
@@ -60,7 +67,11 @@ function hasValue(value) {
 }
 
 function formatValue(key, value) {
-  if (key === 'manualValue') return currency.format(Number(value || 0));
+  if (key === 'manualValue' || key === 'baseValue' || key === 'usageFee') return currency.format(Number(value || 0));
+  if (key === 'durationDays') {
+    const days = Number(value || 0);
+    return `${days} ${days === 1 ? 'dia' : 'dias'}`;
+  }
   if (typeof value === 'object') return JSON.stringify(value);
   return String(formatReservationField(key, value));
 }
