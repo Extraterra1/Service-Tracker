@@ -24,6 +24,13 @@ const FIELD_GROUPS = [
     ]
   },
   {
+    title: 'Condutor',
+    fields: [
+      ['driverLicenseNumber', 'Carta de condução'],
+      ['accommodationAddress', 'Morada do alojamento']
+    ]
+  },
+  {
     title: 'Percurso',
     fields: [
       ['pickupAt', 'Entrega'],
