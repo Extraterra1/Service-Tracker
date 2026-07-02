@@ -1,24 +1,48 @@
-import { getFunctions, httpsCallable } from 'firebase/functions'
-import { app } from './firebaseApp'
+import { auth } from './firebaseAuth'
 
-const functions = app ? getFunctions(app, 'europe-west9') : null
-const getReservations = functions ? httpsCallable(functions, 'getReservations') : null
-const getReservationDetails = functions ? httpsCallable(functions, 'getReservationDetails') : null
+const RESERVATION_API_BASE_URL = 'https://api.justdrivemadeira.com'
 
-export async function fetchReservations(filters) {
-  if (!getReservations) {
-    throw new Error('Configuração Firebase em falta.')
+async function requestReservationApi(path, params) {
+  const user = auth?.currentUser
+  if (!user) throw new Error('Inicia sessão para continuar.')
+
+  const token = await user.getIdToken()
+  const url = new URL(path, RESERVATION_API_BASE_URL)
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length) url.searchParams.set(key, value.join(','))
+      return
+    }
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: 'omit',
+    cache: 'no-store',
+    redirect: 'error',
+  })
+  const contentType = response.headers.get('content-type') ?? ''
+  const payload = contentType.includes('application/json') ? await response.json().catch(() => null) : null
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || 'Não foi possível carregar a reserva.')
   }
-
-  const result = await getReservations(filters)
-  return result.data
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Resposta inválida do serviço de reservas.')
+  }
+  return payload
 }
 
-export async function fetchReservationDetails(reference) {
-  if (!getReservationDetails) {
-    throw new Error('Configuração Firebase em falta.')
-  }
+export function fetchReservations(filters) {
+  return requestReservationApi('/api/service-tracker/reservations', filters)
+}
 
-  const result = await getReservationDetails({ reference })
-  return result.data
+export function fetchReservationDetails(reference) {
+  return requestReservationApi('/api/service-tracker/reservation-details', { reference })
 }
