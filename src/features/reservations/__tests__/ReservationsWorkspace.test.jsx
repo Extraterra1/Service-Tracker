@@ -31,6 +31,8 @@ const payload = {
       clientEmail: 'maria@example.com',
       status: 'confirmed',
       vehicleGroup: 'c',
+      carMake: 'Fiat',
+      carModel: 'Panda',
       licensePlate: 'AA-00-AA',
       pickupAt: '2026-07-01 09:00:00',
       pickupStation: 'aeroporto',
@@ -38,6 +40,9 @@ const payload = {
       returnStation: 'sede',
       origin: 'DIRECT',
       manualValue: '125.50',
+      baseValue: '119.50',
+      usageFee: '6.00',
+      durationDays: 3,
       deliveryComments: 'Cadeira de bebé',
       returnComments: '',
       arrivalFlight: 'TP123',
@@ -60,7 +65,7 @@ describe('ReservationsWorkspace', () => {
 
     expect(await screen.findByText('Maria Silva')).toBeInTheDocument()
     expect(screen.getByText('51')).toBeInTheDocument()
-    expect(screen.getByText('AA-00-AA')).toBeInTheDocument()
+    expect(screen.getByText(/Fiat Panda - AA-00-AA/)).toBeInTheDocument()
     expect(fetchReservations).toHaveBeenCalledWith({ page: 1, pageSize: 10, q: '', status: [] })
     expect(screen.getByRole('option', { name: '10' })).toBeInTheDocument()
   })
@@ -75,6 +80,7 @@ describe('ReservationsWorkspace', () => {
     expect(item).toHaveTextContent('05/07/2026 10:00')
     expect(item).toHaveTextContent('C')
     expect(item).toHaveTextContent('AA-00-AA')
+    expect(item).toHaveTextContent('Fiat Panda')
     expect(item.querySelector('[title="Portugal"]')).not.toBeNull()
     expect(item).not.toHaveTextContent('000123')
     expect(item).not.toHaveTextContent('+351 900 000 000')
@@ -114,6 +120,11 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText('01/07/2026 09:00')).toBeInTheDocument()
     expect(details.getByText('05/07/2026 10:00')).toBeInTheDocument()
     expect(details.getByText(/125,50/)).toBeInTheDocument()
+    expect(details.getByText(/119,50/)).toBeInTheDocument()
+    expect(details.getByText(/6,00/)).toBeInTheDocument()
+    expect(details.getByText('3 dias')).toBeInTheDocument()
+    expect(details.getByText('Fiat')).toBeInTheDocument()
+    expect(details.getByText('Panda')).toBeInTheDocument()
     expect(details.getByText('Cadeira de bebé')).toBeInTheDocument()
     expect(details.getByText('TP123')).toBeInTheDocument()
     expect(details.getByText('Cliente habitual')).toBeInTheDocument()
@@ -186,5 +197,6 @@ describe('ReservationsWorkspace', () => {
     expect(appCss).toMatch(/\.reservations-pager\s*{[^}]*grid-column:\s*2/s)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservations-toolbar\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
     expect(appCss).toMatch(/\.reservation-details-group h3\s*{[^}]*font-family:\s*'Sora'[^}]*font-weight:\s*900/s)
+    expect(appCss).toMatch(/\.reservation-plate\s*{[^}]*overflow-wrap:\s*anywhere/s)
   })
 })
