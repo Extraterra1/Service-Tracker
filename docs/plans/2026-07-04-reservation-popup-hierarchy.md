@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Simplify reservation popup hierarchy by showing the reference once, promoting status to the header, and moving the legacy action to Cliente.
+**Goal:** Simplify reservation popup hierarchy by showing the reference once and placing status and the legacy action in the header.
 
 **Architecture:** Adjust `FIELD_GROUPS` and action placement in the existing popup rather than creating new components. Reuse `formatReservationField` and the established `.reservation-status` variants so popup and list statuses stay visually consistent.
 
@@ -29,7 +29,7 @@
 
 **Step 2:** Render a formatted status pill beside the popup title when status exists.
 
-**Step 3:** Attach the legacy link action to Cliente.
+**Step 3:** Place the labeled legacy link with an external-link icon immediately before the close button.
 
 **Step 4:** Add compact header-title layout styles and run the focused test until it passes.
 

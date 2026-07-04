@@ -8,7 +8,7 @@ Remove duplicated reservation information and place status and the legacy-system
 
 The header keeps the reservation reference as the single visible ID and places the formatted status pill immediately beside it. The Reserva section no longer repeats the reference or status, but continues to show origin when available.
 
-The full-width “Ver no Reservations” action moves to the bottom of the Cliente section. This keeps the external navigation action in the first content section without competing with the reservation metadata.
+The “Ver no Reservations” action sits on the right side of the header, immediately before the close control. It keeps its text label and adds an external-link icon so the destination behavior is explicit without relying on the icon alone.
 
 When status is absent, the header renders no empty pill. Existing status formatting, colors, responsive layout, close behavior, and legacy URL construction remain unchanged.
 
