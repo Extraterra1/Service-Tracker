@@ -54,3 +54,20 @@
 **Step 3:** Keep Marca recognized as a known field so it does not reappear under additional information.
 
 **Step 4:** Run focused tests, ESLint, and the production build.
+
+### Task 5: Separate extras and flag missing IMT
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Modify: `src/App.css`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Add failing tests for Grupo/Matrícula/Modelo order, an Extras pill section, notes without the Extras block, and the missing-IMT header pill.
+
+**Step 2:** Parse `Extras:`, `Notas Cliente:`, and `Notas Serviço:` markers from delivery comments while preserving unstructured comments as notes.
+
+**Step 3:** Render extras in a dedicated pill list and the parsed notes in the existing Notas section.
+
+**Step 4:** Detect `/imt/i` across parsed extras and render “Não tem taxa IMT” only when no match exists.
+
+**Step 5:** Run both popup suites, ESLint, the production build, and `git diff --check`.

@@ -12,8 +12,12 @@ The “Ver no Reservations” action sits on the right side of the header, immed
 
 When status is absent, the header renders no empty pill. Existing status formatting, colors, responsive layout, close behavior, and legacy URL construction remain unchanged.
 
-Percurso follows the operational sequence Entrega, Recolha, Local de entrega, Local de recolha, Duração, then Voo de chegada. Viatura shows a combined Modelo value containing brand and model, followed by Grupo and Matrícula; Marca is not repeated as a separate row.
+Percurso follows the operational sequence Entrega, Recolha, Local de entrega, Local de recolha, Duração, then Voo de chegada. Viatura shows Grupo, Matrícula, then a combined Modelo value containing brand and model; Marca is not repeated as a separate row.
+
+The structured `Extras:` block currently embedded in delivery comments is parsed into a dedicated Extras section. Each extra is rendered as a compact pill, while unstructured delivery comments, customer notes, service notes, and return comments remain in the separate Notas section.
+
+The header shows a warning pill reading “Não tem taxa IMT” when none of the parsed extras contain `IMT`, case-insensitively. Any matching extra suppresses the warning; a reservation with no extras shows it.
 
 ## Testing
 
-Verify the reference appears once, the status appears in the header as a pill, the Reserva section omits ID and Estado, the legacy link is in the header, and Percurso/Viatura fields follow the approved order.
+Verify the reference appears once, the status appears in the header as a pill, the Reserva section omits ID and Estado, the legacy link is in the header, Percurso/Viatura fields follow the approved order, extras and notes are separated, and both IMT warning states behave correctly.
