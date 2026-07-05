@@ -45,7 +45,7 @@ const payload = {
       baseValue: '119.50',
       usageFee: '6.00',
       durationDays: 3,
-      deliveryComments: 'Cadeira de bebé',
+      deliveryComments: 'Extras:\n1x Cadeira de bebé\n1x Taxa IMT\nNotas Cliente:\nChega cedo\nNotas Serviço:\nPreparar cadeira',
       returnComments: '',
       arrivalFlight: 'TP123',
       bookingChannelNote: 'Cliente habitual',
@@ -103,7 +103,10 @@ describe('ReservationsWorkspace', () => {
     const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
     const details = within(dialog)
     expect(details.getByText('Maria Silva')).toBeInTheDocument()
-    expect(details.getByText('+351 900 000 000')).toBeInTheDocument()
+    const whatsappLink = details.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 900 000 000' })
+    expect(whatsappLink).toHaveTextContent('+351 900 000 000')
+    expect(whatsappLink).toHaveAttribute('href', 'https://wa.me/351900000000')
+    expect(whatsappLink).toHaveAttribute('target', '_blank')
     expect(details.getByText('maria@example.com')).toBeInTheDocument()
     expect(details.getByText('P-1234567')).toBeInTheDocument()
     expect(details.getByText('Hotel Madeira, Funchal')).toBeInTheDocument()
@@ -115,30 +118,110 @@ describe('ReservationsWorkspace', () => {
     expect(details.queryByText('Código do país')).not.toBeInTheDocument()
     expect(details.queryByText('País')).not.toBeInTheDocument()
     expect(details.getByText('Maria Silva').previousElementSibling).toHaveAttribute('title', 'Portugal')
-    expect(details.getByText('Confirmada')).toBeInTheDocument()
-    const publicIdLabel = details.getByText('ID')
-    expect(publicIdLabel.nextElementSibling).toHaveTextContent('000123')
+    const popupHeader = details.getByRole('heading', { name: 'Reserva 000123' }).closest('header')
+    expect(within(popupHeader).getByText('Confirmada')).toHaveClass('reservation-status', 'is-confirmed')
+    expect(dialog.textContent.match(/000123/g)).toHaveLength(1)
+    expect(details.queryByText('ID')).not.toBeInTheDocument()
+    expect(details.queryByText('Estado')).not.toBeInTheDocument()
     expect(details.queryByText('11190')).not.toBeInTheDocument()
-    expect(details.getByRole('link', { name: 'Ver no Reservations' })).toHaveAttribute(
+    const legacyLink = within(popupHeader).getByRole('link', { name: 'Ver no Reservations' })
+    expect(legacyLink.querySelector('.lucide-external-link')).not.toBeNull()
+    expect(legacyLink).toHaveAttribute(
       'href',
       'https://reservations.justdrivemadeira.com/index.php?controller=pjAdminBookings&action=pjActionUpdate&id=11190',
     )
-    expect(details.getByRole('link', { name: 'Ver no Reservations' })).toHaveAttribute('target', '_blank')
+    expect(legacyLink).toHaveAttribute('target', '_blank')
     expect(details.getByText('01/07/2026 09:00')).toBeInTheDocument()
     expect(details.getByText('05/07/2026 10:00')).toBeInTheDocument()
     expect(details.getByText(/125,50/)).toBeInTheDocument()
     expect(details.getByText(/119,50/)).toBeInTheDocument()
     expect(details.getByText(/6,00/)).toBeInTheDocument()
     expect(details.getByText('3 dias')).toBeInTheDocument()
-    expect(details.getByText('Fiat')).toBeInTheDocument()
-    expect(details.getByText('Panda')).toBeInTheDocument()
-    expect(details.getByText('Cadeira de bebé')).toBeInTheDocument()
+    const routeSection = details.getByRole('heading', { name: 'Percurso' }).closest('section')
+    expect(Array.from(routeSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
+      'Entrega',
+      'Recolha',
+      'Local de entrega',
+      'Local de recolha',
+      'Duração',
+      'Voo de chegada',
+    ])
+    const vehicleSection = details.getByRole('heading', { name: 'Viatura' }).closest('section')
+    expect(Array.from(vehicleSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
+      'Modelo',
+      'Matrícula',
+      'Grupo',
+    ])
+    expect(within(vehicleSection).getByText('Fiat Panda')).toBeInTheDocument()
+    expect(within(vehicleSection).queryByText('Marca')).not.toBeInTheDocument()
+    const extrasSection = details.getByRole('heading', { name: 'Extras' }).closest('section')
+    expect(Array.from(extrasSection.querySelectorAll('li'), (element) => element.textContent)).toEqual([
+      '1x Cadeira de bebé',
+      '1x Taxa IMT',
+    ])
+    const notesSection = details.getByRole('heading', { name: 'Notas' }).closest('section')
+    expect(within(notesSection).getByText('Chega cedo')).toBeInTheDocument()
+    expect(within(notesSection).getByText('Preparar cadeira')).toBeInTheDocument()
+    expect(within(notesSection).queryByText(/Extras:/)).not.toBeInTheDocument()
+    expect(within(popupHeader).queryByText('Não tem taxa IMT')).not.toBeInTheDocument()
     expect(details.getByText('TP123')).toBeInTheDocument()
     expect(details.getByText('Cliente habitual')).toBeInTheDocument()
 
     await user.click(details.getByRole('button', { name: 'Fechar detalhes da reserva' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(item).toHaveFocus()
+  })
+
+  it('warns in the header when no reservation extra contains IMT', async () => {
+    const user = userEvent.setup()
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        deliveryComments: 'Extras:\n1x Cadeira de bebé\nNotas Cliente:\nSem taxa',
+      }],
+    })
+    render(<ReservationsWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
+    const popupHeader = within(dialog).getByRole('heading', { name: 'Reserva 000123' }).closest('header')
+    expect(within(popupHeader).getByText('Não tem taxa IMT')).toHaveClass('reservation-imt-warning')
+  })
+
+  it('keeps the core detail layout fixed when reservation data is missing', async () => {
+    const user = userEvent.setup()
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{ id: '11190', reference: '000123', customer: 'Maria Silva', status: 'confirmed' }],
+    })
+    render(<ReservationsWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
+    const content = dialog.querySelector('.reservation-details-content')
+    expect(Array.from(content.children, (section) => section.querySelector('h3')?.textContent)).toEqual([
+      'Cliente',
+      'Condutor',
+      'Percurso',
+      'Viatura',
+      'Comercial',
+      'Extras',
+      'Notas',
+      'Reserva',
+    ])
+
+    const vehicleSection = within(dialog).getByRole('heading', { name: 'Viatura' }).closest('section')
+    expect(Array.from(vehicleSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
+      'Modelo',
+      'Matrícula',
+      'Grupo',
+    ])
+    expect(within(vehicleSection).getAllByText('—')).toHaveLength(3)
+    expect(within(dialog).getByText('Sem extras')).toBeInTheDocument()
+    expect(within(dialog).getByText('Sem notas')).toBeInTheDocument()
   })
 
   it('closes reservation details with Escape', async () => {
