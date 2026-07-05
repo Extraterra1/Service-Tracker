@@ -124,3 +124,18 @@
 **Step 2:** Keep Valor base and Taxa only when parsed extras contain `IMT`.
 
 **Step 3:** Run shared popup tests, ESLint, build, and `git diff --check`.
+
+### Task 10: Add restrained operational icons
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Modify: `src/App.css`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Add failing assertions for Lucide date, airport, Office, duration, car, and plate icons.
+
+**Step 2:** Map approved fields to `lucide-react` icons and derive location icons from case-insensitive Airport/Office/Sede matching.
+
+**Step 3:** Style one shared compact value-icon wrapper and keep icons `aria-hidden`.
+
+**Step 4:** Run shared popup tests, ESLint, build, and `git diff --check`.

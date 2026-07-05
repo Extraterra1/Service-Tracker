@@ -24,6 +24,8 @@ Commercial calculations follow the same IMT state. Reservations with any IMT ext
 
 Valid client phone numbers are rendered as WhatsApp links using the app's shared phone normalizer. The visible number stays unchanged, a WhatsApp icon reinforces the action, and the conversation opens in a new tab. Invalid numbers remain plain text.
 
+Selected high-scan values use restrained `lucide-react` icons. Entrega and Recolha use directional calendar icons; locations use Plane for airport, Building2 for Office/Sede, and MapPinned otherwise. Duração uses Clock3, Modelo uses CarFront, and Matrícula uses RectangleHorizontal. Icons are decorative and hidden from assistive technology; remaining sections stay text-only.
+
 ## Testing
 
 Verify the reference appears once, the status appears in the header as a pill, the Reserva section omits ID and Estado, the legacy link is in the header, Percurso/Viatura fields follow the approved order, extras and notes are separated, and both IMT warning states behave correctly.
