@@ -87,3 +87,15 @@
 **Step 4:** Always render Extras and Notas with dedicated empty messages while keeping Informação adicional conditional.
 
 **Step 5:** Run shared popup tests, ESLint, build, and `git diff --check`.
+
+### Task 7: Demote Reserva to the final grid slot
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Change the fixed-layout expectation to Cliente, Condutor, Percurso, Viatura, Comercial, Extras, Notas, Reserva.
+
+**Step 2:** Reorder the core group definitions without changing field behavior.
+
+**Step 3:** Run shared popup tests, ESLint, build, and `git diff --check`.
