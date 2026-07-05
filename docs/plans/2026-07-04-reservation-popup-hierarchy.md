@@ -40,3 +40,17 @@
 **Step 2:** Run ESLint on changed source and test files.
 
 **Step 3:** Run the production build and `git diff --check`.
+
+### Task 4: Order route and vehicle data
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Add failing assertions for the exact Percurso and Viatura label order.
+
+**Step 2:** Reorder the route field definitions and combine brand plus model into the Modelo value.
+
+**Step 3:** Keep Marca recognized as a known field so it does not reappear under additional information.
+
+**Step 4:** Run focused tests, ESLint, and the production build.

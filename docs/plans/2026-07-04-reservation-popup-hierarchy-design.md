@@ -12,6 +12,8 @@ The “Ver no Reservations” action sits on the right side of the header, immed
 
 When status is absent, the header renders no empty pill. Existing status formatting, colors, responsive layout, close behavior, and legacy URL construction remain unchanged.
 
+Percurso follows the operational sequence Entrega, Recolha, Local de entrega, Local de recolha, Duração, then Voo de chegada. Viatura shows a combined Modelo value containing brand and model, followed by Grupo and Matrícula; Marca is not repeated as a separate row.
+
 ## Testing
 
-Verify the reference appears once, the status appears in the header as a pill, the Reserva section omits ID and Estado, and the legacy link is contained by the Cliente section.
+Verify the reference appears once, the status appears in the header as a pill, the Reserva section omits ID and Estado, the legacy link is in the header, and Percurso/Viatura fields follow the approved order.
