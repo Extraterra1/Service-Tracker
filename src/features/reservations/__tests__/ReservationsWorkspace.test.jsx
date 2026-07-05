@@ -186,8 +186,12 @@ describe('ReservationsWorkspace', () => {
     await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
 
     const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
-    const popupHeader = within(dialog).getByRole('heading', { name: 'Reserva 000123' }).closest('header')
+    const details = within(dialog)
+    const popupHeader = details.getByRole('heading', { name: 'Reserva 000123' }).closest('header')
     expect(within(popupHeader).getByText('Não tem taxa IMT')).toHaveClass('reservation-imt-warning')
+    const commercialSection = details.getByRole('heading', { name: 'Comercial' }).closest('section')
+    expect(Array.from(commercialSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual(['Valor total'])
+    expect(within(commercialSection).getByText(/125,50/)).toBeInTheDocument()
   })
 
   it('keeps the core detail layout fixed when reservation data is missing', async () => {

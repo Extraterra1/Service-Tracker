@@ -207,13 +207,20 @@ function ExtrasGroup({ extras }) {
 export default function ReservationDetailsPopup({ reservation, onClose }) {
   const closeButtonRef = useRef(null);
   const reservationDetails = useMemo(() => buildReservationDetails(reservation), [reservation]);
+  const hasImtExtra = reservationDetails.extras.some((extra) => /imt/i.test(extra));
   const groups = useMemo(
     () =>
-      FIELD_GROUPS.map((group) => ({
-        ...group,
-        fields: group.fields.map(([key, label]) => ({ key, label, value: getFieldValue(reservationDetails.values, key) }))
-      })),
-    [reservationDetails.values]
+      FIELD_GROUPS.map((group) => {
+        const fieldDefinitions = group.title === 'Comercial' && !hasImtExtra
+          ? group.fields.filter(([key]) => key === 'manualValue')
+          : group.fields;
+
+        return {
+          ...group,
+          fields: fieldDefinitions.map(([key, label]) => ({ key, label, value: getFieldValue(reservationDetails.values, key) }))
+        };
+      }),
+    [hasImtExtra, reservationDetails.values]
   );
   const extraFields = useMemo(
     () =>
@@ -229,7 +236,6 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
   const countryCode = getReservationCountryCode(reservation);
   const countryName = countryCode ? countryNames.of(countryCode) : '';
   const status = String(reservation.status ?? '').trim().toLowerCase();
-  const hasImtExtra = reservationDetails.extras.some((extra) => /imt/i.test(extra));
 
   useEffect(() => {
     closeButtonRef.current?.focus();
