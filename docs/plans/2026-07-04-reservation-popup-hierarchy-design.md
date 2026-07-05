@@ -16,6 +16,8 @@ Percurso follows the operational sequence Entrega, Recolha, Local de entrega, Lo
 
 The structured `Extras:` block currently embedded in delivery comments is parsed into a dedicated Extras section. Each extra is rendered as a compact pill, while unstructured delivery comments, customer notes, service notes, and return comments remain in the separate Notas section.
 
+The core information architecture is fixed regardless of missing data: Cliente/Reserva, Condutor/Percurso, Viatura/Comercial, then Extras/Notas. Defined fields remain visible with an em-dash placeholder; fully empty Extras and Notas show “Sem extras” and “Sem notas”. Informação adicional may follow the fixed grid but never changes the position of core sections. Viatura uses Modelo, Matrícula, Grupo order.
+
 The header shows a warning pill reading “Não tem taxa IMT” when none of the parsed extras contain `IMT`, case-insensitively. Any matching extra suppresses the warning; a reservation with no extras shows it.
 
 ## Testing

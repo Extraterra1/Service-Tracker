@@ -71,3 +71,19 @@
 **Step 4:** Detect `/imt/i` across parsed extras and render “Não tem taxa IMT” only when no match exists.
 
 **Step 5:** Run both popup suites, ESLint, the production build, and `git diff --check`.
+
+### Task 6: Stabilize the details grid
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Add a sparse-reservation test asserting the eight fixed core sections and placeholders.
+
+**Step 2:** Assert Viatura uses Modelo, Matrícula, Grupo order.
+
+**Step 3:** Stop filtering absent core fields; format missing values as an em dash.
+
+**Step 4:** Always render Extras and Notas with dedicated empty messages while keeping Informação adicional conditional.
+
+**Step 5:** Run shared popup tests, ESLint, build, and `git diff --check`.
