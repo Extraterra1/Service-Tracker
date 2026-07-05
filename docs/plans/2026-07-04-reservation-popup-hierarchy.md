@@ -99,3 +99,16 @@
 **Step 2:** Reorder the core group definitions without changing field behavior.
 
 **Step 3:** Run shared popup tests, ESLint, build, and `git diff --check`.
+
+### Task 8: Link client phones to WhatsApp
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Modify: `src/App.css`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Add a failing assertion for the normalized `wa.me` URL, accessible label, and new-tab behavior.
+
+**Step 2:** Reuse `getWhatsAppHref`; render valid numbers as an icon-enhanced link and invalid values as plain text.
+
+**Step 3:** Run shared popup tests, ESLint, build, and `git diff --check`.
