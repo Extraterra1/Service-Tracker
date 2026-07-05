@@ -112,3 +112,15 @@
 **Step 2:** Reuse `getWhatsAppHref`; render valid numbers as an icon-enhanced link and invalid values as plain text.
 
 **Step 3:** Run shared popup tests, ESLint, build, and `git diff --check`.
+
+### Task 9: Hide derived values without IMT
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Add a failing assertion that no-IMT reservations show only Valor total in Comercial.
+
+**Step 2:** Keep Valor base and Taxa only when parsed extras contain `IMT`.
+
+**Step 3:** Run shared popup tests, ESLint, build, and `git diff --check`.

@@ -20,6 +20,8 @@ The core information architecture is fixed regardless of missing data: Cliente/C
 
 The header shows a warning pill reading “Não tem taxa IMT” when none of the parsed extras contain `IMT`, case-insensitively. Any matching extra suppresses the warning; a reservation with no extras shows it.
 
+Commercial calculations follow the same IMT state. Reservations with any IMT extra show Valor base, Taxa, and Valor total. Reservations without IMT suppress the derived base and fee rows and show only Valor total.
+
 Valid client phone numbers are rendered as WhatsApp links using the app's shared phone normalizer. The visible number stays unchanged, a WhatsApp icon reinforces the action, and the conversation opens in a new tab. Invalid numbers remain plain text.
 
 ## Testing
