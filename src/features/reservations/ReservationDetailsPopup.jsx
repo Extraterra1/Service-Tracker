@@ -1,4 +1,4 @@
-import { ExternalLink, X } from 'lucide-react';
+import { Building2, CalendarArrowDown, CalendarArrowUp, CarFront, Clock3, ExternalLink, MapPinned, Plane, RectangleHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -103,6 +103,23 @@ function getFieldValue(reservation, key) {
   return [make, model].filter(Boolean).join(' ');
 }
 
+function getDetailIcon(key, value) {
+  if (key === 'pickupAt') return <CalendarArrowUp aria-hidden="true" />;
+  if (key === 'returnAt') return <CalendarArrowDown aria-hidden="true" />;
+  if (key === 'durationDays') return <Clock3 aria-hidden="true" />;
+  if (key === 'carModel') return <CarFront aria-hidden="true" />;
+  if (key === 'licensePlate') return <RectangleHorizontal aria-hidden="true" />;
+
+  if (key === 'pickupStation' || key === 'returnStation') {
+    const location = String(formatReservationField(key, value) ?? '').trim().toLocaleLowerCase('pt-PT');
+    if (/\b(aeroporto|airport)\b/i.test(location)) return <Plane aria-hidden="true" />;
+    if (location === 'office' || location === 'sede') return <Building2 aria-hidden="true" />;
+    return <MapPinned aria-hidden="true" />;
+  }
+
+  return null;
+}
+
 function parseDeliveryComments(value) {
   const sections = {
     extras: [],
@@ -150,6 +167,45 @@ function buildReservationDetails(reservation) {
   };
 }
 
+function DetailValue({ fieldKey, value, countryCode, countryName }) {
+  const whatsappHref = fieldKey === 'clientPhone' ? getWhatsAppHref(value) : '';
+  if (whatsappHref) {
+    return (
+      <a
+        className="reservation-details-whatsapp-link"
+        href={whatsappHref}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={`Abrir conversa no WhatsApp para ${value}`}
+      >
+        <span>{formatValue(fieldKey, value)}</span>
+        <FaWhatsapp aria-hidden="true" />
+      </a>
+    );
+  }
+
+  if (fieldKey === 'customer' && countryCode && hasValue(value)) {
+    return (
+      <span className="reservation-details-client-name">
+        <ReactCountryFlag countryCode={countryCode} svg title={countryName} />
+        <span>{formatValue(fieldKey, value)}</span>
+      </span>
+    );
+  }
+
+  const icon = hasValue(value) ? getDetailIcon(fieldKey, value) : null;
+  if (icon) {
+    return (
+      <span className="reservation-details-value-with-icon">
+        {icon}
+        <span>{formatValue(fieldKey, value)}</span>
+      </span>
+    );
+  }
+
+  return formatValue(fieldKey, value);
+}
+
 function DetailGroup({ title, fields, countryCode = '', countryName = '', emptyLabel = '', hideWhenEmpty = false }) {
   const isEmpty = fields.every(({ value }) => !hasValue(value));
   if (hideWhenEmpty && isEmpty) return null;
@@ -163,25 +219,7 @@ function DetailGroup({ title, fields, countryCode = '', countryName = '', emptyL
             <div key={key}>
               <dt>{label}</dt>
               <dd>
-                {key === 'clientPhone' && getWhatsAppHref(value) ? (
-                  <a
-                    className="reservation-details-whatsapp-link"
-                    href={getWhatsAppHref(value)}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Abrir conversa no WhatsApp para ${value}`}
-                  >
-                    <span>{formatValue(key, value)}</span>
-                    <FaWhatsapp aria-hidden="true" />
-                  </a>
-                ) : key === 'customer' && countryCode && hasValue(value) ? (
-                  <span className="reservation-details-client-name">
-                    <ReactCountryFlag countryCode={countryCode} svg title={countryName} />
-                    <span>{formatValue(key, value)}</span>
-                  </span>
-                ) : (
-                  formatValue(key, value)
-                )}
+                <DetailValue fieldKey={key} value={value} countryCode={countryCode} countryName={countryName} />
               </dd>
             </div>
           ))}

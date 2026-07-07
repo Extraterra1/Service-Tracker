@@ -21,11 +21,13 @@ describe('reservationsApi', () => {
     }))
     const { fetchReservations } = await import('../reservationsApi')
 
-    await expect(fetchReservations({ page: 2, pageSize: 10, q: 'ABC', status: ['confirmed', 'cancelled'] })).resolves.toEqual(payload)
+    await expect(fetchReservations({ page: 2, pageSize: 10, pickupFrom: '2026-07-01', pickupTo: '2026-07-01', q: 'ABC', status: ['confirmed', 'cancelled'] })).resolves.toEqual(payload)
     const [url, options] = fetch.mock.calls[0]
     const parsedUrl = new URL(url)
     expect(parsedUrl.origin).toBe('https://api.justdrivemadeira.com')
     expect(parsedUrl.pathname).toBe('/api/service-tracker/reservations')
+    expect(parsedUrl.searchParams.get('pickupFrom')).toBe('2026-07-01')
+    expect(parsedUrl.searchParams.get('pickupTo')).toBe('2026-07-01')
     expect(parsedUrl.searchParams.get('status')).toBe('confirmed,cancelled')
     expect(options.headers.Authorization).toBe('Bearer firebase-id-token')
     expect(options.credentials).toBe('omit')

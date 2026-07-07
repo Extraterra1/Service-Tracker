@@ -153,6 +153,7 @@
 }
 
 .reservations-search button,
+.reservations-date-filter button,
 .reservations-pager button {
   width: 2rem;
   height: 2rem;
@@ -170,25 +171,65 @@
   background: transparent;
 }
 
-.reservations-status-filters {
+.reservations-filter-row {
   grid-column: 1;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.6rem;
+  min-width: 0;
 }
 
-.reservations-status-filters button {
-  min-height: 1.9rem;
-  padding: 0.25rem 0.55rem;
+.reservations-status-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.reservations-status-select,
+.reservations-date-filter input {
+  min-height: 2rem;
   border: 1px solid var(--stroke);
   border-radius: 6px;
-  background: var(--ghost-bg);
-  color: var(--ghost-text);
+  background: var(--input-bg);
+  color: var(--input-text);
+  padding: 0 0.45rem;
+  font: inherit;
+}
+
+.reservations-status-select {
+  min-height: 2rem;
+  min-width: 9.5rem;
+}
+
+.reservations-date-filter {
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 750;
 }
 
-.reservations-status-filters button.is-active {
-  border-color: var(--accent);
-  background: color-mix(in oklab, var(--accent), transparent 88%);
-  color: var(--accent-strong);
+.reservations-date-filter label {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.reservations-date-filter input {
+  max-width: 10.2rem;
+}
+
+.reservations-date-filter button {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  background: transparent;
 }
 
 .reservations-pager {
@@ -620,6 +661,20 @@
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--stroke), transparent 20%);
 }
 
+.reservation-details-value-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.reservation-details-value-with-icon > svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  stroke-width: 1.9;
+}
+
 .reservation-details-whatsapp-link {
   color: var(--ready-green);
   display: inline-flex;
@@ -713,9 +768,21 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .reservations-status-filters,
+  .reservations-filter-row,
   .reservations-pager {
     grid-column: auto;
+  }
+
+  .reservations-filter-row,
+  .reservations-date-filter {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .reservations-status-filter,
+  .reservations-status-select,
+  .reservations-date-filter input {
+    flex: 1 1 8rem;
   }
 
   .reservations-pager {

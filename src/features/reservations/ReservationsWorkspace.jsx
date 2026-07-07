@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, RotateCw, Search, X } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, RotateCw, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
 import { fetchReservations } from '../../lib/reservationsApi'
@@ -35,6 +35,8 @@ function displayVehicle(reservation) {
 
 export default function ReservationsWorkspace() {
   const [query, setQuery] = useState('')
+  const [pickupFrom, setPickupFrom] = useState('')
+  const [pickupTo, setPickupTo] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState([])
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -43,12 +45,12 @@ export default function ReservationsWorkspace() {
   const [selectedReservation, setSelectedReservation] = useState(null)
   const openerRef = useRef(null)
   const debouncedQuery = useDebouncedValue(query.trim(), 250)
-  const requestKey = JSON.stringify([page, pageSize, debouncedQuery, selectedStatuses, requestVersion])
+  const requestKey = JSON.stringify([page, pageSize, debouncedQuery, pickupFrom, pickupTo, selectedStatuses, requestVersion])
 
   useEffect(() => {
     let active = true
 
-    fetchReservations({ page, pageSize, q: debouncedQuery, status: selectedStatuses })
+    fetchReservations({ page, pageSize, pickupFrom, pickupTo, q: debouncedQuery, status: selectedStatuses })
       .then((data) => {
         if (active) setRequestState({ key: requestKey, payload: data, error: '' })
       })
@@ -59,7 +61,7 @@ export default function ReservationsWorkspace() {
     return () => {
       active = false
     }
-  }, [debouncedQuery, page, pageSize, requestKey, selectedStatuses])
+  }, [debouncedQuery, page, pageSize, pickupFrom, pickupTo, requestKey, selectedStatuses])
 
   const loading = requestState.key !== requestKey
   const payload = loading ? null : requestState.payload
@@ -74,13 +76,6 @@ export default function ReservationsWorkspace() {
     [payload],
   )
 
-  function toggleStatus(status) {
-    setPage(1)
-    setSelectedStatuses((current) => (
-      current.includes(status) ? current.filter((entry) => entry !== status) : [...current, status]
-    ))
-  }
-
   const closeDetails = useCallback(() => {
     setSelectedReservation(null)
     openerRef.current?.focus()
@@ -90,7 +85,7 @@ export default function ReservationsWorkspace() {
     <main className="reservations-workspace">
       <section className="reservations-summary" aria-label="Resumo das reservas">
         <div className="reservations-total">
-          <span>{debouncedQuery ? 'Resultados' : 'Reservas'}</span>
+          <span>{debouncedQuery || pickupFrom || pickupTo ? 'Resultados' : 'Reservas'}</span>
           <strong>{loading && !payload ? '...' : totalRows.toLocaleString('pt-PT')}</strong>
         </div>
         <div className="reservations-status-summary" aria-label="Contagens por estado">
@@ -122,29 +117,62 @@ export default function ReservationsWorkspace() {
           ) : null}
         </div>
 
-        <div className="reservations-status-filters" aria-label="Filtrar por estado">
-          <button
-            type="button"
-            className={selectedStatuses.length === 0 ? 'is-active' : ''}
-            aria-pressed={selectedStatuses.length === 0}
-            onClick={() => {
-              setSelectedStatuses([])
-              setPage(1)
-            }}
-          >
-            Todas
-          </button>
-          {STATUS_OPTIONS.map((status) => (
-            <button
-              type="button"
-              key={status}
-              className={selectedStatuses.includes(status) ? 'is-active' : ''}
-              aria-pressed={selectedStatuses.includes(status)}
-              onClick={() => toggleStatus(status)}
+        <div className="reservations-filter-row">
+          <label className="reservations-status-filter" htmlFor="reservations-status">
+            <span>Estado</span>
+            <select
+              id="reservations-status"
+              className="reservations-status-select"
+              value={selectedStatuses[0] ?? ''}
+              onChange={(event) => {
+                setSelectedStatuses(event.target.value ? [event.target.value] : [])
+                setPage(1)
+              }}
             >
-              {RESERVATION_STATUS_LABELS[status]}
-            </button>
-          ))}
+              <option value="">Todas</option>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>{RESERVATION_STATUS_LABELS[status]}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="reservations-date-filter">
+            <CalendarDays size={17} aria-hidden="true" />
+            <label htmlFor="reservations-pickup-from">Entrega de</label>
+            <input
+              id="reservations-pickup-from"
+              type="date"
+              value={pickupFrom}
+              onChange={(event) => {
+                setPickupFrom(event.target.value)
+                setPage(1)
+              }}
+            />
+            <label htmlFor="reservations-pickup-to">Até</label>
+            <input
+              id="reservations-pickup-to"
+              type="date"
+              value={pickupTo}
+              onChange={(event) => {
+                setPickupTo(event.target.value)
+                setPage(1)
+              }}
+              aria-label="Entrega até"
+            />
+            {pickupFrom || pickupTo ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setPickupFrom('')
+                  setPickupTo('')
+                  setPage(1)
+                }}
+                aria-label="Limpar intervalo de entrega"
+              >
+                <X size={15} aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="reservations-pager">

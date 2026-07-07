@@ -68,7 +68,14 @@ describe('ReservationsWorkspace', () => {
     expect(await screen.findByText('Maria Silva')).toBeInTheDocument()
     expect(screen.getByText('51')).toBeInTheDocument()
     expect(screen.getByText(/Fiat Panda - AA-00-AA/)).toBeInTheDocument()
-    expect(fetchReservations).toHaveBeenCalledWith({ page: 1, pageSize: 10, q: '', status: [] })
+    expect(fetchReservations).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 10,
+      pickupFrom: '',
+      pickupTo: '',
+      q: '',
+      status: [],
+    })
     expect(screen.getByRole('option', { name: '10' })).toBeInTheDocument()
   })
 
@@ -131,12 +138,14 @@ describe('ReservationsWorkspace', () => {
       'https://reservations.justdrivemadeira.com/index.php?controller=pjAdminBookings&action=pjActionUpdate&id=11190',
     )
     expect(legacyLink).toHaveAttribute('target', '_blank')
-    expect(details.getByText('01/07/2026 09:00')).toBeInTheDocument()
-    expect(details.getByText('05/07/2026 10:00')).toBeInTheDocument()
+    expect(details.getByText('01/07/2026 09:00').closest('dd').querySelector('.lucide-calendar-arrow-up')).not.toBeNull()
+    expect(details.getByText('05/07/2026 10:00').closest('dd').querySelector('.lucide-calendar-arrow-down')).not.toBeNull()
+    expect(details.getByText('Aeroporto').closest('dd').querySelector('.lucide-plane')).not.toBeNull()
+    expect(details.getByText('Office').closest('dd').querySelector('.lucide-building-2')).not.toBeNull()
     expect(details.getByText(/125,50/)).toBeInTheDocument()
     expect(details.getByText(/119,50/)).toBeInTheDocument()
     expect(details.getByText(/6,00/)).toBeInTheDocument()
-    expect(details.getByText('3 dias')).toBeInTheDocument()
+    expect(details.getByText('3 dias').closest('dd').querySelector('.lucide-clock-3')).not.toBeNull()
     const routeSection = details.getByRole('heading', { name: 'Percurso' }).closest('section')
     expect(Array.from(routeSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
       'Entrega',
@@ -153,6 +162,8 @@ describe('ReservationsWorkspace', () => {
       'Grupo',
     ])
     expect(within(vehicleSection).getByText('Fiat Panda')).toBeInTheDocument()
+    expect(within(vehicleSection).getByText('Fiat Panda').closest('dd').querySelector('.lucide-car-front')).not.toBeNull()
+    expect(within(vehicleSection).getByText('AA-00-AA').closest('dd').querySelector('.lucide-rectangle-horizontal')).not.toBeNull()
     expect(within(vehicleSection).queryByText('Marca')).not.toBeInTheDocument()
     const extrasSection = details.getByRole('heading', { name: 'Extras' }).closest('section')
     expect(Array.from(extrasSection.querySelectorAll('li'), (element) => element.textContent)).toEqual([
@@ -178,6 +189,7 @@ describe('ReservationsWorkspace', () => {
       ...payload,
       reservations: [{
         ...payload.reservations[0],
+        pickupStation: 'Funchal',
         deliveryComments: 'Extras:\n1x Cadeira de bebé\nNotas Cliente:\nSem taxa',
       }],
     })
@@ -192,6 +204,7 @@ describe('ReservationsWorkspace', () => {
     const commercialSection = details.getByRole('heading', { name: 'Comercial' }).closest('section')
     expect(Array.from(commercialSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual(['Valor total'])
     expect(within(commercialSection).getByText(/125,50/)).toBeInTheDocument()
+    expect(details.getByText('Funchal').closest('dd').querySelector('.lucide-map-pinned')).not.toBeNull()
   })
 
   it('keeps the core detail layout fixed when reservation data is missing', async () => {
@@ -248,20 +261,55 @@ describe('ReservationsWorkspace', () => {
     expect(screen.getAllByTestId('reservation-skeleton')).toHaveLength(10)
   })
 
-  it('debounces search and supports combined status filters', async () => {
+  it('debounces search and filters by selected status', async () => {
     const user = userEvent.setup()
     render(<ReservationsWorkspace />)
     await screen.findByText('Maria Silva')
 
     await user.type(screen.getByRole('searchbox', { name: 'Pesquisar reservas' }), 'Maria')
-    await user.click(screen.getByRole('button', { name: 'Cancelada' }))
+    await user.selectOptions(screen.getByLabelText('Estado'), 'cancelled')
 
     await waitFor(() => {
       expect(fetchReservations).toHaveBeenLastCalledWith({
         page: 1,
         pageSize: 10,
+        pickupFrom: '',
+        pickupTo: '',
         q: 'Maria',
         status: ['cancelled'],
+      })
+    })
+  })
+
+  it('filters reservations by pickup date range and can clear the date range', async () => {
+    const user = userEvent.setup()
+    render(<ReservationsWorkspace />)
+    await screen.findByText('Maria Silva')
+
+    await user.type(screen.getByLabelText('Entrega de'), '2026-07-01')
+    await user.type(screen.getByLabelText('Entrega até'), '2026-07-05')
+
+    await waitFor(() => {
+      expect(fetchReservations).toHaveBeenLastCalledWith({
+        page: 1,
+        pageSize: 10,
+        pickupFrom: '2026-07-01',
+        pickupTo: '2026-07-05',
+        q: '',
+        status: [],
+      })
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Limpar intervalo de entrega' }))
+
+    await waitFor(() => {
+      expect(fetchReservations).toHaveBeenLastCalledWith({
+        page: 1,
+        pageSize: 10,
+        pickupFrom: '',
+        pickupTo: '',
+        q: '',
+        status: [],
       })
     })
   })
@@ -277,7 +325,14 @@ describe('ReservationsWorkspace', () => {
 
     await user.click(screen.getByRole('button', { name: 'Página seguinte' }))
     await waitFor(() => {
-      expect(fetchReservations).toHaveBeenLastCalledWith({ page: 2, pageSize: 10, q: '', status: [] })
+      expect(fetchReservations).toHaveBeenLastCalledWith({
+        page: 2,
+        pageSize: 10,
+        pickupFrom: '',
+        pickupTo: '',
+        q: '',
+        status: [],
+      })
     })
   })
 
@@ -287,8 +342,10 @@ describe('ReservationsWorkspace', () => {
     expect(appCss).toMatch(/\.reservation-details-backdrop\s*{[^}]*position:\s*fixed/s)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservation-item\s*{/)
     expect(appCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.reservation-item-skeleton/)
-    expect(appCss).toMatch(/\.reservations-status-filters\s*{[^}]*grid-column:\s*1/s)
+    expect(appCss).toMatch(/\.reservations-filter-row\s*{[^}]*grid-column:\s*1/s)
+    expect(appCss).toMatch(/\.reservations-status-select\s*{[^}]*min-height:\s*2rem/s)
     expect(appCss).toMatch(/\.reservations-pager\s*{[^}]*grid-column:\s*2/s)
+    expect(appCss).toMatch(/\.reservations-date-filter\s*{[^}]*display:\s*inline-flex/s)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservations-toolbar\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
     expect(appCss).toMatch(/\.reservation-details-group h3\s*{[^}]*font-family:\s*'Sora'[^}]*font-weight:\s*900/s)
     expect(appCss).toMatch(/\.reservation-plate\s*{[^}]*overflow-wrap:\s*anywhere/s)
