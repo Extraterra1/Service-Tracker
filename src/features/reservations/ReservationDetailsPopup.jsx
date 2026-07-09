@@ -9,6 +9,16 @@ const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: '
 const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' });
 const IMT_DAILY_FEE = 2;
 const IMT_MAX_DAYS = 10;
+const DISCOUNT_FIELD_KEYS = [
+  'discount',
+  'discountPercent',
+  'discountPercentage',
+  'discountRate',
+  'discountValue',
+  'partnerDiscount',
+  'promoDiscount',
+  'couponDiscount'
+];
 
 const FIELD_GROUPS = [
   {
@@ -97,6 +107,53 @@ function formatImtAmount(value, language) {
   })}€`;
 }
 
+function parseNumberLike(value) {
+  const normalized = String(value ?? '')
+    .trim()
+    .replace('%', '')
+    .replace(/\s/g, '')
+    .replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getReservationDiscountPercent(reservation) {
+  for (const key of DISCOUNT_FIELD_KEYS) {
+    const discount = parseNumberLike(reservation[key]);
+    if (discount > 0 && discount < 100) return discount;
+  }
+
+  const text = Object.values(reservation).map((value) => String(value ?? '')).join('\n');
+  const discountMatch = text.match(/\b(?:desconto|discount)\s+(\d+(?:[.,]\d+)?)\s*%/i);
+  if (discountMatch) {
+    const discount = parseNumberLike(discountMatch[1]);
+    if (discount > 0 && discount < 100) return discount;
+  }
+
+  return 0;
+}
+
+function getImtFeeAmount(reservation) {
+  const days = getRentalDays(reservation);
+  const feeDays = Math.min(Math.max(days, 0), IMT_MAX_DAYS);
+  return feeDays * IMT_DAILY_FEE;
+}
+
+function getPostImtPreDiscountFinalPrice(reservation) {
+  const finalPriceAfterImt = Number(reservation.manualValue || 0) + getImtFeeAmount(reservation);
+  if (!Number.isFinite(finalPriceAfterImt) || finalPriceAfterImt <= 0) return 0;
+
+  const discountPercent = getReservationDiscountPercent(reservation);
+  if (!discountPercent) return finalPriceAfterImt;
+
+  return finalPriceAfterImt / (1 - discountPercent / 100);
+}
+
+function formatClipboardAmount(value) {
+  const amount = Number(value || 0);
+  return amount.toFixed(2);
+}
+
 function parseReservationDate(value) {
   const normalized = String(value ?? '').trim().replace(' ', 'T');
   const date = new Date(normalized);
@@ -117,8 +174,7 @@ function getRentalDays(reservation) {
 function buildImtMessage({ reservation, countryCode }) {
   const days = getRentalDays(reservation);
   const initialAmount = Number(reservation.manualValue || 0);
-  const feeDays = Math.min(Math.max(days, 0), IMT_MAX_DAYS);
-  const totalAmount = initialAmount + feeDays * IMT_DAILY_FEE;
+  const totalAmount = initialAmount + getImtFeeAmount(reservation);
   const language = String(countryCode ?? '').toUpperCase() === 'PT' ? 'pt' : 'en';
   const initialText = formatImtAmount(initialAmount, language);
   const totalText = formatImtAmount(totalAmount, language);
@@ -158,6 +214,12 @@ function getImtWhatsAppHref({ reservation, countryCode }) {
   const whatsappHref = getWhatsAppHref(reservation.clientPhone);
   if (whatsappHref) return `${whatsappHref}?text=${message}`;
   return `https://wa.me/?text=${message}`;
+}
+
+function copyImtPriceToClipboard(reservation) {
+  const clipboard = window?.navigator?.clipboard;
+  if (!clipboard?.writeText) return;
+  void clipboard.writeText(formatClipboardAmount(getPostImtPreDiscountFinalPrice(reservation)));
 }
 
 function humanizeKey(key) {
@@ -348,6 +410,7 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
   const countryName = countryCode ? countryNames.of(countryCode) : '';
   const status = String(reservation.status ?? '').trim().toLowerCase();
   const imtWhatsAppHref = canManageAccess && !hasImtExtra ? getImtWhatsAppHref({ reservation, countryCode }) : '';
+  const imtClipboardPrice = formatClipboardAmount(getPostImtPreDiscountFinalPrice(reservation));
 
   useEffect(() => {
     closeButtonRef.current?.focus();
@@ -382,6 +445,10 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Enviar mensagem IMT por WhatsApp"
+                    data-clipboard-price={imtClipboardPrice}
+                    onMouseDown={() => copyImtPriceToClipboard(reservation)}
+                    onClick={() => copyImtPriceToClipboard(reservation)}
+                    onTouchStart={() => copyImtPriceToClipboard(reservation)}
                   >
                     Não tem taxa IMT
                   </a>

@@ -7,6 +7,7 @@ const appCss = readFileSync('src/App.css', 'utf8')
 
 const fetchReservations = vi.fn()
 vi.mock('../../../lib/reservationsApi', () => ({ fetchReservations }))
+const writeText = vi.fn()
 
 let ReservationsWorkspace
 try {
@@ -57,6 +58,11 @@ describe('ReservationsWorkspace', () => {
   beforeEach(() => {
     fetchReservations.mockReset()
     fetchReservations.mockResolvedValue(payload)
+    writeText.mockReset()
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
   })
 
   afterEach(cleanup)
@@ -232,6 +238,27 @@ describe('ReservationsWorkspace', () => {
     expect(message).toContain('125,50€')
     expect(message).toContain('131,50€')
     expect(message).toContain('Por favor, confirme.')
+  })
+
+  it('copies the post-IMT pre-discount final price when admins click the IMT WhatsApp pill', async () => {
+    const user = userEvent.setup()
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        manualValue: '263',
+        deliveryComments: 'Extras:\n1x Cadeira de bebé\nPreço original 292.22 EUR (desconto 10% PARTNER)',
+      }],
+    })
+    render(<ReservationsWorkspace canManageAccess />)
+
+    await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
+    const popupHeader = within(dialog).getByRole('heading', { name: 'Reserva 000123' }).closest('header')
+    const imtLink = within(popupHeader).getByRole('link', { name: /Enviar mensagem IMT por WhatsApp/i })
+
+    expect(imtLink).toHaveAttribute('data-clipboard-price', '298.89')
   })
 
   it('defaults the admin IMT WhatsApp message to English for non-Portuguese clients', async () => {
