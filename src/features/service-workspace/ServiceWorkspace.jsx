@@ -38,6 +38,7 @@ function ServiceWorkspace({
   onToggleReady,
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
+  canManageAccess = false,
   updatingItemId = '',
   disabled,
   loading = false,
@@ -177,7 +178,7 @@ function ServiceWorkspace({
       </main>
 
       {reservationPopupReference ? (
-        <ServiceReservationPopup reference={reservationPopupReference} onClose={handleCloseReservation} />
+        <ServiceReservationPopup reference={reservationPopupReference} onClose={handleCloseReservation} canManageAccess={canManageAccess} />
       ) : null}
 
       {activePlateInfoPopup ? (

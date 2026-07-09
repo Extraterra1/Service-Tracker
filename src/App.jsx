@@ -1062,7 +1062,7 @@ function App() {
 
       {activeWorkspace === 'reservations' ? (
         <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
-          <ReservationsWorkspace />
+          <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
       ) : paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
@@ -1077,6 +1077,7 @@ function App() {
             onToggleReady={handleToggleReady}
             onSaveTimeOverride={handleSaveItemTimeOverride}
             onOpenCarHistoryFromModel={handleOpenCarHistoryFromModel}
+            canManageAccess={canManageAccess}
             updatingItemId={updatingItemId}
             disabled={serviceWorkspaceReadOnly}
             loading={paneLoading}

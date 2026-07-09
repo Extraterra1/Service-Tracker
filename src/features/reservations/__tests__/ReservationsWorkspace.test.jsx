@@ -201,10 +201,66 @@ describe('ReservationsWorkspace', () => {
     const details = within(dialog)
     const popupHeader = details.getByRole('heading', { name: 'Reserva 000123' }).closest('header')
     expect(within(popupHeader).getByText('Não tem taxa IMT')).toHaveClass('reservation-imt-warning')
+    expect(within(popupHeader).queryByRole('link', { name: /Enviar mensagem IMT/i })).not.toBeInTheDocument()
     const commercialSection = details.getByRole('heading', { name: 'Comercial' }).closest('section')
     expect(Array.from(commercialSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual(['Valor total'])
     expect(within(commercialSection).getByText(/125,50/)).toBeInTheDocument()
     expect(details.getByText('Funchal').closest('dd').querySelector('.lucide-map-pinned')).not.toBeNull()
+  })
+
+  it('lets admins open a Portuguese IMT WhatsApp message with the adjusted price', async () => {
+    const user = userEvent.setup()
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        deliveryComments: 'Extras:\n1x Cadeira de bebé',
+      }],
+    })
+    render(<ReservationsWorkspace canManageAccess />)
+
+    await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
+    const popupHeader = within(dialog).getByRole('heading', { name: 'Reserva 000123' }).closest('header')
+    const imtLink = within(popupHeader).getByRole('link', { name: /Enviar mensagem IMT por WhatsApp/i })
+    const url = new URL(imtLink.href)
+    const message = url.searchParams.get('text')
+
+    expect(url.origin + url.pathname).toBe('https://wa.me/351900000000')
+    expect(message).toContain('No seu caso, como são 3 dias de aluguer')
+    expect(message).toContain('125,50€')
+    expect(message).toContain('131,50€')
+    expect(message).toContain('Por favor, confirme.')
+  })
+
+  it('defaults the admin IMT WhatsApp message to English for non-Portuguese clients', async () => {
+    const user = userEvent.setup()
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        country: 'GB',
+        clientPhone: '+44 7700 900123',
+        manualValue: '100',
+        durationDays: 12,
+        deliveryComments: 'Extras:\n1x Cadeira de bebé',
+      }],
+    })
+    render(<ReservationsWorkspace canManageAccess />)
+
+    await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
+    const popupHeader = within(dialog).getByRole('heading', { name: 'Reserva 000123' }).closest('header')
+    const imtLink = within(popupHeader).getByRole('link', { name: /Enviar mensagem IMT por WhatsApp/i })
+    const message = new URL(imtLink.href).searchParams.get('text')
+
+    expect(imtLink.href).toContain('https://wa.me/447700900123')
+    expect(message).toContain('as the rental period is 12 days')
+    expect(message).toContain('initially quoted amount of 100.00€')
+    expect(message).toContain('bringing the total amount to 120.00€')
+    expect(message).toContain("Sadly there's nothing we can do.")
   })
 
   it('keeps the core detail layout fixed when reservation data is missing', async () => {

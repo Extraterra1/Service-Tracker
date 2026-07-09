@@ -472,6 +472,24 @@
   color: color-mix(in oklab, var(--note-yellow), black 48%);
 }
 
+.reservation-imt-warning-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.reservation-imt-warning-link:hover {
+  background: color-mix(in oklab, var(--note-yellow), transparent 68%);
+  transform: translateY(-1px);
+}
+
+.reservation-imt-warning-link:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--note-yellow), black 28%);
+  outline-offset: 2px;
+}
+
 .reservation-details-header h2 {
   margin: 0;
   font-size: 1.05rem;

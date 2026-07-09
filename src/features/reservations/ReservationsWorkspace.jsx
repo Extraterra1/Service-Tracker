@@ -33,7 +33,7 @@ function displayVehicle(reservation) {
   return vehicle ? `${vehicle} - ${plate}` : plate
 }
 
-export default function ReservationsWorkspace() {
+export default function ReservationsWorkspace({ canManageAccess = false }) {
   const [query, setQuery] = useState('')
   const [pickupFrom, setPickupFrom] = useState('')
   const [pickupTo, setPickupTo] = useState('')
@@ -243,7 +243,7 @@ export default function ReservationsWorkspace() {
         </ul>
         {!loading && !error && reservations.length === 0 ? <p className="reservations-empty">Sem reservas correspondentes.</p> : null}
       </section>
-      {selectedReservation ? <ReservationDetailsPopup reservation={selectedReservation} onClose={closeDetails} /> : null}
+      {selectedReservation ? <ReservationDetailsPopup reservation={selectedReservation} onClose={closeDetails} canManageAccess={canManageAccess} /> : null}
     </main>
   )
 }

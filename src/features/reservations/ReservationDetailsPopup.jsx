@@ -7,6 +7,8 @@ import { formatReservationField, getReservationCountryCode } from './reservation
 
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' });
+const IMT_DAILY_FEE = 2;
+const IMT_MAX_DAYS = 10;
 
 const FIELD_GROUPS = [
   {
@@ -85,6 +87,76 @@ function formatValue(key, value) {
   }
   if (typeof value === 'object') return JSON.stringify(value);
   return String(formatReservationField(key, value));
+}
+
+function formatImtAmount(value, language) {
+  const amount = Number(value || 0);
+  return `${amount.toLocaleString(language === 'pt' ? 'pt-PT' : 'en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}€`;
+}
+
+function parseReservationDate(value) {
+  const normalized = String(value ?? '').trim().replace(' ', 'T');
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getRentalDays(reservation) {
+  const explicitDays = Number(reservation.durationDays);
+  if (Number.isFinite(explicitDays) && explicitDays > 0) return Math.ceil(explicitDays);
+
+  const pickupAt = parseReservationDate(reservation.pickupAt);
+  const returnAt = parseReservationDate(reservation.returnAt);
+  if (!pickupAt || !returnAt || returnAt <= pickupAt) return 0;
+
+  return Math.max(Math.ceil((returnAt.getTime() - pickupAt.getTime()) / 86_400_000), 1);
+}
+
+function buildImtMessage({ reservation, countryCode }) {
+  const days = getRentalDays(reservation);
+  const initialAmount = Number(reservation.manualValue || 0);
+  const feeDays = Math.min(Math.max(days, 0), IMT_MAX_DAYS);
+  const totalAmount = initialAmount + feeDays * IMT_DAILY_FEE;
+  const language = String(countryCode ?? '').toUpperCase() === 'PT' ? 'pt' : 'en';
+  const initialText = formatImtAmount(initialAmount, language);
+  const totalText = formatImtAmount(totalAmount, language);
+
+  if (language === 'pt') {
+    return [
+      'Informamos os nossos clientes que, de acordo com a nova legislação em vigor na Região Autónoma da Madeira, a partir do dia 1 de junho de 2026, passou a ser aplicada uma taxa regional obrigatória aos contratos de aluguer de viaturas rent-a-car.',
+      '',
+      'Assim, para além do valor final apresentado para o aluguer da viatura, será acrescentada a respetiva taxa regional obrigatória de 2€ por dia por viatura;',
+      '',
+      'Esta taxa é aplicada até ao máximo de 10 dias por contrato, conforme definido pela legislação regional em vigor.',
+      '',
+      `No seu caso, como são ${days} ${days === 1 ? 'dia' : 'dias'} de aluguer, ao valor inicialmente apresentado de ${initialText} será acrescentado o valor da taxa, passando o total para ${totalText}.`,
+      '',
+      'Por favor, confirme.'
+    ].join('\n');
+  }
+
+  return [
+    'Hello!',
+    'JustDrive Team here.',
+    '',
+    'We would like to inform you that, according to the new legislation in force in the Autonomous Region of Madeira, from June 1st, 2026, a mandatory regional fee applies to all car rental agreements.',
+    '',
+    'Therefore, in addition to the final rental price presented for the vehicle, an extra mandatory regional fee of €2 per day per vehicle will be added.',
+    '',
+    'This fee is applied for a maximum of 10 days per contract, as established by the regional legislation currently in force.',
+    '',
+    `In your case, as the rental period is ${days} ${days === 1 ? 'day' : 'days'}, the initially quoted amount of ${initialText} will have the additional fee applied, bringing the total amount to ${totalText}.`,
+    '',
+    "Sadly there's nothing we can do. Please let us know if this is okay for you."
+  ].join('\n');
+}
+
+function getImtWhatsAppHref({ reservation, countryCode }) {
+  const whatsappHref = getWhatsAppHref(reservation.clientPhone);
+  if (!whatsappHref) return '';
+  return `${whatsappHref}?text=${encodeURIComponent(buildImtMessage({ reservation, countryCode }))}`;
 }
 
 function humanizeKey(key) {
@@ -242,7 +314,7 @@ function ExtrasGroup({ extras }) {
   );
 }
 
-export default function ReservationDetailsPopup({ reservation, onClose }) {
+export default function ReservationDetailsPopup({ reservation, onClose, canManageAccess = false }) {
   const closeButtonRef = useRef(null);
   const reservationDetails = useMemo(() => buildReservationDetails(reservation), [reservation]);
   const hasImtExtra = reservationDetails.extras.some((extra) => /imt/i.test(extra));
@@ -274,6 +346,7 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
   const countryCode = getReservationCountryCode(reservation);
   const countryName = countryCode ? countryNames.of(countryCode) : '';
   const status = String(reservation.status ?? '').trim().toLowerCase();
+  const imtWhatsAppHref = canManageAccess && !hasImtExtra ? getImtWhatsAppHref({ reservation, countryCode }) : '';
 
   useEffect(() => {
     closeButtonRef.current?.focus();
@@ -300,7 +373,21 @@ export default function ReservationDetailsPopup({ reservation, onClose }) {
               {status ? (
                 <span className={`reservation-status is-${status}`}>{formatReservationField('status', reservation.status)}</span>
               ) : null}
-              {!hasImtExtra ? <span className="reservation-status reservation-imt-warning">Não tem taxa IMT</span> : null}
+              {!hasImtExtra ? (
+                imtWhatsAppHref ? (
+                  <a
+                    className="reservation-status reservation-imt-warning reservation-imt-warning-link"
+                    href={imtWhatsAppHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Enviar mensagem IMT por WhatsApp"
+                  >
+                    Não tem taxa IMT
+                  </a>
+                ) : (
+                  <span className="reservation-status reservation-imt-warning">Não tem taxa IMT</span>
+                )
+              ) : null}
             </div>
           </div>
           <div className="reservation-details-header-actions">

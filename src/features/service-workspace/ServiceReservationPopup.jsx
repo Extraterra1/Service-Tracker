@@ -9,7 +9,7 @@ function getCacheKey(reference) {
   return String(reference ?? '').trim().replace(/^0+(?=\d)/, '');
 }
 
-export default function ServiceReservationPopup({ reference, onClose }) {
+export default function ServiceReservationPopup({ reference, onClose, canManageAccess = false }) {
   const cacheKey = getCacheKey(reference);
   const cachedReservation = reservationDetailsCache.get(cacheKey) ?? null;
   const [state, setState] = useState(() => (
@@ -62,7 +62,7 @@ export default function ServiceReservationPopup({ reference, onClose }) {
   }, [cacheKey, cachedReservation, reference]);
 
   if (state.status === 'success') {
-    return <ReservationDetailsPopup reservation={state.reservation} onClose={onClose} />;
+    return <ReservationDetailsPopup reservation={state.reservation} onClose={onClose} canManageAccess={canManageAccess} />;
   }
 
   const isLoading = state.status === 'loading';
