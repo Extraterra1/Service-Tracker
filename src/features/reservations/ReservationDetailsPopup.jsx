@@ -154,9 +154,10 @@ function buildImtMessage({ reservation, countryCode }) {
 }
 
 function getImtWhatsAppHref({ reservation, countryCode }) {
+  const message = encodeURIComponent(buildImtMessage({ reservation, countryCode }));
   const whatsappHref = getWhatsAppHref(reservation.clientPhone);
-  if (!whatsappHref) return '';
-  return `${whatsappHref}?text=${encodeURIComponent(buildImtMessage({ reservation, countryCode }))}`;
+  if (whatsappHref) return `${whatsappHref}?text=${message}`;
+  return `https://wa.me/?text=${message}`;
 }
 
 function humanizeKey(key) {
