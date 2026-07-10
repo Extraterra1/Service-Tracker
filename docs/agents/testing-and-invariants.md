@@ -10,8 +10,12 @@ Key locations:
 - `src/hooks/__tests__` - hook orchestration and async race behavior
 - `src/components/__tests__` - UI-level regressions and CSS assumptions
 - `src/features/service-workspace/__tests__` - workspace-level behavior
+- `src/features/flights/__tests__` - flight workspace, normalization, and callable client behavior
+- `functions/test` - backend callable, normalization, matching, and service behavior
 
 `src/test/setup.js` only wires `jest-dom` helpers.
+
+Frontend and Functions tests use separate runners: run `npm test` at the repository root for Vitest, and `npm --prefix functions test` for the Node test runner.
 
 ## High-value invariants already covered
 
@@ -151,6 +155,30 @@ Protected behavior:
 - switching periods does not allow stale async responses to clobber the active view
 - loading overlay can appear while current rows remain visible
 
+## Flight arrivals behavior
+
+Tests:
+
+- `src/features/flights/__tests__/flightNumbers.test.js`
+- `src/features/flights/__tests__/flightsApi.test.js`
+- `src/features/flights/__tests__/FlightsWorkspace.test.jsx`
+- `functions/test/flights-request.test.js`
+- `functions/test/flightview-client.test.js`
+- `functions/test/arrivals-service.test.js`
+
+Protected behavior:
+
+- only pickup flight numbers are used; whitespace is removed, values are uppercased, and duplicates are collapsed
+- service items and flight results must belong to the current selected date
+- no flight lookup runs while service data is loading or unavailable
+- changing the date or normalized flight list invalidates older callable results
+- the client sends more than 20 flights as sequential batches of at most 20 and preserves result order
+- individual lookup failures do not discard successful rows
+- the callable requires authentication and an active allowlist record
+- backend input is limited to a valid date and 1-20 valid normalized flight numbers
+- the destination is fixed to FNC and previous-day departure lookup supports overnight arrivals
+- flight results remain live request data and are not persisted to Firestore
+
 ## Session diagnostics privacy
 
 Test:
@@ -173,6 +201,8 @@ If you change one of these areas, add or update tests before trusting the change
 - refresh-lock semantics
 - leaderboard scoring rules
 - card interaction behavior that depends on timing, motion, or CSS state
+- flight workspace date/readiness pairing or async request behavior
+- callable authorization, input limits, or FlightView matching
 
 ## What is notable by absence
 

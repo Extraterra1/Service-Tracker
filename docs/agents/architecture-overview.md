@@ -17,6 +17,7 @@ Backend surface in this repo:
 
 - Firestore rules and indexes
 - Firestore-only access approval through `access_requests` and `staff_allowlist`
+- Firebase callable Functions, including live FlightView arrival lookup
 
 External dependency outside this repo:
 
@@ -88,8 +89,36 @@ Separate hooks and stores power:
 - activity popup
 - car history popup
 - leaderboard popup
+- `#voos` flights workspace
 
 These features reuse the same underlying Firestore data rather than introducing separate backend APIs.
+
+The flights workspace is the exception to the last point: it derives lookup inputs from the current service-day snapshot, then calls the backend directly for live arrival data.
+
+### Flight arrivals
+
+`#voos` is an in-app, same-tab workspace for the selected day's FNC arrivals. `App.jsx` keeps the date navigator visible and passes the same service-day readiness state and items used by the service list to `FlightsWorkspace`.
+
+The frontend:
+
+- selects only `pickup` items
+- trims flight numbers, removes all remaining whitespace, uppercases, drops blanks, and deduplicates
+- waits until the selected day's service data is ready before looking up flights
+- sends at most 20 flights per callable request, sequentially batching longer lists while preserving order
+- ignores results from requests made stale by a date or flight-list change
+- retains successful rows when individual flights return errors
+
+`getFlightArrivals` is an authenticated callable in `europe-west9`. It requires an active `staff_allowlist/{uid}` record and validates the arrival date, flight format, and 1-20 flight limit. The backend fixes the destination to FNC and asks FlightView for both the requested arrival date and its previous departure date so overnight flights can match the requested arrival day.
+
+Flight results are live request data: they are neither written to Firestore nor cached as a separate flight collection. Main files:
+
+- `src/features/flights/FlightsWorkspace.jsx`
+- `src/features/flights/flightNumbers.js`
+- `src/features/flights/flightsApi.js`
+- `functions/src/index.js`
+- `functions/src/flights/request.js`
+- `functions/src/flights/arrivals-service.js`
+- `functions/src/flights/flightview-client.js`
 
 ## Runtime data flow
 
@@ -196,6 +225,8 @@ The repo has several deliberate performance choices:
 - `firestore.rules` - backend guardrails
 - `src/lib/__tests__/firestore.rules.test.js` - current-day write behavior
 - `src/hooks/__tests__/useServiceDayData.test.jsx` - refresh and lock behavior
+- `src/features/flights/__tests__` - flight input normalization, batching, readiness, and async race behavior
+- `functions/test` - callable authorization/input limits and FlightView matching
 - `src/lib/__tests__/leaderboardStore.test.js` - scoring semantics
 - `src/components/__tests__/ServicePane.completedRollover.test.jsx` - delayed completed rollover
 

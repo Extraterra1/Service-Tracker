@@ -111,6 +111,38 @@ Notes:
 - the workspace does not set a recurring idle interval
 - shared plate markers are derived by matching normalized plates across pickups and returns for the selected day
 
+## Flight arrivals workspace
+
+Visible behavior:
+
+- same-tab `#voos` workspace opened from the header menu
+- selected-date FNC arrival board derived only from pickup services
+- loading, empty, service-data unavailable, retry, and per-flight failure states
+- scheduled, estimated, and actual arrival times with live status and optional FlightView link
+- successful rows remain visible when other flight lookups fail
+
+Main files:
+
+- `src/App.jsx`
+- `src/components/AppHeaderMenu.jsx`
+- `src/features/flights/FlightsWorkspace.jsx`
+- `src/features/flights/flightNumbers.js`
+- `src/features/flights/flightsApi.js`
+- `functions/src/index.js`
+- `functions/src/flights/request.js`
+- `functions/src/flights/arrivals-service.js`
+- `functions/src/flights/flightview-client.js`
+
+Notes:
+
+- flight inputs are trimmed, stripped of internal whitespace, uppercased, and deduplicated; return-service flights are excluded
+- the board does not look up flights until the current selected day's service snapshot is ready
+- the client calls `getFlightArrivals` in `europe-west9` sequentially in batches of at most 20
+- the callable requires Firebase authentication plus an active allowlist record; FNC is fixed server-side
+- FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date
+- flight responses are live and are not persisted in Firestore
+- stale callable responses are ignored after the date or normalized flight list changes
+
 ## Service item card
 
 Visible behavior:
