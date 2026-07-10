@@ -86,6 +86,27 @@ describe('FlightsWorkspace', () => {
     await screen.findByRole('article', { name: 'Voo TP1685' })
   })
 
+  it('does not show the prior day flight count while the newly selected day is loading', async () => {
+    fetchFlightArrivals.mockResolvedValue(response)
+    const { rerender } = render(
+      <FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} serviceDataReady />,
+    )
+    expect(screen.getByText('2 voos')).toBeInTheDocument()
+
+    rerender(
+      <FlightsWorkspace
+        selectedDate="2026-07-11"
+        allServiceItems={services}
+        serviceDataLoading
+        serviceDataReady={false}
+      />,
+    )
+
+    expect(screen.queryByText('2 voos')).not.toBeInTheDocument()
+    expect(screen.getByText('— voos')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Voltar à lista de serviços' })).toBeInTheDocument()
+  })
+
   it('waits for current service-day data before showing empty state or requesting flights', () => {
     render(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[]} serviceDataLoading serviceDataReady={false} />)
 

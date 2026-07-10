@@ -153,7 +153,9 @@ function FlightsWorkspace({
           <h1>Chegadas ao Funchal</h1>
         </div>
         <div className="flights-header-controls">
-          <span className="flights-total">{flightNumbers.length} {flightNumbers.length === 1 ? 'voo' : 'voos'}</span>
+          <span className="flights-total">
+            {serviceDataReady ? `${flightNumbers.length} ${flightNumbers.length === 1 ? 'voo' : 'voos'}` : '— voos'}
+          </span>
           <time dateTime={selectedDate}>{selectedDate}</time>
           <button type="button" className="ghost-btn compact-btn flights-back-btn" onClick={() => onWorkspaceChange?.('services')} aria-label="Voltar à lista de serviços">
             <ArrowLeft aria-hidden="true" />
