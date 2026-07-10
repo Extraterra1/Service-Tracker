@@ -163,6 +163,7 @@ Tests:
 - `src/features/flights/__tests__/flightsApi.test.js`
 - `src/features/flights/__tests__/FlightsWorkspace.test.jsx`
 - `functions/test/flights-request.test.js`
+- `functions/test/flight-number-normalizer.test.js`
 - `functions/test/flightview-client.test.js`
 - `functions/test/arrivals-service.test.js`
 

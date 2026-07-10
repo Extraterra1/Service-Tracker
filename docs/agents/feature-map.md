@@ -131,6 +131,7 @@ Main files:
 - `functions/src/index.js`
 - `functions/src/flights/request.js`
 - `functions/src/flights/arrivals-service.js`
+- `functions/src/flights/flight-number-normalizer.js` and `functions/src/flights/airline-codes.json` - provider lookup normalization and ICAO-to-IATA code mapping
 - `functions/src/flights/flightview-client.js`
 
 Notes:

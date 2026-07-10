@@ -118,6 +118,7 @@ Flight results are live request data: they are neither written to Firestore nor 
 - `functions/src/index.js`
 - `functions/src/flights/request.js`
 - `functions/src/flights/arrivals-service.js`
+- `functions/src/flights/flight-number-normalizer.js` and `functions/src/flights/airline-codes.json` - normalize provider lookup codes using the ICAO-to-IATA map
 - `functions/src/flights/flightview-client.js`
 
 ## Runtime data flow
