@@ -32,6 +32,14 @@ function FlightsWorkspaceSkeleton({ label = 'A carregar voos' }) {
             </div>
             <span className="flights-skeleton-block flight-skeleton-status" data-testid="flight-skeleton-status" />
             <span className="flights-skeleton-block flight-skeleton-source" data-testid="flight-skeleton-source" />
+            <div className="flight-skeleton-client" data-testid="flight-skeleton-client">
+              <span className="flights-skeleton-block flight-skeleton-client-flag" />
+              <span className="flights-skeleton-block flight-skeleton-client-name" />
+              <span className="flights-skeleton-block flight-skeleton-client-detail" />
+              <span className="flights-skeleton-block flight-skeleton-client-detail" />
+              <span className="flights-skeleton-block flight-skeleton-client-phone" />
+              <span className="flights-skeleton-block flight-skeleton-client-action" />
+            </div>
           </article>
         ))}
       </div>

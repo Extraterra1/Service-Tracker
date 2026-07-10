@@ -242,6 +242,86 @@
 .flight-source-link:focus-visible { outline: 3px solid color-mix(in oklab, var(--accent), transparent 35%); outline-offset: 2px; }
 .flight-source-link svg { width: 1rem; height: 1rem; }
 
+.flight-clients {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin-top: 0.15rem;
+  border-top: 1px solid color-mix(in oklab, var(--stroke), transparent 25%);
+}
+
+.flight-client {
+  min-width: 0;
+  padding: 0.65rem 0;
+  display: grid;
+  grid-template-columns: 1.5rem minmax(8rem, 1.25fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) minmax(9rem, 1.15fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.flight-client + .flight-client {
+  border-top: 1px solid color-mix(in oklab, var(--stroke), transparent 48%);
+}
+
+.flight-client-flag {
+  min-width: 1.2rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.flight-client-flag img { width: 1.2rem; height: 0.9rem; object-fit: cover; border-radius: 2px; }
+.flight-client-name { min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; }
+
+.flight-client-detail {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.flight-client-detail small {
+  color: var(--text-muted);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.flight-client-plate { font-weight: 800; letter-spacing: 0.04em; }
+
+.flight-client-phone,
+.flight-client-reservation {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.flight-client-phone { color: var(--ready-green); }
+.flight-client-phone svg { width: 1rem; height: 1rem; flex: 0 0 auto; }
+.flight-client-phone span { overflow-wrap: anywhere; }
+.flight-client-phone--disabled { color: var(--text-muted); }
+
+.flight-client-reservation {
+  min-height: 2rem;
+  padding: 0.35rem 0.55rem;
+  justify-content: center;
+  color: var(--text);
+  border: 1px solid var(--stroke);
+  border-radius: 5px;
+  background: var(--ghost-bg);
+}
+
+.flight-client-reservation:hover { color: var(--accent); border-color: color-mix(in oklab, var(--accent), transparent 42%); }
+.flight-client-reservation:focus-visible,
+.flight-client-phone:focus-visible { outline: 3px solid color-mix(in oklab, var(--accent), transparent 35%); outline-offset: 2px; }
+.flight-client-reservation svg { width: 0.85rem; height: 0.85rem; }
+.flight-client-reservation--disabled { width: 100%; color: var(--text-muted); background: transparent; }
+
 .flight-inline-error {
   min-width: 0;
   margin: 0;
@@ -341,6 +421,20 @@
 }
 .flight-skeleton-status { width: 78%; height: 1.65rem; justify-self: start; }
 .flight-skeleton-source { width: 2rem; height: 2rem; border-radius: 50%; }
+.flight-skeleton-client {
+  grid-column: 1 / -1;
+  padding-top: 0.65rem;
+  display: grid;
+  grid-template-columns: 1.5rem minmax(8rem, 1.25fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) minmax(9rem, 1.15fr) 6.5rem;
+  align-items: center;
+  gap: 0.7rem;
+  border-top: 1px solid color-mix(in oklab, var(--stroke), transparent 25%);
+}
+.flight-skeleton-client-flag { width: 1.2rem; height: 0.9rem; border-radius: 2px; }
+.flight-skeleton-client-name { width: 68%; height: 0.86rem; }
+.flight-skeleton-client-detail { width: 72%; }
+.flight-skeleton-client-phone { width: 80%; }
+.flight-skeleton-client-action { width: 100%; height: 2rem; border-radius: 5px; }
 .flights-skeleton-rule-label { width: 100%; }
 
 @keyframes flights-skeleton-pulse {
@@ -358,6 +452,15 @@
   .flight-skeleton-times { grid-column: 1 / -1; grid-row: 2; }
   .flight-skeleton-status { grid-column: 1; grid-row: 3; justify-self: start; width: 45%; }
   .flight-skeleton-source { grid-column: 2; grid-row: 3; }
+  .flight-skeleton-client {
+    grid-row: 4;
+    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+    gap: 0.55rem;
+  }
+  .flight-skeleton-client-name { grid-column: 2 / -1; }
+  .flight-skeleton-client-detail,
+  .flight-skeleton-client-phone { grid-column: 2; }
+  .flight-skeleton-client-action { grid-column: 3; grid-row: 3 / span 2; width: 5.75rem; }
 
   .flight-row,
   .flight-row--error {
@@ -369,6 +472,17 @@
   .flight-inline-error { grid-column: 1 / -1; grid-row: 2; }
   .flight-status { grid-column: 1; grid-row: 3; }
   .flight-source-link { grid-column: 2; grid-row: 3; }
+
+  .flight-clients { grid-row: 4; }
+  .flight-client {
+    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+    gap: 0.55rem;
+  }
+  .flight-client-name { grid-column: 2 / -1; }
+  .flight-client-detail { grid-column: 2; }
+  .flight-client-plate { grid-column: 3; }
+  .flight-client-phone { grid-column: 2; }
+  .flight-client-reservation { grid-column: 3; grid-row: 3 / span 2; align-self: end; }
 }
 
 @media (max-width: 360px) {

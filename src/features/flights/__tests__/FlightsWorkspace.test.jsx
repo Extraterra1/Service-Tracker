@@ -201,6 +201,74 @@ describe('FlightsWorkspace', () => {
     expect(secondRow.textContent.match(/--:--/g)).toHaveLength(3)
   })
 
+  it('stacks every pickup client beneath the matching normalized flight', async () => {
+    fetchFlightArrivals.mockResolvedValue({ results: [response.results[0]] })
+    render(
+      <FlightsWorkspace
+        selectedDate="2026-07-10"
+        allServiceItems={[
+          {
+            serviceType: 'pickup', flightNumber: ' TP 1685 ', name: 'Maria Silva', car: 'Fiat Panda',
+            plate: 'AA-00-AA', phone: '+351 912 345 678', id: '1001', reservationUrl: 'https://reservations.example.com/1001',
+          },
+          {
+            serviceType: 'pickup', flightNumber: 'tp1685', name: 'John Smith', car: 'Renault Clio',
+            plate: 'BB-11-BB', phone: '+44 7700 900123', id: '1002', reservationUrl: 'https://reservations.example.com/1002',
+          },
+        ]}
+      />,
+    )
+
+    const flight = await screen.findByRole('article', { name: 'Voo TP1685' })
+    const clients = within(flight).getAllByTestId('flight-client')
+    expect(clients).toHaveLength(2)
+    expect(clients[0]).toHaveTextContent('Maria Silva')
+    expect(clients[0]).toHaveTextContent('Fiat Panda')
+    expect(clients[0]).toHaveTextContent('AA-00-AA')
+    expect(clients[1]).toHaveTextContent('John Smith')
+    expect(clients[1]).toHaveTextContent('Renault Clio')
+    expect(clients[1]).toHaveTextContent('BB-11-BB')
+  })
+
+  it('links client phones to WhatsApp and reservations in a new tab', async () => {
+    fetchFlightArrivals.mockResolvedValue({ results: [response.results[0]] })
+    render(
+      <FlightsWorkspace
+        selectedDate="2026-07-10"
+        allServiceItems={[{
+          serviceType: 'pickup', flightNumber: 'TP1685', name: 'John Smith', car: 'Renault Clio', plate: 'BB-11-BB',
+          phone: '+44 7700 900123', id: '1002', reservationUrl: 'https://reservations.example.com/1002',
+        }]}
+      />,
+    )
+
+    const flight = await screen.findByRole('article', { name: 'Voo TP1685' })
+    expect(within(flight).getByTitle('GB')).toBeInTheDocument()
+    expect(within(flight).getByRole('link', { name: 'WhatsApp +44 7700 900123' })).toHaveAttribute('href', 'https://wa.me/447700900123')
+    const reservation = within(flight).getByRole('link', { name: 'Reservations 1002' })
+    expect(reservation).toHaveAttribute('href', 'https://reservations.example.com/1002')
+    expect(reservation).toHaveAttribute('target', '_blank')
+    expect(reservation.getAttribute('rel')).toMatch(/noopener/)
+  })
+
+  it('shows missing client details without creating unsafe links', async () => {
+    fetchFlightArrivals.mockResolvedValue({ results: [response.results[0]] })
+    render(
+      <FlightsWorkspace
+        selectedDate="2026-07-10"
+        allServiceItems={[{
+          serviceType: 'pickup', flightNumber: 'TP1685', name: '', car: '', plate: '', phone: 'invalid',
+          id: '1003', reservationUrl: 'javascript:alert(1)',
+        }]}
+      />,
+    )
+
+    const client = within(await screen.findByRole('article', { name: 'Voo TP1685' })).getByTestId('flight-client')
+    expect(client.textContent.match(/—/g)?.length).toBeGreaterThanOrEqual(4)
+    expect(within(client).queryByRole('link', { name: 'Reservations 1003' })).not.toBeInTheDocument()
+    expect(within(client).queryByRole('link', { name: /WhatsApp/ })).not.toBeInTheDocument()
+  })
+
   it('does not render non-http source URLs as links', async () => {
     fetchFlightArrivals.mockResolvedValue({
       results: [{ ...response.results[0], sourceUrl: 'javascript:alert(1)' }],

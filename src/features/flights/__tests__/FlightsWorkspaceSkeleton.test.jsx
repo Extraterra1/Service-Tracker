@@ -17,6 +17,7 @@ describe('FlightsWorkspaceSkeleton', () => {
       expect(within(row).getAllByTestId('flight-skeleton-time')).toHaveLength(3)
       expect(within(row).getByTestId('flight-skeleton-status')).toBeInTheDocument()
       expect(within(row).getByTestId('flight-skeleton-source')).toBeInTheDocument()
+      expect(within(row).getByTestId('flight-skeleton-client')).toBeInTheDocument()
     })
   })
 

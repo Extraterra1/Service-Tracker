@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, CircleAlert, ExternalLink, PlaneLanding } from 'lucide-react'
+import ReactCountryFlag from 'react-country-flag'
+import { FaWhatsapp } from 'react-icons/fa'
 
+import { detectPhoneCountryCode, getWhatsAppHref } from '../../lib/phone'
 import { fetchFlightArrivals } from './flightsApi'
-import { getPickupFlightNumbers } from './flightNumbers'
+import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers'
 import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton'
 
 const STATUS_LABELS = {
@@ -43,6 +46,15 @@ function getSafeSourceUrl(value) {
   }
 }
 
+function getSafeReservationUrl(value) {
+  try {
+    const url = new URL(String(value ?? ''))
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : ''
+  } catch {
+    return ''
+  }
+}
+
 function FlightTime({ label, value }) {
   return (
     <div className="flight-time">
@@ -52,7 +64,53 @@ function FlightTime({ label, value }) {
   )
 }
 
-function FlightResult({ result, index }) {
+function FlightClient({ client }) {
+  const name = String(client?.name ?? '').trim() || '—'
+  const car = String(client?.car ?? '').trim() || '—'
+  const plate = String(client?.plate ?? '').trim().toUpperCase() || '—'
+  const phone = String(client?.phone ?? '').trim()
+  const countryCode = detectPhoneCountryCode(phone)
+  const whatsappUrl = getWhatsAppHref(phone)
+  const reservationId = String(client?.id ?? '').trim()
+  const reservationUrl = getSafeReservationUrl(client?.reservationUrl)
+
+  return (
+    <div className="flight-client" data-testid="flight-client">
+      <span className="flight-client-flag">
+        {countryCode ? (
+          <ReactCountryFlag countryCode={countryCode} svg title={countryCode} />
+        ) : '—'}
+      </span>
+      <strong className="flight-client-name">{name}</strong>
+      <span className="flight-client-detail"><small>Carro</small>{car}</span>
+      <span className="flight-client-detail flight-client-plate"><small>Matrícula</small>{plate}</span>
+      {whatsappUrl ? (
+        <a className="flight-client-phone" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${phone}`}>
+          <FaWhatsapp aria-hidden="true" />
+          <span>{phone}</span>
+        </a>
+      ) : (
+        <span className="flight-client-phone flight-client-phone--disabled">{phone || '—'}</span>
+      )}
+      {reservationUrl ? (
+        <a
+          className="flight-client-reservation"
+          href={reservationUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={reservationId ? `Reservations ${reservationId}` : 'Reservations'}
+        >
+          Reservations
+          <ExternalLink aria-hidden="true" />
+        </a>
+      ) : (
+        <span className="flight-client-reservation flight-client-reservation--disabled">—</span>
+      )}
+    </div>
+  )
+}
+
+function FlightResult({ result, index, clients = [] }) {
   const flightNumber = String(result?.flightNumber ?? '').trim() || '—'
   const hasError = Boolean(result?.error)
   const status = hasError
@@ -92,6 +150,14 @@ function FlightResult({ result, index }) {
           <ExternalLink aria-hidden="true" />
         </a>
       ) : null}
+
+      {clients.length > 0 ? (
+        <div className="flight-clients" aria-label={`Clientes do voo ${flightNumber}`}>
+          {clients.map((client, clientIndex) => (
+            <FlightClient client={client} key={client?.itemId ?? client?.id ?? clientIndex} />
+          ))}
+        </div>
+      ) : null}
     </article>
   )
 }
@@ -105,6 +171,18 @@ function FlightsWorkspace({
   onWorkspaceChange,
 }) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems])
+  const clientsByFlight = useMemo(() => {
+    const groupedClients = new Map()
+
+    allServiceItems.forEach((item) => {
+      if (item?.serviceType !== 'pickup') return
+      const flightNumber = normalizeFlightNumber(item?.flightNumber)
+      if (!flightNumber) return
+      groupedClients.set(flightNumber, [...(groupedClients.get(flightNumber) ?? []), item])
+    })
+
+    return groupedClients
+  }, [allServiceItems])
   const flightListKey = flightNumbers.join('|')
   const requestIdRef = useRef(0)
   const [retryVersion, setRetryVersion] = useState(0)
@@ -190,7 +268,10 @@ function FlightsWorkspace({
         <section className="flights-board" aria-label="Lista de chegadas">
           <div className="flights-board-rule" aria-hidden="true"><span>ARR</span><span>RWY 05</span></div>
           <div className="flights-list">
-            {state.results.map((result, index) => <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} />)}
+            {state.results.map((result, index) => {
+              const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? []
+              return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} />
+            })}
           </div>
         </section>
       )}
