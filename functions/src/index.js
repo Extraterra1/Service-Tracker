@@ -3,6 +3,8 @@ import { Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { defineSecret } from 'firebase-functions/params'
 import { logger, setGlobalOptions } from 'firebase-functions/v2'
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https'
+import { getFlightArrivals as getFlightArrivalsFromService } from './flights/arrivals-service.js'
+import { createFlightArrivalsHandler } from './flights/request.js'
 
 initializeApp()
 
@@ -12,6 +14,21 @@ setGlobalOptions({
   region: 'europe-west9',
   maxInstances: 10,
 })
+
+export const flightArrivalsHandler = createFlightArrivalsHandler({
+  HttpsErrorClass: HttpsError,
+  getStaffAllowlist: async (uid) => {
+    const snapshot = await db.doc(`staff_allowlist/${uid}`).get()
+    return {
+      exists: snapshot.exists,
+      active: snapshot.exists ? snapshot.get('active') : undefined,
+    }
+  },
+  getArrivals: getFlightArrivalsFromService,
+  logError: (message, metadata) => logger.error(message, metadata),
+})
+
+export const getFlightArrivals = onCall({ cors: true }, flightArrivalsHandler)
 
 const TELEGRAM_BOT_TOKEN = defineSecret('TELEGRAM_BOT_TOKEN')
 const TELEGRAM_ADMIN_CHAT_ID = defineSecret('TELEGRAM_ADMIN_CHAT_ID')
