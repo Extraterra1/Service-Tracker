@@ -1,4 +1,5 @@
 const SKELETON_ROWS = 4
+const TIME_LABELS = ['Programado', 'Estimado', 'Real']
 
 function FlightsWorkspaceSkeleton({ label = 'A carregar voos' }) {
   return (
@@ -10,14 +11,27 @@ function FlightsWorkspaceSkeleton({ label = 'A carregar voos' }) {
       </div>
       <div className="flights-skeleton-list" aria-hidden="true">
         {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-          <article className="flight-skeleton-row" data-testid="flight-skeleton-row" key={index}>
-            <span className="flights-skeleton-block flight-skeleton-number" />
-            <div className="flight-skeleton-times">
-              <span className="flights-skeleton-block" />
-              <span className="flights-skeleton-block" />
-              <span className="flights-skeleton-block" />
+          <article
+            className="flight-skeleton-row"
+            data-testid="flight-skeleton-row"
+            key={index}
+            style={{ '--skeleton-delay': `${index * 100}ms` }}
+          >
+            <div className="flight-skeleton-identity" data-testid="flight-skeleton-identity">
+              <span className="flights-skeleton-block flight-skeleton-route" />
+              <span className="flights-skeleton-block flight-skeleton-number" />
+              <span className="flights-skeleton-block flight-skeleton-airport" />
             </div>
-            <span className="flights-skeleton-block flight-skeleton-status" />
+            <div className="flight-skeleton-times">
+              {TIME_LABELS.map((timeLabel) => (
+                <div className="flight-skeleton-time" data-testid="flight-skeleton-time" key={timeLabel}>
+                  <span className="flight-skeleton-time-label">{timeLabel}</span>
+                  <span className="flights-skeleton-block flight-skeleton-time-value" />
+                </div>
+              ))}
+            </div>
+            <span className="flights-skeleton-block flight-skeleton-status" data-testid="flight-skeleton-status" />
+            <span className="flights-skeleton-block flight-skeleton-source" data-testid="flight-skeleton-source" />
           </article>
         ))}
       </div>
