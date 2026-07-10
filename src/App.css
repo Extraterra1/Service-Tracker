@@ -4343,6 +4343,17 @@ h1 {
   background: rgba(102, 199, 134, 0.18);
 }
 
+.item-plate-button.is-ready:not(:disabled):hover {
+  border-color: rgba(55, 148, 86, 0.38);
+  background: rgba(102, 199, 134, 0.18);
+}
+
+.item-plate-button.is-ready:not(:disabled):focus-visible {
+  border-color: rgba(55, 148, 86, 0.38);
+  background: rgba(102, 199, 134, 0.18);
+  outline-color: rgba(55, 148, 86, 0.7);
+}
+
 .item-ready-dot {
   width: 0.42rem;
   height: 0.42rem;
