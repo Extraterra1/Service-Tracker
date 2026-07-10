@@ -110,9 +110,23 @@ describe('FlightsWorkspace', () => {
   it('waits for current service-day data before showing empty state or requesting flights', () => {
     render(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[]} serviceDataLoading serviceDataReady={false} />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('A preparar dados do dia')
+    expect(screen.getByRole('status', { name: 'A preparar voos' })).toBeInTheDocument()
+    expect(screen.getByTestId('flights-loading-skeleton')).toBeInTheDocument()
     expect(screen.queryByText('Não há voos de recolha para este dia.')).not.toBeInTheDocument()
     expect(fetchFlightArrivals).not.toHaveBeenCalled()
+  })
+
+  it('shows the arrivals-board skeleton while live flight results load', async () => {
+    const loading = deferred()
+    fetchFlightArrivals.mockReturnValue(loading.promise)
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    expect(screen.getByRole('status', { name: 'A carregar voos' })).toBeInTheDocument()
+    expect(screen.getByTestId('flights-loading-skeleton')).toBeInTheDocument()
+    expect(screen.getAllByTestId('flight-skeleton-row')).toHaveLength(4)
+
+    loading.resolve(response)
+    await screen.findByRole('article', { name: 'Voo TP1685' })
   })
 
   it('shows an unavailable state with service-data retry after loading ends without a day response', async () => {
@@ -144,7 +158,7 @@ describe('FlightsWorkspace', () => {
 
     rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={services.slice(0, 1)} serviceDataLoading serviceDataReady={false} />)
     expect(fetchFlightArrivals).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('status')).toHaveTextContent('A preparar dados do dia')
+    expect(screen.getByRole('status', { name: 'A preparar voos' })).toBeInTheDocument()
     older.resolve(response)
     await older.promise
     expect(screen.queryByText('TP1685')).not.toBeInTheDocument()

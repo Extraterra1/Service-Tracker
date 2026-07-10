@@ -115,7 +115,7 @@ Notes:
 
 Visible behavior:
 
-- same-tab `#voos` workspace opened from the header menu
+- admin-only, same-tab `#voos` workspace opened from the header menu
 - selected-date FNC arrival board derived only from pickup services
 - loading, empty, service-data unavailable, retry, and per-flight failure states
 - scheduled, estimated, and actual arrival times with live status and optional FlightView link
@@ -134,6 +134,8 @@ Notes:
 
 - flight inputs are trimmed, stripped of internal whitespace, uppercased, and deduplicated; return-service flights are excluded
 - the board does not look up flights until the current selected day's service snapshot is ready
+- non-admin users do not see the action and are redirected if they enter `#voos` directly
+- the company logo returns to the service list and flight loading uses an arrivals-board skeleton
 - the client posts directly to the public Aviability API sequentially in batches of at most 20
 - Service Tracker fixes the destination to FNC in the request; Firebase is not part of the flight lookup
 - FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date

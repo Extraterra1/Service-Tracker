@@ -98,13 +98,14 @@ The flights workspace is the exception to the last point: it derives lookup inpu
 
 ### Flight arrivals
 
-`#voos` is an in-app, same-tab workspace for the selected day's FNC arrivals. `App.jsx` keeps the date navigator visible and passes the same service-day readiness state and items used by the service list to `FlightsWorkspace`.
+`#voos` is an admin-only, in-app, same-tab workspace for the selected day's FNC arrivals. Non-admin users are redirected to services if they enter the hash directly. `App.jsx` keeps the date navigator visible and passes the same service-day readiness state and items used by the service list to `FlightsWorkspace`.
 
 The frontend:
 
 - selects only `pickup` items
 - trims flight numbers, removes all remaining whitespace, uppercases, drops blanks, and deduplicates
 - waits until the selected day's service data is ready before looking up flights
+- uses a shared arrivals-board skeleton while service-day or live flight data is loading
 - sends at most 20 flights per Aviability request, sequentially batching longer lists while preserving order
 - ignores results from requests made stale by a date or flight-list change
 - retains successful rows when individual flights return errors

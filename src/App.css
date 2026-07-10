@@ -278,12 +278,66 @@
 .flights-loading svg { width: 1.1rem; height: 1.1rem; animation: spin 0.8s linear infinite; }
 .flights-request-error > svg { color: var(--action-red); }
 
+.flights-skeleton {
+  min-height: 11rem;
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: var(--panel-bg-strong);
+}
+
+.flights-skeleton-rule,
+.flight-skeleton-row {
+  display: grid;
+  align-items: center;
+}
+
+.flights-skeleton-rule {
+  grid-template-columns: 3rem 4rem;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.flights-skeleton-list { display: grid; }
+
+.flight-skeleton-row {
+  grid-template-columns: minmax(5rem, 0.75fr) minmax(12rem, 2fr) minmax(5rem, 0.65fr);
+  gap: 1rem;
+  min-height: 4.6rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.flight-skeleton-row:last-child { border-bottom: 0; }
+.flight-skeleton-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; }
+.flights-skeleton-block {
+  display: block;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ghost-bg) 20%, color-mix(in oklab, var(--ghost-bg), white 16%) 48%, var(--ghost-bg) 76%);
+  background-size: 220% 100%;
+  animation: flights-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+.flight-skeleton-number { width: 72%; height: 1rem; }
+.flight-skeleton-status { width: 82%; justify-self: end; }
+.flights-skeleton-rule-label { width: 100%; }
+
+@keyframes flights-skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
 @keyframes flight-row-enter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 700px) {
+  .flight-skeleton-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.65rem; }
+  .flight-skeleton-times { grid-column: 1 / -1; grid-row: 2; }
+  .flight-skeleton-status { grid-column: 1; grid-row: 3; justify-self: start; width: 45%; }
+
   .flight-row,
   .flight-row--error {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -306,6 +360,7 @@
 @media (prefers-reduced-motion: reduce) {
   .flight-row { animation: none; }
   .flights-loading svg { animation: none; }
+  .flights-skeleton-block { animation: none; }
 }
 
 .reservations-workspace {
@@ -1457,6 +1512,22 @@
   align-items: center;
   gap: 0.72rem;
   flex: 0 1 auto;
+}
+
+.brand-logo-button {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.brand-logo-button:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--accent), transparent 35%);
+  outline-offset: 3px;
 }
 
 .header-logo {

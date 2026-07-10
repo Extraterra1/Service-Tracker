@@ -1,5 +1,5 @@
 export function resolveWorkspace(hash, canManageAccess) {
-  if (hash === '#voos') {
+  if (hash === '#voos' && canManageAccess) {
     return 'flights'
   }
 

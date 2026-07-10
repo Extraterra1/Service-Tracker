@@ -153,11 +153,26 @@ describe('AppHeaderMenu accordion animations', () => {
   it('opens the native flights workspace without an external lookup link', async () => {
     const user = userEvent.setup();
     const onWorkspaceChange = vi.fn();
-    render(<AppHeaderMenu {...createProps({ onWorkspaceChange })} />);
+    render(<AppHeaderMenu {...createProps({ canManageAccess: true, onWorkspaceChange })} />);
 
     expect(screen.queryByRole('link', { name: 'Aviability Lookup' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Voos' }));
     expect(onWorkspaceChange).toHaveBeenCalledWith('flights');
+  });
+
+  it('hides the flights workspace action from non-admin users', () => {
+    render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
+
+    expect(screen.queryByRole('button', { name: 'Voos' })).not.toBeInTheDocument();
+  });
+
+  it('returns to the service list when the company logo is clicked', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'flights', onWorkspaceChange })} />);
+
+    await user.click(screen.getByRole('button', { name: 'Ir para Lista de Serviço' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
   });
 
   it('exposes a menu action to copy session diagnostics', async () => {

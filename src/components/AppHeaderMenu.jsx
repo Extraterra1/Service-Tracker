@@ -165,7 +165,9 @@ function AppHeaderMenu({
   return (
     <header className="app-header app-header-compact">
       <div className="brand-block">
-        <img className="header-logo" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
+        <button type="button" className="brand-logo-button" onClick={() => onWorkspaceChange?.('services')} aria-label="Ir para Lista de Serviço">
+          <img className="header-logo" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
+        </button>
         <div className="title-block">
           <p className="eyebrow">Operação diária</p>
           <h1>{activeWorkspace === 'reservations' ? 'Reservas' : activeWorkspace === 'flights' ? 'Voos' : 'Lista de Serviço'}</h1>
@@ -210,7 +212,7 @@ function AppHeaderMenu({
                 </button>
               </div>
             ) : null}
-            {activeWorkspace !== 'flights' ? (
+            {canManageAccess && activeWorkspace !== 'flights' ? (
               <div className="menu-section">
                 <button
                   type="button"

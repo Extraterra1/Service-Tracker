@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CircleAlert, ExternalLink, LoaderCircle, PlaneLanding } from 'lucide-react'
+import { ArrowLeft, CircleAlert, ExternalLink, PlaneLanding } from 'lucide-react'
 
 import { fetchFlightArrivals } from './flightsApi'
 import { getPickupFlightNumbers } from './flightNumbers'
+import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton'
 
 const STATUS_LABELS = {
   planned: 'Planeado',
@@ -165,10 +166,7 @@ function FlightsWorkspace({
       </header>
 
       {isPreparingDay ? (
-        <div className="flights-loading" role="status">
-          <LoaderCircle aria-hidden="true" />
-          <span>A preparar dados do dia…</span>
-        </div>
+        <FlightsWorkspaceSkeleton label="A preparar voos" />
       ) : isServiceDataUnavailable ? (
         <div className="flights-request-error" role="alert">
           <CircleAlert aria-hidden="true" />
@@ -181,10 +179,7 @@ function FlightsWorkspace({
           <p>Não há voos de recolha para este dia.</p>
         </div>
       ) : isLoading ? (
-        <div className="flights-loading" role="status">
-          <LoaderCircle aria-hidden="true" />
-          <span>A carregar voos…</span>
-        </div>
+        <FlightsWorkspaceSkeleton label="A carregar voos" />
       ) : state.status === 'error' ? (
         <div className="flights-request-error" role="alert">
           <CircleAlert aria-hidden="true" />

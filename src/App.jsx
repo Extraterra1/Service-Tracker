@@ -31,6 +31,7 @@ import { usePinSync } from './hooks/usePinSync';
 import { useServiceDayData } from './hooks/useServiceDayData';
 import { toDateValue } from './lib/timestamp';
 import { resolveWorkspace } from './lib/workspaceNavigation';
+import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleton';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
@@ -169,14 +170,14 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (accessState === 'allowed' && requestedWorkspace === 'reservations' && !canManageAccess) {
+    if (accessState === 'allowed' && (requestedWorkspace === 'reservations' || requestedWorkspace === 'flights') && !canManageAccess) {
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
       setRequestedWorkspace('services');
     }
   }, [accessState, canManageAccess, requestedWorkspace]);
 
   const handleWorkspaceChange = useCallback((workspace) => {
-    const nextWorkspace = workspace === 'flights' || (workspace === 'reservations' && canManageAccess) ? workspace : 'services';
+    const nextWorkspace = (workspace === 'flights' || workspace === 'reservations') && canManageAccess ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
     setRequestedWorkspace(nextWorkspace);
     if (nextWorkspace === 'reservations' || nextWorkspace === 'flights') {
@@ -1075,7 +1076,7 @@ function App() {
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
-        <Suspense fallback={<main className="flights-loading" aria-busy="true" aria-label="Voos">A carregar voos...</main>}>
+        <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
           <FlightsWorkspace
             selectedDate={selectedDate}
             allServiceItems={allServiceItems}
