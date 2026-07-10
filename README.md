@@ -53,6 +53,25 @@ npm run build
 npm run preview
 ```
 
+## Local authentication bypass
+
+Local development can automatically sign in a dedicated Firebase debug account while continuing to use live Firestore data and the existing security rules.
+
+1. In Firebase Authentication, enable the **Email/Password** provider.
+2. Create a dedicated debug user. Do not reuse a personal or production staff password.
+3. Copy that user's UID and create `staff_allowlist/{uid}` in Firestore with `active: true` and the least-privileged appropriate role.
+4. Create an ignored `.env.local` file containing:
+
+```dotenv
+VITE_LOCAL_AUTH_BYPASS=true
+VITE_LOCAL_AUTH_EMAIL=debug-account@example.com
+VITE_LOCAL_AUTH_PASSWORD=replace-with-the-debug-account-password
+```
+
+5. Restart `npm run dev` after changing the environment file.
+
+The bypass activates only when Vite is running in development mode and the explicit flag and both credentials are present. Production builds always leave it disabled. An existing authenticated Firebase session is preserved, and failed automatic sign-in falls back to the normal Google sign-in screen. Never commit `.env.local` or relax Firestore rules for this account.
+
 ## Access approval backend (Firestore-only)
 
 Access approval is handled directly through Firestore and guarded by `firestore.rules`:
