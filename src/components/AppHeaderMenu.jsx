@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Check, ListChecks, Menu, MoonStar, Star, SunMedium, UserX, X } from 'lucide-react';
+import { CalendarDays, Check, ListChecks, Menu, MoonStar, Plane, Star, SunMedium, UserX, X } from 'lucide-react';
 import AuthPanel from './AuthPanel';
 import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
 
@@ -63,26 +63,6 @@ function getAccessStatusLabel(active) {
   return active ? 'Ativo' : 'Inativo';
 }
 
-function getAviabilityLookupUrl(allServiceItems, selectedDate) {
-  const baseUrl = new URL('https://fncfutures.vercel.app');
-  const arrivalFlightNumbers = [...new Set(
-    allServiceItems
-      .filter((item) => item?.serviceType === 'pickup')
-      .map((item) => String(item?.flightNumber ?? '').trim())
-      .filter(Boolean)
-  )];
-
-  if (arrivalFlightNumbers.length > 0) {
-    baseUrl.searchParams.set('flights', arrivalFlightNumbers.join(','));
-  }
-
-  if (String(selectedDate ?? '').trim()) {
-    baseUrl.searchParams.set('date', String(selectedDate).trim());
-  }
-
-  return baseUrl.toString();
-}
-
 function AppHeaderMenu({
   menuPanelRef,
   theme,
@@ -128,15 +108,12 @@ function AppHeaderMenu({
   onRevokeAccessUser,
   leaderboardLoading,
   statusLine,
-  selectedDate,
   canMutateSelectedDate = true,
   children,
 }) {
   const [openSections, setOpenSections] = useState(() => createMenuSectionState());
   const [closingSections, setClosingSections] = useState(() => createMenuSectionState());
   const closingTimersRef = useRef({});
-  const aviabilityLookupUrl = getAviabilityLookupUrl(allServiceItems, selectedDate);
-
   useEffect(
     () => () => {
       Object.values(closingTimersRef.current).forEach((timerId) => {
@@ -191,7 +168,7 @@ function AppHeaderMenu({
         <img className="header-logo" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
         <div className="title-block">
           <p className="eyebrow">Operação diária</p>
-          <h1>{activeWorkspace === 'reservations' ? 'Reservas' : 'Lista de Serviço'}</h1>
+          <h1>{activeWorkspace === 'reservations' ? 'Reservas' : activeWorkspace === 'flights' ? 'Voos' : 'Lista de Serviço'}</h1>
         </div>
       </div>
 
@@ -221,15 +198,39 @@ function AppHeaderMenu({
           </div>
 
           <div className="menu-sections">
-            {canManageAccess ? (
+            {activeWorkspace !== 'services' ? (
               <div className="menu-section">
                 <button
                   type="button"
                   className="menu-section-summary menu-section-summary--action menu-workspace-action"
-                  onClick={() => onWorkspaceChange?.(activeWorkspace === 'reservations' ? 'services' : 'reservations')}
+                  onClick={() => onWorkspaceChange?.('services')}
                 >
-                  {activeWorkspace === 'reservations' ? <ListChecks aria-hidden="true" /> : <CalendarDays aria-hidden="true" />}
-                  {activeWorkspace === 'reservations' ? 'Lista de Serviço' : 'Reservas'}
+                  <ListChecks aria-hidden="true" />
+                  Lista de Serviço
+                </button>
+              </div>
+            ) : null}
+            {activeWorkspace !== 'flights' ? (
+              <div className="menu-section">
+                <button
+                  type="button"
+                  className="menu-section-summary menu-section-summary--action menu-workspace-action"
+                  onClick={() => onWorkspaceChange?.('flights')}
+                >
+                  <Plane aria-hidden="true" />
+                  Voos
+                </button>
+              </div>
+            ) : null}
+            {canManageAccess && activeWorkspace !== 'reservations' ? (
+              <div className="menu-section">
+                <button
+                  type="button"
+                  className="menu-section-summary menu-section-summary--action menu-workspace-action"
+                  onClick={() => onWorkspaceChange?.('reservations')}
+                >
+                  <CalendarDays aria-hidden="true" />
+                  Reservas
                 </button>
               </div>
             ) : null}
@@ -518,16 +519,6 @@ function AppHeaderMenu({
               </summary>
             </details>
 
-            <div className="menu-section">
-              <a
-                className="menu-section-summary menu-section-summary--action"
-                href={aviabilityLookupUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Aviability Lookup
-              </a>
-            </div>
           </div>
           <p className="menu-sync-footnote">{statusLine}</p>
         </div>

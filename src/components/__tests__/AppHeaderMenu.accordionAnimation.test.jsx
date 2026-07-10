@@ -150,27 +150,14 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
   });
 
-  it('renders an aviability lookup link with joined arrival flights and selected date params', () => {
-    render(
-      <AppHeaderMenu
-        {...createProps({
-          selectedDate: '2026-04-15',
-          allServiceItems: [
-            { itemId: 'pickup-1', serviceType: 'pickup', flightNumber: 'TP123' },
-            { itemId: 'pickup-2', serviceType: 'pickup', flightNumber: 'FR456' },
-            { itemId: 'pickup-3', serviceType: 'pickup', flightNumber: 'TP123' },
-            { itemId: 'return-1', serviceType: 'return', flightNumber: 'U27654' },
-            { itemId: 'pickup-4', serviceType: 'pickup', flightNumber: '   ' }
-          ]
-        })}
-      />
-    );
+  it('opens the native flights workspace without an external lookup link', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ onWorkspaceChange })} />);
 
-    const lookupLink = screen.getByRole('link', { name: 'Aviability Lookup' });
-
-    expect(lookupLink).toHaveAttribute('href', 'https://fncfutures.vercel.app/?flights=TP123%2CFR456&date=2026-04-15');
-    expect(lookupLink).toHaveAttribute('target', '_blank');
-    expect(lookupLink).toHaveAttribute('rel', 'noreferrer');
+    expect(screen.queryByRole('link', { name: 'Aviability Lookup' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Voos' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('flights');
   });
 
   it('exposes a menu action to copy session diagnostics', async () => {
@@ -231,6 +218,17 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.getByRole('heading', { name: 'Reservas' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
     expect(onWorkspaceChange).toHaveBeenCalledWith('services');
+  });
+
+  it('offers Lista de Serviço and updates the title in the flights workspace', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'flights', onWorkspaceChange })} />);
+
+    expect(screen.getByRole('heading', { name: 'Voos' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
+    expect(screen.queryByRole('button', { name: 'Voos' })).not.toBeInTheDocument();
   });
 
   it('hides the pending request group when admins have no pending requests', async () => {

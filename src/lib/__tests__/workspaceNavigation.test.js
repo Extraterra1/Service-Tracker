@@ -8,9 +8,15 @@ try {
 }
 
 describe('workspaceNavigation', () => {
+  it('resolves the flights hash for every signed-in role', () => {
+    expect(resolveWorkspace('#voos', true)).toBe('flights')
+    expect(resolveWorkspace('#voos', false)).toBe('flights')
+  })
+
   it('allows only admins to resolve the reservations hash', () => {
     expect(resolveWorkspace('#reservas', true)).toBe('reservations')
     expect(resolveWorkspace('#reservas', false)).toBe('services')
     expect(resolveWorkspace('', true)).toBe('services')
+    expect(resolveWorkspace('#unknown', true)).toBe('services')
   })
 })

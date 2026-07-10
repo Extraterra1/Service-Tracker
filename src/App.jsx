@@ -138,7 +138,7 @@ function ServiceWorkspaceLocked({ lockedMessage }) {
 function App() {
   const menuPanelRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
-  const [requestedWorkspace, setRequestedWorkspace] = useState(() => (window.location.hash === '#reservas' ? 'reservations' : 'services'));
+  const [requestedWorkspace, setRequestedWorkspace] = useState(() => resolveWorkspace(window.location.hash, true));
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
   const [updatingItemId, setUpdatingItemId] = useState('');
@@ -158,10 +158,11 @@ function App() {
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
   const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
-  const activeWorkspace = resolveWorkspace(requestedWorkspace === 'reservations' ? '#reservas' : '', canManageAccess);
+  const requestedWorkspaceHash = requestedWorkspace === 'reservations' ? '#reservas' : requestedWorkspace === 'flights' ? '#voos' : '';
+  const activeWorkspace = resolveWorkspace(requestedWorkspaceHash, canManageAccess);
 
   useEffect(() => {
-    const handleHashChange = () => setRequestedWorkspace(window.location.hash === '#reservas' ? 'reservations' : 'services');
+    const handleHashChange = () => setRequestedWorkspace(resolveWorkspace(window.location.hash, true));
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -174,11 +175,11 @@ function App() {
   }, [accessState, canManageAccess, requestedWorkspace]);
 
   const handleWorkspaceChange = useCallback((workspace) => {
-    const nextWorkspace = workspace === 'reservations' && canManageAccess ? 'reservations' : 'services';
+    const nextWorkspace = workspace === 'flights' || (workspace === 'reservations' && canManageAccess) ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
     setRequestedWorkspace(nextWorkspace);
-    if (nextWorkspace === 'reservations') {
-      window.history.pushState(null, '', '#reservas');
+    if (nextWorkspace === 'reservations' || nextWorkspace === 'flights') {
+      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : '#voos');
     } else {
       window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
     }
@@ -1064,6 +1065,8 @@ function App() {
         <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
+      ) : activeWorkspace === 'flights' ? (
+        <main aria-busy="true" aria-label="Voos">A carregar voos...</main>
       ) : paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
       ) : canReadServiceData ? (
