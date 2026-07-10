@@ -34,6 +34,7 @@ import { resolveWorkspace } from './lib/workspaceNavigation';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
+const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
@@ -1036,7 +1037,15 @@ function App() {
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}
       >
-        {activeWorkspace === 'services' ? <DateNavigator date={selectedDate} onDateChange={setSelectedDate} onManualRefresh={manualRefresh} loading={loadingServices} /> : null}
+        {activeWorkspace === 'services' || activeWorkspace === 'flights' ? (
+          <DateNavigator
+            date={selectedDate}
+            onDateChange={setSelectedDate}
+            onManualRefresh={manualRefresh}
+            loading={loadingServices}
+            showRefresh={activeWorkspace === 'services'}
+          />
+        ) : null}
       </AppHeaderMenu>
 
       {accessState === 'firebase_missing' ? <p className="error-banner">Configuração Firebase em falta. Preenche as variáveis `VITE_FIREBASE_*`.</p> : null}
@@ -1066,7 +1075,9 @@ function App() {
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
-        <main aria-busy="true" aria-label="Voos">A carregar voos...</main>
+        <Suspense fallback={<main className="flights-loading" aria-busy="true" aria-label="Voos">A carregar voos...</main>}>
+          <FlightsWorkspace selectedDate={selectedDate} allServiceItems={allServiceItems} />
+        </Suspense>
       ) : paneLoading ? (
         <ServiceWorkspaceLoadingFallback />
       ) : canReadServiceData ? (

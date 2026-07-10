@@ -1,0 +1,158 @@
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { fetchFlightArrivals } = vi.hoisted(() => ({ fetchFlightArrivals: vi.fn() }))
+vi.mock('../flightsApi', () => ({ fetchFlightArrivals }))
+
+import FlightsWorkspace from '../FlightsWorkspace'
+
+const services = [
+  { serviceType: 'pickup', flightNumber: ' TP 1685 ' },
+  { serviceType: 'pickup', flightNumber: 'tp1685' },
+  { serviceType: 'return', flightNumber: ' FR 123 ' },
+  { serviceType: 'pickup', flightNumber: '\tU2 7654\n' },
+]
+
+const response = {
+  results: [
+    {
+      flightNumber: 'TP1685',
+      status: 'arrived',
+      scheduledArrivalLocal: '2026-07-10T14:20:00',
+      estimatedArrivalLocal: '2026-07-10T14:35:00',
+      actualArrivalLocal: '2026-07-10T14:31:00',
+      sourceUrl: 'https://www.flightview.com/flight-tracker/TP/1685',
+    },
+    {
+      flightNumber: 'U27654',
+      status: 'delayed',
+      scheduledArrivalLocal: null,
+      estimatedArrivalLocal: '',
+      actualArrivalLocal: undefined,
+      sourceUrl: '',
+    },
+  ],
+}
+
+function deferred() {
+  let resolve
+  let reject
+  const promise = new Promise((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
+
+describe('FlightsWorkspace', () => {
+  beforeEach(() => fetchFlightArrivals.mockReset())
+  afterEach(cleanup)
+
+  it('shows a Portuguese empty state without calling the API when pickups have no flights', () => {
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={[{ serviceType: 'return', flightNumber: 'TP1685' }]} />)
+
+    expect(screen.getByRole('heading', { name: 'Chegadas ao Funchal' })).toBeInTheDocument()
+    expect(screen.getByText('Não há voos de recolha para este dia.')).toBeInTheDocument()
+    expect(fetchFlightArrivals).not.toHaveBeenCalled()
+  })
+
+  it('automatically loads normalized, deduplicated pickup flights for the selected date', async () => {
+    fetchFlightArrivals.mockResolvedValue(response)
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    await waitFor(() => expect(fetchFlightArrivals).toHaveBeenCalledWith({
+      arrivalDate: '2026-07-10',
+      flightNumbers: ['TP1685', 'U27654'],
+    }))
+  })
+
+  it('announces loading accessibly', async () => {
+    const pending = deferred()
+    fetchFlightArrivals.mockReturnValue(pending.promise)
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('A carregar voos')
+    expect(screen.getByRole('main')).toHaveAttribute('aria-busy', 'true')
+    pending.resolve(response)
+    await screen.findByRole('article', { name: 'Voo TP1685' })
+  })
+
+  it('renders localized operational fields, safe missing times, and a secure source link', async () => {
+    fetchFlightArrivals.mockResolvedValue(response)
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    const firstRow = await screen.findByRole('article', { name: 'Voo TP1685' })
+    expect(firstRow).toHaveTextContent('TP1685')
+    expect(firstRow).toHaveTextContent('Chegou')
+    expect(firstRow).toHaveTextContent('Programado14:20')
+    expect(firstRow).toHaveTextContent('Estimado14:35')
+    expect(firstRow).toHaveTextContent('Real14:31')
+    expect(firstRow).toHaveTextContent('Estado')
+    const source = within(firstRow).getByRole('link', { name: 'Ver TP1685 no FlightView' })
+    expect(source).toHaveAttribute('target', '_blank')
+    expect(source.getAttribute('rel')).toMatch(/noreferrer/)
+    expect(source.getAttribute('rel')).toMatch(/noopener/)
+
+    const secondRow = screen.getByRole('article', { name: 'Voo U27654' })
+    expect(secondRow).toHaveTextContent('Atrasado')
+    expect(secondRow.textContent.match(/--:--/g)).toHaveLength(3)
+  })
+
+  it('keeps successful flights visible beside localized per-flight failures', async () => {
+    fetchFlightArrivals.mockResolvedValue({
+      results: [response.results[0], { flightNumber: 'U27654', error: { code: 'not_found', message: 'raw detail' } }],
+    })
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toHaveTextContent('Chegou')
+    expect(screen.getByRole('article', { name: 'Voo U27654' })).toHaveTextContent('Voo não encontrado')
+    expect(screen.queryByText('raw detail')).not.toBeInTheDocument()
+  })
+
+  it('shows a useful whole-request error and retries the current inputs', async () => {
+    const user = userEvent.setup()
+    fetchFlightArrivals.mockRejectedValueOnce(new Error('backend internals')).mockResolvedValueOnce(response)
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar as chegadas')
+    expect(screen.queryByText('backend internals')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    await screen.findByRole('article', { name: 'Voo TP1685' })
+    expect(fetchFlightArrivals).toHaveBeenCalledTimes(2)
+  })
+
+  it('ignores an older result after the date changes', async () => {
+    const older = deferred()
+    const newer = deferred()
+    fetchFlightArrivals.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+    const { rerender } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+    rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={services} />)
+    newer.resolve({ results: [{ ...response.results[0], flightNumber: 'NEW200' }] })
+    expect(await screen.findByRole('article', { name: 'Voo NEW200' })).toBeInTheDocument()
+    older.resolve({ results: [{ ...response.results[0], flightNumber: 'OLD100' }] })
+    await waitFor(() => expect(screen.queryByText('OLD100')).not.toBeInTheDocument())
+  })
+
+  it('ignores an older result after the normalized pickup flight list changes', async () => {
+    const older = deferred()
+    const newer = deferred()
+    fetchFlightArrivals.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+    const { rerender } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} />)
+    rerender(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={[{ serviceType: 'pickup', flightNumber: 'NEW 200' }]} />)
+    newer.resolve({ results: [{ ...response.results[0], flightNumber: 'NEW200' }] })
+    expect(await screen.findByText('NEW200')).toBeInTheDocument()
+    older.resolve({ results: [{ ...response.results[0], flightNumber: 'OLD100' }] })
+    await waitFor(() => expect(screen.queryByText('OLD100')).not.toBeInTheDocument())
+  })
+
+  it('does not apply a response after unmount', async () => {
+    const pending = deferred()
+    fetchFlightArrivals.mockReturnValue(pending.promise)
+    const { unmount } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+    unmount()
+    pending.resolve(response)
+    await pending.promise
+    expect(screen.queryByRole('main')).not.toBeInTheDocument()
+  })
+})

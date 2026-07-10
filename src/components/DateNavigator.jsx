@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { addDays, getTodayDate } from '../lib/date';
 
-function DateNavigator({ date, onDateChange, onManualRefresh, loading }) {
+function DateNavigator({ date, onDateChange, onManualRefresh, loading, showRefresh = true }) {
   return (
     <section className="toolbar toolbar-compact" aria-label="Date controls">
       <div className="toolbar-line">
@@ -24,10 +24,12 @@ function DateNavigator({ date, onDateChange, onManualRefresh, loading }) {
           </button>
         </div>
 
-        <button type="button" className="primary-btn compact-btn refresh-btn" onClick={onManualRefresh} disabled={loading} aria-label={loading ? 'A atualizar lista' : 'Atualizar lista'}>
-          <RefreshCw className={`toolbar-icon refresh-icon ${loading ? 'is-loading' : ''}`} aria-hidden="true" />
-          <span className="refresh-btn-label">{loading ? 'A atualizar...' : 'Atualizar'}</span>
-        </button>
+        {showRefresh ? (
+          <button type="button" className="primary-btn compact-btn refresh-btn" onClick={onManualRefresh} disabled={loading} aria-label={loading ? 'A atualizar lista' : 'Atualizar lista'}>
+            <RefreshCw className={`toolbar-icon refresh-icon ${loading ? 'is-loading' : ''}`} aria-hidden="true" />
+            <span className="refresh-btn-label">{loading ? 'A atualizar...' : 'Atualizar'}</span>
+          </button>
+        ) : null}
       </div>
     </section>
   );
