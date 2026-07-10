@@ -245,17 +245,31 @@
 .flight-clients {
   grid-column: 1 / -1;
   min-width: 0;
-  margin-top: 0.15rem;
-  border-top: 1px solid color-mix(in oklab, var(--stroke), transparent 25%);
+  margin: 0.3rem 0 0 2rem;
+  padding: 0 0.55rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--stroke), transparent 38%);
+  border-radius: 5px;
+  background: color-mix(in oklab, var(--ghost-bg), transparent 34%);
+}
+
+.flight-clients-label {
+  display: block;
+  padding: 0.35rem 0 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .flight-client {
   min-width: 0;
-  padding: 0.65rem 0;
+  padding: 0.45rem 0;
   display: grid;
-  grid-template-columns: 1.5rem minmax(8rem, 1.25fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) minmax(9rem, 1.15fr) auto;
+  grid-template-columns: 1.3rem minmax(8rem, 1.25fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) minmax(9rem, 1.15fr) auto;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
 .flight-client + .flight-client {
@@ -263,26 +277,26 @@
 }
 
 .flight-client-flag {
-  min-width: 1.2rem;
+  min-width: 1.05rem;
   color: var(--text-muted);
   line-height: 1;
 }
 
-.flight-client-flag img { width: 1.2rem; height: 0.9rem; object-fit: cover; border-radius: 2px; }
-.flight-client-name { min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; }
+.flight-client-flag img { width: 1.05rem; height: 0.78rem; object-fit: cover; border-radius: 2px; }
+.flight-client-name { min-width: 0; overflow-wrap: anywhere; font-size: 0.8rem; }
 
 .flight-client-detail {
   min-width: 0;
   display: grid;
   gap: 0.12rem;
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   overflow-wrap: anywhere;
 }
 
 .flight-client-detail small {
   color: var(--text-muted);
-  font-size: 0.56rem;
+  font-size: 0.52rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -296,19 +310,19 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 750;
   text-decoration: none;
 }
 
-.flight-client-phone { color: var(--ready-green); }
-.flight-client-phone svg { width: 1rem; height: 1rem; flex: 0 0 auto; }
+.flight-client-phone { color: var(--text); }
+.flight-client-phone svg { width: 0.9rem; height: 0.9rem; flex: 0 0 auto; color: var(--ready-green); }
 .flight-client-phone span { overflow-wrap: anywhere; }
 .flight-client-phone--disabled { color: var(--text-muted); }
 
 .flight-client-reservation {
-  min-height: 2rem;
-  padding: 0.35rem 0.55rem;
+  min-height: 1.7rem;
+  padding: 0.28rem 0.45rem;
   justify-content: center;
   color: var(--text);
   border: 1px solid var(--stroke);
@@ -423,18 +437,22 @@
 .flight-skeleton-source { width: 2rem; height: 2rem; border-radius: 50%; }
 .flight-skeleton-client {
   grid-column: 1 / -1;
-  padding-top: 0.65rem;
+  margin: 0.3rem 0 0 2rem;
+  padding: 0.35rem 0.55rem 0.45rem;
   display: grid;
-  grid-template-columns: 1.5rem minmax(8rem, 1.25fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) minmax(9rem, 1.15fr) 6.5rem;
+  grid-template-columns: 1.3rem minmax(8rem, 1.25fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) minmax(9rem, 1.15fr) 5.75rem;
   align-items: center;
-  gap: 0.7rem;
-  border-top: 1px solid color-mix(in oklab, var(--stroke), transparent 25%);
+  gap: 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--stroke), transparent 38%);
+  border-radius: 5px;
+  background: color-mix(in oklab, var(--ghost-bg), transparent 34%);
 }
-.flight-skeleton-client-flag { width: 1.2rem; height: 0.9rem; border-radius: 2px; }
-.flight-skeleton-client-name { width: 68%; height: 0.86rem; }
+.flight-skeleton-client-label { grid-column: 1 / -1; width: 2.5rem; height: 0.4rem; margin-bottom: 0.1rem; }
+.flight-skeleton-client-flag { width: 1.05rem; height: 0.78rem; border-radius: 2px; }
+.flight-skeleton-client-name { width: 68%; height: 0.76rem; }
 .flight-skeleton-client-detail { width: 72%; }
 .flight-skeleton-client-phone { width: 80%; }
-.flight-skeleton-client-action { width: 100%; height: 2rem; border-radius: 5px; }
+.flight-skeleton-client-action { width: 100%; height: 1.7rem; border-radius: 5px; }
 .flights-skeleton-rule-label { width: 100%; }
 
 @keyframes flights-skeleton-pulse {
@@ -454,6 +472,7 @@
   .flight-skeleton-source { grid-column: 2; grid-row: 3; }
   .flight-skeleton-client {
     grid-row: 4;
+    margin-left: 0;
     grid-template-columns: 1.4rem minmax(0, 1fr) auto;
     gap: 0.55rem;
   }
@@ -473,7 +492,7 @@
   .flight-status { grid-column: 1; grid-row: 3; }
   .flight-source-link { grid-column: 2; grid-row: 3; }
 
-  .flight-clients { grid-row: 4; }
+  .flight-clients { grid-row: 4; margin-left: 0; }
   .flight-client {
     grid-template-columns: 1.4rem minmax(0, 1fr) auto;
     gap: 0.55rem;

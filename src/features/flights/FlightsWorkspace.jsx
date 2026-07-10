@@ -153,6 +153,7 @@ function FlightResult({ result, index, clients = [] }) {
 
       {clients.length > 0 ? (
         <div className="flight-clients" aria-label={`Clientes do voo ${flightNumber}`}>
+          <span className="flight-clients-label">Clients</span>
           {clients.map((client, clientIndex) => (
             <FlightClient client={client} key={client?.itemId ?? client?.id ?? clientIndex} />
           ))}
