@@ -7,6 +7,21 @@ import {
 import { auth, googleProvider } from './firebaseAuth'
 import { hasFirebaseConfig } from './firebaseApp'
 
+export function getLocalAuthBypassCredentials({ isDev, env }) {
+  if (!isDev || env?.VITE_LOCAL_AUTH_BYPASS !== 'true') {
+    return null
+  }
+
+  const email = String(env?.VITE_LOCAL_AUTH_EMAIL ?? '').trim()
+  const password = String(env?.VITE_LOCAL_AUTH_PASSWORD ?? '').trim()
+
+  if (!email || !password) {
+    return null
+  }
+
+  return { email, password }
+}
+
 export function subscribeToAuthChanges(callback) {
   if (!auth) {
     callback(null)
