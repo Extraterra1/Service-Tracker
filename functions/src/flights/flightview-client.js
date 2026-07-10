@@ -35,6 +35,19 @@ function matchesScheduledDate(value, arrivalDate) {
 }
 const extractTime = (value) => value?.match(/T(\d{2}:\d{2})/)?.[1] ?? value?.match(/\b(\d{1,2}:\d{2})\b/)?.[1];
 
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isEndpointPayload(payload) {
+  if (!isObject(payload)) return false;
+  if (payload.flights !== undefined && (
+    !Array.isArray(payload.flights) || !payload.flights.every(isObject)
+  )) return false;
+  if (payload.flight !== undefined && payload.flight !== null && !isObject(payload.flight)) return false;
+  return true;
+}
+
 async function fetchResponse(fetchImpl, airlineCode, flightNumber, departureDate, departureAirportCode) {
   let response;
   try {
@@ -50,7 +63,7 @@ async function fetchResponse(fetchImpl, airlineCode, flightNumber, departureDate
   if (!response.ok) return { kind: 'error', code: 'flightview_unavailable', message: `FlightView lookup failed for ${airlineCode}${flightNumber}` };
   try {
     const payload = await response.json();
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('invalid payload');
+    if (!isEndpointPayload(payload)) throw new Error('invalid payload');
     return payload;
   } catch {
     return { kind: 'error', code: 'parse_failed', message: `Unable to parse FlightView data for ${airlineCode}${flightNumber}` };

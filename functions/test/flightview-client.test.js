@@ -92,6 +92,30 @@ describe('lookupFlightViewArrival', () => {
     });
   });
 
+  test('returns parse_failed for malformed object-shaped endpoint data', async () => {
+    for (const payload of [
+      { flights: {} },
+      { flights: [null] },
+      { flights: [], flight: 'not-a-flight' },
+    ]) {
+      const result = await lookupFlightViewArrival(request, {
+        fetchImpl: createFetch([payload]),
+      });
+      assert.deepEqual(result, {
+        kind: 'error', code: 'parse_failed', message: 'Unable to parse FlightView data for TP1702',
+      });
+    }
+  });
+
+  test('returns flightview_unavailable when fetch throws', async () => {
+    const fetchImpl = async () => {
+      throw new Error('network failed');
+    };
+    assert.deepEqual(await lookupFlightViewArrival(request, { fetchImpl }), {
+      kind: 'error', code: 'flightview_unavailable', message: 'FlightView lookup failed for TP1702',
+    });
+  });
+
   test('returns not_found when no candidate matches airport and date', async () => {
     const result = await lookupFlightViewArrival({ ...request, airportCode: 'OPO' }, { fetchImpl: createFetch([empty, flight()]) });
     assert.deepEqual(result, {
