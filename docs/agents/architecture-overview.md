@@ -17,11 +17,12 @@ Backend surface in this repo:
 
 - Firestore rules and indexes
 - Firestore-only access approval through `access_requests` and `staff_allowlist`
-- Firebase callable Functions, including live FlightView arrival lookup
+- Firebase callable Functions for access approval and Telegram integration
 
 External dependency outside this repo:
 
 - Existing `/getjson` HTTP API used to refresh a day's service list
+- Public Aviability `/arrivals` API used for live FNC flight status
 
 ## Boot and runtime entry points
 
@@ -104,22 +105,18 @@ The frontend:
 - selects only `pickup` items
 - trims flight numbers, removes all remaining whitespace, uppercases, drops blanks, and deduplicates
 - waits until the selected day's service data is ready before looking up flights
-- sends at most 20 flights per callable request, sequentially batching longer lists while preserving order
+- sends at most 20 flights per Aviability request, sequentially batching longer lists while preserving order
 - ignores results from requests made stale by a date or flight-list change
 - retains successful rows when individual flights return errors
 
-`getFlightArrivals` is an authenticated callable in `europe-west9`. It requires an active `staff_allowlist/{uid}` record and validates the arrival date, flight format, and 1-20 flight limit. The backend fixes the destination to FNC and asks FlightView for both the requested arrival date and its previous departure date so overnight flights can match the requested arrival day.
+The browser posts directly to the public CORS-enabled Aviability `/arrivals` API. Service Tracker fixes the destination to FNC in every request. Aviability validates the request and asks FlightView for both the requested arrival date and its previous departure date so overnight flights can match the requested arrival day.
 
 Flight results are live request data: they are neither written to Firestore nor cached as a separate flight collection. Main files:
 
 - `src/features/flights/FlightsWorkspace.jsx`
 - `src/features/flights/flightNumbers.js`
 - `src/features/flights/flightsApi.js`
-- `functions/src/index.js`
-- `functions/src/flights/request.js`
-- `functions/src/flights/arrivals-service.js`
-- `functions/src/flights/flight-number-normalizer.js` and `functions/src/flights/airline-codes.json` - normalize provider lookup codes using the ICAO-to-IATA map
-- `functions/src/flights/flightview-client.js`
+- `/Users/cpires/Aviability-Scraper` - public CORS API and FlightView lookup implementation
 
 ## Runtime data flow
 
@@ -227,7 +224,7 @@ The repo has several deliberate performance choices:
 - `src/lib/__tests__/firestore.rules.test.js` - current-day write behavior
 - `src/hooks/__tests__/useServiceDayData.test.jsx` - refresh and lock behavior
 - `src/features/flights/__tests__` - flight input normalization, batching, readiness, and async race behavior
-- `functions/test` - callable authorization/input limits and FlightView matching
+- `/Users/cpires/Aviability-Scraper/test` - CORS, input limits, normalization, and FlightView matching
 - `src/lib/__tests__/leaderboardStore.test.js` - scoring semantics
 - `src/components/__tests__/ServicePane.completedRollover.test.jsx` - delayed completed rollover
 

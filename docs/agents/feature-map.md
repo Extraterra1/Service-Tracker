@@ -128,21 +128,17 @@ Main files:
 - `src/features/flights/FlightsWorkspace.jsx`
 - `src/features/flights/flightNumbers.js`
 - `src/features/flights/flightsApi.js`
-- `functions/src/index.js`
-- `functions/src/flights/request.js`
-- `functions/src/flights/arrivals-service.js`
-- `functions/src/flights/flight-number-normalizer.js` and `functions/src/flights/airline-codes.json` - provider lookup normalization and ICAO-to-IATA code mapping
-- `functions/src/flights/flightview-client.js`
+- the external Aviability repository - public CORS API and FlightView lookup implementation
 
 Notes:
 
 - flight inputs are trimmed, stripped of internal whitespace, uppercased, and deduplicated; return-service flights are excluded
 - the board does not look up flights until the current selected day's service snapshot is ready
-- the client calls `getFlightArrivals` in `europe-west9` sequentially in batches of at most 20
-- the callable requires Firebase authentication plus an active allowlist record; FNC is fixed server-side
+- the client posts directly to the public Aviability API sequentially in batches of at most 20
+- Service Tracker fixes the destination to FNC in the request; Firebase is not part of the flight lookup
 - FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date
 - flight responses are live and are not persisted in Firestore
-- stale callable responses are ignored after the date or normalized flight list changes
+- stale API responses are ignored after the date or normalized flight list changes
 
 ## Service item card
 
