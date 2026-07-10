@@ -33,6 +33,15 @@ function localizeStatus(status) {
   return STATUS_LABELS[normalized.toLowerCase()] ?? normalized
 }
 
+function getSafeSourceUrl(value) {
+  try {
+    const url = new URL(String(value ?? ''))
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : ''
+  } catch {
+    return ''
+  }
+}
+
 function FlightTime({ label, value }) {
   return (
     <div className="flight-time">
@@ -48,6 +57,7 @@ function FlightResult({ result, index }) {
   const status = hasError
     ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo')
     : localizeStatus(result?.status)
+  const sourceUrl = getSafeSourceUrl(result?.sourceUrl)
 
   return (
     <article
@@ -76,8 +86,8 @@ function FlightResult({ result, index }) {
         <strong>{status}</strong>
       </div>
 
-      {!hasError && result.sourceUrl ? (
-        <a className="flight-source-link" href={result.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver ${flightNumber} no FlightView`}>
+      {!hasError && sourceUrl ? (
+        <a className="flight-source-link" href={sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver ${flightNumber} no FlightView`}>
           <ExternalLink aria-hidden="true" />
         </a>
       ) : null}
@@ -85,7 +95,7 @@ function FlightResult({ result, index }) {
   )
 }
 
-function FlightsWorkspace({ selectedDate, allServiceItems = [] }) {
+function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataReady = true }) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems])
   const flightListKey = flightNumbers.join('|')
   const requestIdRef = useRef(0)
@@ -96,7 +106,7 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [] }) {
   useEffect(() => {
     const requestId = ++requestIdRef.current
 
-    if (!flightListKey) {
+    if (!serviceDataReady || !flightListKey) {
       return () => {
         requestIdRef.current += 1
       }
@@ -117,12 +127,13 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [] }) {
     return () => {
       requestIdRef.current += 1
     }
-  }, [selectedDate, flightListKey, currentRequestKey])
+  }, [selectedDate, flightListKey, currentRequestKey, serviceDataReady])
 
-  const isLoading = Boolean(flightListKey) && state.requestKey !== currentRequestKey
+  const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestKey !== currentRequestKey
+  const isPreparingDay = !serviceDataReady
 
   return (
-    <main className="flights-workspace" aria-busy={isLoading}>
+    <main className="flights-workspace" aria-busy={isLoading || isPreparingDay}>
       <header className="flights-board-header">
         <div>
           <span className="flights-kicker">Voos · FNC</span>
@@ -131,7 +142,12 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [] }) {
         <time dateTime={selectedDate}>{selectedDate}</time>
       </header>
 
-      {!flightListKey ? (
+      {isPreparingDay ? (
+        <div className="flights-loading" role="status">
+          <LoaderCircle aria-hidden="true" />
+          <span>A preparar dados do dia…</span>
+        </div>
+      ) : !flightListKey ? (
         <div className="flights-empty">
           <PlaneLanding aria-hidden="true" />
           <p>Não há voos de recolha para este dia.</p>

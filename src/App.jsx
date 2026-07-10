@@ -1076,7 +1076,11 @@ function App() {
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
         <Suspense fallback={<main className="flights-loading" aria-busy="true" aria-label="Voos">A carregar voos...</main>}>
-          <FlightsWorkspace selectedDate={selectedDate} allServiceItems={allServiceItems} />
+          <FlightsWorkspace
+            selectedDate={selectedDate}
+            allServiceItems={allServiceItems}
+            serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
+          />
         </Suspense>
       ) : paneLoading ? (
         <ServiceWorkspaceLoadingFallback />

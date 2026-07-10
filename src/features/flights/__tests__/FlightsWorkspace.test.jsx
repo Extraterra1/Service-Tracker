@@ -67,6 +67,34 @@ describe('FlightsWorkspace', () => {
     }))
   })
 
+  it('waits for current service-day data before showing empty state or requesting flights', () => {
+    render(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[]} serviceDataReady={false} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('A preparar dados do dia')
+    expect(screen.queryByText('Não há voos de recolha para este dia.')).not.toBeInTheDocument()
+    expect(fetchFlightArrivals).not.toHaveBeenCalled()
+  })
+
+  it('invalidates the old date request and waits for ready data before loading the new date flights', async () => {
+    const older = deferred()
+    fetchFlightArrivals.mockReturnValueOnce(older.promise).mockResolvedValueOnce({
+      results: [{ ...response.results[0], flightNumber: 'NEW200' }],
+    })
+    const { rerender } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} serviceDataReady />)
+
+    rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={services.slice(0, 1)} serviceDataReady={false} />)
+    expect(fetchFlightArrivals).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('status')).toHaveTextContent('A preparar dados do dia')
+    older.resolve(response)
+    await older.promise
+    expect(screen.queryByText('TP1685')).not.toBeInTheDocument()
+
+    rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[{ serviceType: 'pickup', flightNumber: ' NEW 200 ' }]} serviceDataReady />)
+    expect(await screen.findByRole('article', { name: 'Voo NEW200' })).toBeInTheDocument()
+    expect(fetchFlightArrivals).toHaveBeenLastCalledWith({ arrivalDate: '2026-07-11', flightNumbers: ['NEW200'] })
+    expect(fetchFlightArrivals).toHaveBeenCalledTimes(2)
+  })
+
   it('announces loading accessibly', async () => {
     const pending = deferred()
     fetchFlightArrivals.mockReturnValue(pending.promise)
@@ -97,6 +125,16 @@ describe('FlightsWorkspace', () => {
     const secondRow = screen.getByRole('article', { name: 'Voo U27654' })
     expect(secondRow).toHaveTextContent('Atrasado')
     expect(secondRow.textContent.match(/--:--/g)).toHaveLength(3)
+  })
+
+  it('does not render non-http source URLs as links', async () => {
+    fetchFlightArrivals.mockResolvedValue({
+      results: [{ ...response.results[0], sourceUrl: 'javascript:alert(1)' }],
+    })
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} />)
+
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toHaveTextContent('TP1685')
+    expect(screen.queryByRole('link', { name: 'Ver TP1685 no FlightView' })).not.toBeInTheDocument()
   })
 
   it('keeps successful flights visible beside localized per-flight failures', async () => {
