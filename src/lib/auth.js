@@ -1,6 +1,7 @@
 import {
   onAuthStateChanged,
   onIdTokenChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
 } from 'firebase/auth'
@@ -20,6 +21,19 @@ export function getLocalAuthBypassCredentials({ isDev, env }) {
   }
 
   return { email, password }
+}
+
+export async function signInWithLocalDebugAccount({
+  isDev = import.meta.env.DEV,
+  env = import.meta.env,
+  authInstance = auth,
+} = {}) {
+  const credentials = getLocalAuthBypassCredentials({ isDev, env })
+  if (!authInstance || authInstance.currentUser || !credentials) {
+    return null
+  }
+
+  return signInWithEmailAndPassword(authInstance, credentials.email, credentials.password)
 }
 
 export function subscribeToAuthChanges(callback) {
