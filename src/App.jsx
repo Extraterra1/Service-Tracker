@@ -1079,7 +1079,9 @@ function App() {
           <FlightsWorkspace
             selectedDate={selectedDate}
             allServiceItems={allServiceItems}
+            serviceDataLoading={loadingDateData}
             serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
+            onRetryServiceData={manualRefresh}
           />
         </Suspense>
       ) : paneLoading ? (

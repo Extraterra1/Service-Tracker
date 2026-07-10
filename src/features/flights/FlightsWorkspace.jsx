@@ -95,7 +95,13 @@ function FlightResult({ result, index }) {
   )
 }
 
-function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataReady = true }) {
+function FlightsWorkspace({
+  selectedDate,
+  allServiceItems = [],
+  serviceDataLoading = false,
+  serviceDataReady = true,
+  onRetryServiceData,
+}) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems])
   const flightListKey = flightNumbers.join('|')
   const requestIdRef = useRef(0)
@@ -130,7 +136,12 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataReady
   }, [selectedDate, flightListKey, currentRequestKey, serviceDataReady])
 
   const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestKey !== currentRequestKey
-  const isPreparingDay = !serviceDataReady
+  const isPreparingDay = serviceDataLoading && !serviceDataReady
+  const isServiceDataUnavailable = !serviceDataLoading && !serviceDataReady
+
+  const retryServiceData = () => {
+    Promise.resolve(onRetryServiceData?.()).catch(() => {})
+  }
 
   return (
     <main className="flights-workspace" aria-busy={isLoading || isPreparingDay}>
@@ -146,6 +157,12 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataReady
         <div className="flights-loading" role="status">
           <LoaderCircle aria-hidden="true" />
           <span>A preparar dados do dia…</span>
+        </div>
+      ) : isServiceDataUnavailable ? (
+        <div className="flights-request-error" role="alert">
+          <CircleAlert aria-hidden="true" />
+          <p>Não foi possível obter os serviços deste dia.</p>
+          <button type="button" className="primary-btn compact-btn" onClick={retryServiceData}>Tentar novamente</button>
         </div>
       ) : !flightListKey ? (
         <div className="flights-empty">

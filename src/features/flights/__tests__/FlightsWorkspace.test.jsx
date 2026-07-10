@@ -68,10 +68,30 @@ describe('FlightsWorkspace', () => {
   })
 
   it('waits for current service-day data before showing empty state or requesting flights', () => {
-    render(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[]} serviceDataReady={false} />)
+    render(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[]} serviceDataLoading serviceDataReady={false} />)
 
     expect(screen.getByRole('status')).toHaveTextContent('A preparar dados do dia')
     expect(screen.queryByText('Não há voos de recolha para este dia.')).not.toBeInTheDocument()
+    expect(fetchFlightArrivals).not.toHaveBeenCalled()
+  })
+
+  it('shows an unavailable state with service-data retry after loading ends without a day response', async () => {
+    const user = userEvent.setup()
+    const onRetryServiceData = vi.fn().mockRejectedValue(new Error('handled by service data state'))
+    render(
+      <FlightsWorkspace
+        selectedDate="2026-07-11"
+        allServiceItems={[]}
+        serviceDataLoading={false}
+        serviceDataReady={false}
+        onRetryServiceData={onRetryServiceData}
+      />,
+    )
+
+    expect(screen.queryByText('A preparar dados do dia…')).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível obter os serviços deste dia')
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    expect(onRetryServiceData).toHaveBeenCalledTimes(1)
     expect(fetchFlightArrivals).not.toHaveBeenCalled()
   })
 
@@ -82,7 +102,7 @@ describe('FlightsWorkspace', () => {
     })
     const { rerender } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} serviceDataReady />)
 
-    rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={services.slice(0, 1)} serviceDataReady={false} />)
+    rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={services.slice(0, 1)} serviceDataLoading serviceDataReady={false} />)
     expect(fetchFlightArrivals).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('status')).toHaveTextContent('A preparar dados do dia')
     older.resolve(response)
