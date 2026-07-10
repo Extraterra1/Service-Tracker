@@ -35,7 +35,16 @@ export function createFlightArrivalsHandler({
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsErrorClass('unauthenticated', 'Authentication is required.');
 
-    const allowlistUser = await getStaffAllowlist(uid);
+    let allowlistUser;
+    try {
+      allowlistUser = await getStaffAllowlist(uid);
+    } catch (error) {
+      logError('Flight arrivals authorization check failed', {
+        errorType: typeof error?.name === 'string' ? error.name : 'UnknownError',
+      });
+      throw new HttpsErrorClass('internal', 'Unable to verify staff access.');
+    }
+
     if (!allowlistUser.exists || allowlistUser.active !== true) {
       throw new HttpsErrorClass('permission-denied', 'Active staff access is required.');
     }

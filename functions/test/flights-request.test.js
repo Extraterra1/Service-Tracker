@@ -56,6 +56,20 @@ describe('createFlightArrivalsHandler', () => {
     }
   });
 
+  test('safely converts unexpected allowlist lookup failures to an internal error', async () => {
+    const logs = [];
+    const handler = createHandler({
+      getStaffAllowlist: async () => { throw new Error('firestore detail for staff-1'); },
+      logError: (message, metadata) => logs.push([message, metadata]),
+    });
+
+    await assert.rejects(
+      () => handler({ data: {}, auth: { uid: 'staff-1', token: { secret: 'do-not-log' } } }),
+      { code: 'internal', message: 'Unable to verify staff access.' },
+    );
+    assert.deepEqual(logs, [['Flight arrivals authorization check failed', { errorType: 'Error' }]]);
+  });
+
   test('rejects invalid request data', async () => {
     const handler = createHandler();
     await assert.rejects(
