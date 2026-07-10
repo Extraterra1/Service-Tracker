@@ -117,6 +117,22 @@ describe('fetchFlightArrivals', () => {
     expect(response.summary).toEqual({ requested: 21, resolved: 20, failed: 1 })
   })
 
+  it('counts every non-error backend result as resolved even when it has no status field', async () => {
+    firebaseMocks.callable.mockResolvedValue({
+      data: {
+        results: [{ flightNumber: 'TP1685', scheduledArrivalLocal: '09:30' }],
+      },
+    })
+    const { fetchFlightArrivals } = await loadApi()
+
+    const response = await fetchFlightArrivals({
+      arrivalDate: '2026-07-10',
+      flightNumbers: ['TP1685'],
+    })
+
+    expect(response.summary).toEqual({ requested: 1, resolved: 1, failed: 0 })
+  })
+
   it('propagates callable transport errors', async () => {
     const transportError = new Error('network unavailable')
     firebaseMocks.callable.mockRejectedValue(transportError)

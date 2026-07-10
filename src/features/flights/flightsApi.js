@@ -15,12 +15,7 @@ function createEmptyResponse(arrivalDate) {
 }
 
 function summarize(results, requested) {
-  const resolved = results.filter(
-    (result) =>
-      result &&
-      !result.error &&
-      (Object.hasOwn(result, 'status') || result.success === true),
-  ).length
+  const resolved = results.filter((result) => result && !result.error).length
 
   return {
     requested,
