@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { subscribeToAuthChanges, subscribeToIdTokenChanges, waitForAuthStateReady } from '../lib/auth';
+import {
+  signInWithLocalDebugAccount,
+  subscribeToAuthChanges,
+  subscribeToIdTokenChanges,
+  waitForAuthStateReady
+} from '../lib/auth';
 import { hasFirebaseConfig } from '../lib/firebaseApp';
 import { sessionDiagnostics } from '../lib/sessionDiagnostics';
 
@@ -161,6 +166,16 @@ export function useAccessGate() {
         await waitForAuthStateReady();
       } catch {
         // Subscription callback still handles final auth resolution.
+      }
+
+      if (!isMounted) {
+        return;
+      }
+
+      try {
+        await signInWithLocalDebugAccount();
+      } catch (nextError) {
+        sessionDiagnostics.recordError('local_auth_bypass_error', nextError);
       }
     };
 
