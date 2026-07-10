@@ -67,6 +67,25 @@ describe('FlightsWorkspace', () => {
     }))
   })
 
+  it('shows the normalized flight total and returns to the service list from the header', async () => {
+    const user = userEvent.setup()
+    const onWorkspaceChange = vi.fn()
+    fetchFlightArrivals.mockResolvedValue(response)
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} onWorkspaceChange={onWorkspaceChange} />)
+
+    expect(screen.getByText('2 voos')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Voltar à lista de serviços' }))
+    expect(onWorkspaceChange).toHaveBeenCalledWith('services')
+  })
+
+  it('uses the singular flight count', async () => {
+    fetchFlightArrivals.mockResolvedValue({ results: [response.results[0]] })
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} />)
+
+    expect(screen.getByText('1 voo')).toBeInTheDocument()
+    await screen.findByRole('article', { name: 'Voo TP1685' })
+  })
+
   it('waits for current service-day data before showing empty state or requesting flights', () => {
     render(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={[]} serviceDataLoading serviceDataReady={false} />)
 
@@ -157,6 +176,17 @@ describe('FlightsWorkspace', () => {
     expect(screen.queryByRole('link', { name: 'Ver TP1685 no FlightView' })).not.toBeInTheDocument()
   })
 
+  it.each([
+    'https://example.com/flight/TP1685',
+    'http://www.flightview.com/flight-tracker/TP/1685',
+  ])('does not link an untrusted FlightView source URL: %s', async (sourceUrl) => {
+    fetchFlightArrivals.mockResolvedValue({ results: [{ ...response.results[0], sourceUrl }] })
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} />)
+
+    await screen.findByRole('article', { name: 'Voo TP1685' })
+    expect(screen.queryByRole('link', { name: 'Ver TP1685 no FlightView' })).not.toBeInTheDocument()
+  })
+
   it('keeps successful flights visible beside localized per-flight failures', async () => {
     fetchFlightArrivals.mockResolvedValue({
       results: [response.results[0], { flightNumber: 'U27654', error: { code: 'not_found', message: 'raw detail' } }],
@@ -202,6 +232,25 @@ describe('FlightsWorkspace', () => {
     expect(await screen.findByText('NEW200')).toBeInTheDocument()
     older.resolve({ results: [{ ...response.results[0], flightNumber: 'OLD100' }] })
     await waitFor(() => expect(screen.queryByText('OLD100')).not.toBeInTheDocument())
+  })
+
+  it('starts a fresh loading request when returning from an empty list to identical inputs', async () => {
+    fetchFlightArrivals.mockResolvedValueOnce(response)
+    const secondRequest = deferred()
+    fetchFlightArrivals.mockReturnValueOnce(secondRequest.promise)
+    const { rerender } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument()
+
+    rerender(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={[]} />)
+    expect(screen.getByText('Não há voos de recolha para este dia.')).toBeInTheDocument()
+    rerender(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />)
+
+    expect(screen.getByRole('main')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('status')).toHaveTextContent('A carregar voos')
+    expect(screen.queryByRole('article', { name: 'Voo TP1685' })).not.toBeInTheDocument()
+    expect(fetchFlightArrivals).toHaveBeenCalledTimes(2)
+    secondRequest.resolve(response)
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument()
   })
 
   it('does not apply a response after unmount', async () => {

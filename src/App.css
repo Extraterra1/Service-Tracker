@@ -77,6 +77,33 @@
   text-transform: uppercase;
 }
 
+.flights-header-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.flights-total {
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.flights-back-btn {
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.flights-back-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
 .flights-board {
   min-width: 0;
   overflow: hidden;
@@ -271,6 +298,7 @@
 
 @media (max-width: 360px) {
   .flights-board-header { align-items: start; flex-direction: column; gap: 0.35rem; }
+  .flights-header-controls { width: 100%; justify-content: space-between; }
   .flight-row { padding-inline: 0.6rem; }
   .flight-time dt { font-size: 0.56rem; letter-spacing: 0; }
 }

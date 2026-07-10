@@ -1082,6 +1082,7 @@ function App() {
             serviceDataLoading={loadingDateData}
             serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
             onRetryServiceData={manualRefresh}
+            onWorkspaceChange={handleWorkspaceChange}
           />
         </Suspense>
       ) : paneLoading ? (

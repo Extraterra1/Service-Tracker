@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CircleAlert, ExternalLink, LoaderCircle, PlaneLanding } from 'lucide-react'
+import { ArrowLeft, CircleAlert, ExternalLink, LoaderCircle, PlaneLanding } from 'lucide-react'
 
 import { fetchFlightArrivals } from './flightsApi'
 import { getPickupFlightNumbers } from './flightNumbers'
@@ -36,7 +36,7 @@ function localizeStatus(status) {
 function getSafeSourceUrl(value) {
   try {
     const url = new URL(String(value ?? ''))
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : ''
+    return url.protocol === 'https:' && url.hostname === 'www.flightview.com' ? url.href : ''
   } catch {
     return ''
   }
@@ -101,13 +101,15 @@ function FlightsWorkspace({
   serviceDataLoading = false,
   serviceDataReady = true,
   onRetryServiceData,
+  onWorkspaceChange,
 }) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems])
   const flightListKey = flightNumbers.join('|')
   const requestIdRef = useRef(0)
   const [retryVersion, setRetryVersion] = useState(0)
-  const [state, setState] = useState({ requestKey: '', status: 'idle', results: [], error: '' })
-  const currentRequestKey = `${selectedDate}:${flightListKey}:${retryVersion}`
+  const [state, setState] = useState({ requestToken: null, status: 'idle', results: [], error: '' })
+  const currentRequestKey = `${selectedDate}:${flightListKey}:${retryVersion}:${serviceDataReady ? 'ready' : 'waiting'}`
+  const requestToken = useMemo(() => ({ key: currentRequestKey }), [currentRequestKey])
 
   useEffect(() => {
     const requestId = ++requestIdRef.current
@@ -123,19 +125,19 @@ function FlightsWorkspace({
     fetchFlightArrivals({ arrivalDate: selectedDate, flightNumbers: currentFlights })
       .then((payload) => {
         if (requestId !== requestIdRef.current) return
-        setState({ requestKey: currentRequestKey, status: 'success', results: payload?.results ?? [], error: '' })
+        setState({ requestToken, status: 'success', results: payload?.results ?? [], error: '' })
       })
       .catch(() => {
         if (requestId !== requestIdRef.current) return
-        setState({ requestKey: currentRequestKey, status: 'error', results: [], error: 'Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.' })
+        setState({ requestToken, status: 'error', results: [], error: 'Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.' })
       })
 
     return () => {
       requestIdRef.current += 1
     }
-  }, [selectedDate, flightListKey, currentRequestKey, serviceDataReady])
+  }, [selectedDate, flightListKey, requestToken, serviceDataReady])
 
-  const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestKey !== currentRequestKey
+  const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestToken !== requestToken
   const isPreparingDay = serviceDataLoading && !serviceDataReady
   const isServiceDataUnavailable = !serviceDataLoading && !serviceDataReady
 
@@ -150,7 +152,14 @@ function FlightsWorkspace({
           <span className="flights-kicker">Voos · FNC</span>
           <h1>Chegadas ao Funchal</h1>
         </div>
-        <time dateTime={selectedDate}>{selectedDate}</time>
+        <div className="flights-header-controls">
+          <span className="flights-total">{flightNumbers.length} {flightNumbers.length === 1 ? 'voo' : 'voos'}</span>
+          <time dateTime={selectedDate}>{selectedDate}</time>
+          <button type="button" className="ghost-btn compact-btn flights-back-btn" onClick={() => onWorkspaceChange?.('services')} aria-label="Voltar à lista de serviços">
+            <ArrowLeft aria-hidden="true" />
+            <span>Lista</span>
+          </button>
+        </div>
       </header>
 
       {isPreparingDay ? (
