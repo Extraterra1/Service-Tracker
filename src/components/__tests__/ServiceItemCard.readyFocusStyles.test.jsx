@@ -10,4 +10,12 @@ describe('ServiceItemCard ready plate focus styles', () => {
       /\.item-plate-button\.is-ready:not\(:disabled\):focus-visible\s*\{[\s\S]*?border-color:\s*rgba\(55,\s*148,\s*86,\s*0\.38\);[\s\S]*?background:\s*rgba\(102,\s*199,\s*134,\s*0\.18\);/
     );
   });
+
+  it('only applies plate hover colors on devices that support hover', () => {
+    const appCss = fs.readFileSync(path.resolve(globalThis.process.cwd(), 'src/App.css'), 'utf8');
+
+    expect(appCss).toMatch(
+      /@media\s*\(hover:\s*hover\)\s*\{[\s\S]*?\.item-plate-button:not\(:disabled\):hover\s*\{[\s\S]*?background:\s*color-mix\(in oklab,\s*var\(--item-service\),\s*transparent 91%\);/
+    );
+  });
 });
