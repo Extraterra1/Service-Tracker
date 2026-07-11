@@ -197,6 +197,26 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.queryByRole('button', { name: 'Voos' })).not.toBeInTheDocument();
   });
 
+  it('opens Porta-chaves for non-admin users', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ onWorkspaceChange })} />);
+
+    await user.click(screen.getByRole('button', { name: 'Porta-chaves' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('keyrings');
+  });
+
+  it('offers Lista de Serviço and updates the title in the keyring workspace', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'keyrings', onWorkspaceChange })} />);
+
+    expect(screen.getByRole('heading', { name: 'Porta-chaves' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
+    expect(screen.queryByRole('button', { name: 'Porta-chaves' })).not.toBeInTheDocument();
+  });
+
   it('returns to the service list when the company logo is clicked', async () => {
     const user = userEvent.setup();
     const onWorkspaceChange = vi.fn();

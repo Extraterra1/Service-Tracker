@@ -36,6 +36,7 @@ import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleto
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
 const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
+const KeyringsWorkspace = lazy(() => import('./features/keyrings/KeyringsWorkspace'));
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
@@ -160,7 +161,14 @@ function App() {
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
   const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
-  const requestedWorkspaceHash = requestedWorkspace === 'reservations' ? '#reservas' : requestedWorkspace === 'flights' ? '#voos' : '';
+  const requestedWorkspaceHash =
+    requestedWorkspace === 'reservations'
+      ? '#reservas'
+      : requestedWorkspace === 'flights'
+        ? '#voos'
+        : requestedWorkspace === 'keyrings'
+          ? '#porta-chaves'
+          : '';
   const activeWorkspace = resolveWorkspace(requestedWorkspaceHash, canManageAccess);
 
   useEffect(() => {
@@ -177,11 +185,11 @@ function App() {
   }, [accessState, canManageAccess, requestedWorkspace]);
 
   const handleWorkspaceChange = useCallback((workspace) => {
-    const nextWorkspace = (workspace === 'flights' || workspace === 'reservations') && canManageAccess ? workspace : 'services';
+    const nextWorkspace = workspace === 'keyrings' || ((workspace === 'flights' || workspace === 'reservations') && canManageAccess) ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
     setRequestedWorkspace(nextWorkspace);
-    if (nextWorkspace === 'reservations' || nextWorkspace === 'flights') {
-      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : '#voos');
+    if (nextWorkspace === 'reservations' || nextWorkspace === 'flights' || nextWorkspace === 'keyrings') {
+      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : nextWorkspace === 'flights' ? '#voos' : '#porta-chaves');
     } else {
       window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
     }
@@ -255,6 +263,12 @@ function App() {
   } = useCarHistory({
     accessState
   });
+
+  useEffect(() => {
+    if (activeWorkspace === 'keyrings' && accessState === 'allowed') {
+      void loadCarHistory();
+    }
+  }, [accessState, activeWorkspace, loadCarHistory]);
   const {
     data: leaderboardData,
     loading: leaderboardLoading,
@@ -1071,7 +1085,11 @@ function App() {
         </p>
       ) : null}
 
-      {activeWorkspace === 'reservations' ? (
+      {activeWorkspace === 'keyrings' ? (
+        <Suspense fallback={<main className="keyrings-workspace" aria-busy="true">A carregar porta-chaves…</main>}>
+          <KeyringsWorkspace plateOptions={carHistoryPlateOptions} loading={loadingCarHistory} error={carHistoryErrorMessage} />
+        </Suspense>
+      ) : activeWorkspace === 'reservations' ? (
         <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>

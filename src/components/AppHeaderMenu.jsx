@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Check, ListChecks, Menu, MoonStar, Plane, Star, SunMedium, UserX, X } from 'lucide-react';
+import { CalendarDays, Check, KeyRound, ListChecks, Menu, MoonStar, Plane, Star, SunMedium, UserX, X } from 'lucide-react';
 import AuthPanel from './AuthPanel';
 import justDriveLogo from '../assets/Logo Base.svg';
 
@@ -174,7 +174,15 @@ function AppHeaderMenu({
         </button>
         <div className="title-block">
           <p className="eyebrow">Operação diária</p>
-          <h1>{activeWorkspace === 'reservations' ? 'Reservas' : activeWorkspace === 'flights' ? 'Voos' : 'Lista de Serviço'}</h1>
+          <h1>
+            {activeWorkspace === 'reservations'
+              ? 'Reservas'
+              : activeWorkspace === 'flights'
+                ? 'Voos'
+                : activeWorkspace === 'keyrings'
+                  ? 'Porta-chaves'
+                  : 'Lista de Serviço'}
+          </h1>
         </div>
       </div>
 
@@ -213,6 +221,18 @@ function AppHeaderMenu({
                   >
                     <ListChecks aria-hidden="true" />
                     Lista de Serviço
+                  </button>
+                </div>
+              ) : null}
+              {activeWorkspace !== 'keyrings' ? (
+                <div className="menu-section">
+                  <button
+                    type="button"
+                    className="menu-section-summary menu-section-summary--action menu-workspace-action"
+                    onClick={() => onWorkspaceChange?.('keyrings')}
+                  >
+                    <KeyRound aria-hidden="true" />
+                    Porta-chaves
                   </button>
                 </div>
               ) : null}
