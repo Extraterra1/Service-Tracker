@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, Check, ListChecks, Menu, MoonStar, Plane, Star, SunMedium, UserX, X } from 'lucide-react';
 import AuthPanel from './AuthPanel';
-import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
+import justDriveLogo from '../assets/Logo Base.svg';
 
 const MENU_SECTION_CLOSE_ANIMATION_MS = 360;
 const MENU_SECTION_KEYS = {

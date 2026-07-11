@@ -1,4 +1,4 @@
-import justDriveLogo from '../assets/Logo Just Drive Madeira-1.png';
+import justDriveLogo from '../assets/Logo Base.svg';
 
 function SignedOutLanding({
   onSignIn,
