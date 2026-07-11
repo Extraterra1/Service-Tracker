@@ -36,6 +36,7 @@ import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleto
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
 const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
+const KeyringsWorkspace = lazy(() => import('./features/keyrings/KeyringsWorkspace'));
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
@@ -262,6 +263,12 @@ function App() {
   } = useCarHistory({
     accessState
   });
+
+  useEffect(() => {
+    if (activeWorkspace === 'keyrings' && accessState === 'allowed') {
+      void loadCarHistory();
+    }
+  }, [accessState, activeWorkspace, loadCarHistory]);
   const {
     data: leaderboardData,
     loading: leaderboardLoading,
@@ -1078,7 +1085,11 @@ function App() {
         </p>
       ) : null}
 
-      {activeWorkspace === 'reservations' ? (
+      {activeWorkspace === 'keyrings' ? (
+        <Suspense fallback={<main className="keyrings-workspace" aria-busy="true">A carregar porta-chaves…</main>}>
+          <KeyringsWorkspace plateOptions={carHistoryPlateOptions} loading={loadingCarHistory} error={carHistoryErrorMessage} />
+        </Suspense>
+      ) : activeWorkspace === 'reservations' ? (
         <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
