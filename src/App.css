@@ -178,6 +178,60 @@
   font-size: 0.72rem;
 }
 
+.keyrings-selected-plate {
+  margin-top: 0.7rem;
+  min-height: 2.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.42rem 0.45rem 0.42rem 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--accent), transparent 58%);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent), transparent 91%);
+}
+
+.keyrings-selected-plate span {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.keyrings-selected-plate small {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.keyrings-selected-plate strong {
+  color: var(--text);
+  font-size: 0.83rem;
+  letter-spacing: 0.055em;
+}
+
+.keyrings-selected-plate button {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: color-mix(in oklab, var(--panel-bg-strong), transparent 18%);
+  cursor: pointer;
+}
+
+.keyrings-selected-plate button:hover {
+  color: var(--text);
+  background: color-mix(in oklab, var(--accent), transparent 82%);
+}
+
+.keyrings-selected-plate button svg { width: 0.85rem; height: 0.85rem; }
+
 .keyrings-state,
 .keyrings-error,
 .keyrings-note {

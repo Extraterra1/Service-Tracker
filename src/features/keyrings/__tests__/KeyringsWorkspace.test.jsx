@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import KeyringsWorkspace from '../KeyringsWorkspace';
@@ -47,7 +47,7 @@ describe('KeyringsWorkspace', () => {
 
     await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
     expect(combobox).toHaveValue('BF-07-JZ');
-    expect(screen.getAllByText('BF-07-JZ')).toHaveLength(2);
+    expect(screen.getAllByText('BF-07-JZ')).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Gerar PDF' }));
     expect(downloadKeyringPdf).toHaveBeenCalledWith('BF-07-JZ');
   });
@@ -69,6 +69,36 @@ describe('KeyringsWorkspace', () => {
     await user.tab();
     await user.click(combobox);
     expect(combobox).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('survives the real pointer-down and blur ordering when selecting a result', async () => {
+    const user = userEvent.setup();
+    render(<KeyringsWorkspace plateOptions={plates} />);
+    const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
+    await user.type(combobox, 'BF');
+    const option = screen.getByRole('option', { name: 'BF-07-JZ' });
+
+    expect(fireEvent.pointerDown(option)).toBe(false);
+    fireEvent.click(option);
+
+    expect(screen.getByText('Viatura selecionada')).toBeInTheDocument();
+    expect(screen.getByText('BF-07-JZ', { selector: '.keyrings-selected-plate strong' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeEnabled();
+  });
+
+  it('clears the selected plate from its pill', async () => {
+    const user = userEvent.setup();
+    render(<KeyringsWorkspace plateOptions={plates} />);
+    const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
+    await user.type(combobox, 'AA11');
+    await user.click(screen.getByRole('option', { name: 'AA-11-BB' }));
+
+    await user.click(screen.getByRole('button', { name: 'Limpar matrícula AA-11-BB' }));
+
+    expect(combobox).toHaveValue('');
+    expect(screen.queryByText('Viatura selecionada')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeDisabled();
+    expect(screen.getByText('A matrícula aparece aqui')).toBeInTheDocument();
   });
 
   it('shows explicit loading, empty, and fleet error states', () => {

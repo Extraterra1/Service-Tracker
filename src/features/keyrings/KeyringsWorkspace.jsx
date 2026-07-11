@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef, useState } from 'react';
-import { Download, KeyRound, Search } from 'lucide-react';
+import { Download, KeyRound, Search, X } from 'lucide-react';
 import logoUrl from '../../assets/Logo Base.svg';
 import whatsappUrl from '../../assets/whatsapp.svg';
 import { downloadKeyringPdf } from './keyringPdf';
@@ -126,6 +126,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
                   className={index === activeIndex ? 'is-highlighted' : ''}
                   key={option.value}
                   onMouseEnter={() => setHighlightedIndex(index)}
+                  onPointerDown={(event) => event.preventDefault()}
                   onClick={() => selectPlate(option)}
                 >
                   {option.label}
@@ -134,6 +135,24 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
             </div>
           ) : null}
         </div>
+
+        {selectedPlate ? (
+          <div className="keyrings-selected-plate">
+            <span><small>Viatura selecionada</small><strong>{selectedPlate}</strong></span>
+            <button
+              type="button"
+              aria-label={`Limpar matrícula ${selectedPlate}`}
+              onClick={() => {
+                setSelectedValue('');
+                setQuery('');
+                setIsPickerOpen(false);
+                setHighlightedIndex(0);
+              }}
+            >
+              <X aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
 
         {loading ? <p className="keyrings-state" aria-live="polite">A carregar viaturas…</p> : null}
         {!loading && !error && plateOptions.length === 0 ? <p className="keyrings-state">Não foram encontradas viaturas no histórico.</p> : null}
