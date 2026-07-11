@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { Download, KeyRound, Search } from 'lucide-react';
 import logoUrl from '../../assets/Logo Base.svg';
 import whatsappUrl from '../../assets/whatsapp.svg';
 import { downloadKeyringPdf } from './keyringPdf';
+import { rankPlateOptions } from './keyringSearch';
 
 function KeyringStripPreview({ plate }) {
   return (
@@ -26,14 +27,47 @@ function KeyringStripPreview({ plate }) {
 export default function KeyringsWorkspace({ plateOptions = [], loading = false, error = '' }) {
   const [query, setQuery] = useState('');
   const [selectedValue, setSelectedValue] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState('');
-  const filteredOptions = useMemo(() => {
-    const normalizedQuery = query.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!normalizedQuery) return plateOptions;
-    return plateOptions.filter((option) => `${option.value}${option.label}`.toUpperCase().replace(/[^A-Z0-9]/g, '').includes(normalizedQuery));
-  }, [plateOptions, query]);
+  const pickerRef = useRef(null);
+  const listboxId = useId();
+  const filteredOptions = useMemo(() => rankPlateOptions(plateOptions, query), [plateOptions, query]);
   const selectedPlate = plateOptions.find((option) => option.value === selectedValue)?.label ?? '';
+  const pickerDisabled = loading || Boolean(error) || plateOptions.length === 0;
+  const activeIndex = filteredOptions.length === 0 ? 0 : Math.min(highlightedIndex, filteredOptions.length - 1);
+  const activeOption = filteredOptions[activeIndex];
+
+  const selectPlate = (option) => {
+    setSelectedValue(option.value);
+    setQuery(option.label);
+    setIsPickerOpen(false);
+    setHighlightedIndex(0);
+  };
+
+  const handlePickerKeyDown = (event) => {
+    if (pickerDisabled) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setIsPickerOpen(false);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      setIsPickerOpen(true);
+      const direction = event.key === 'ArrowDown' ? 1 : -1;
+      setHighlightedIndex((current) => {
+        if (filteredOptions.length === 0) return 0;
+        return (current + direction + filteredOptions.length) % filteredOptions.length;
+      });
+      return;
+    }
+    if (event.key === 'Enter' && isPickerOpen && activeOption) {
+      event.preventDefault();
+      selectPlate(activeOption);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!selectedPlate || generating) return;
@@ -55,18 +89,51 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
         <h2 id="keyrings-heading">Porta-chaves da viatura</h2>
         <p className="keyrings-intro">Escolhe uma matrícula e descarrega a folha A4 pronta para imprimir à escala real.</p>
 
-        <label className="keyrings-search-field">
-          <span>Pesquisar matrícula</span>
-          <span className="keyrings-input-shell"><Search aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ex.: BF-07-JZ" /></span>
-        </label>
-
-        <label className="keyrings-select-field">
-          <span>Selecionar viatura</span>
-          <select value={selectedValue} onChange={(event) => setSelectedValue(event.target.value)} disabled={loading || Boolean(error) || plateOptions.length === 0}>
-            <option value="">Escolhe uma matrícula</option>
-            {filteredOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
+        <div className="keyrings-search-field keyrings-combobox" ref={pickerRef}>
+          <label htmlFor={`${listboxId}-input`}>Pesquisar matrícula</label>
+          <span className="keyrings-input-shell">
+            <Search aria-hidden="true" />
+            <input
+              id={`${listboxId}-input`}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={isPickerOpen}
+              aria-controls={listboxId}
+              aria-activedescendant={isPickerOpen && activeOption ? `${listboxId}-${activeOption.value}` : undefined}
+              value={query}
+              disabled={pickerDisabled}
+              onFocus={() => setIsPickerOpen(true)}
+              onBlur={(event) => {
+                if (!pickerRef.current?.contains(event.relatedTarget)) setIsPickerOpen(false);
+              }}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setIsPickerOpen(true);
+                setHighlightedIndex(0);
+              }}
+              onKeyDown={handlePickerKeyDown}
+              placeholder="Ex.: BF-07-JZ"
+            />
+          </span>
+          {isPickerOpen && !pickerDisabled ? (
+            <div className="keyrings-combobox-results" id={listboxId} role="listbox">
+              {filteredOptions.length > 0 ? filteredOptions.map((option, index) => (
+                <button
+                  type="button"
+                  id={`${listboxId}-${option.value}`}
+                  role="option"
+                  aria-selected={option.value === selectedValue}
+                  className={index === activeIndex ? 'is-highlighted' : ''}
+                  key={option.value}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  onClick={() => selectPlate(option)}
+                >
+                  {option.label}
+                </button>
+              )) : <p>Sem matrículas correspondentes.</p>}
+            </div>
+          ) : null}
+        </div>
 
         {loading ? <p className="keyrings-state" aria-live="polite">A carregar viaturas…</p> : null}
         {!loading && !error && plateOptions.length === 0 ? <p className="keyrings-state">Não foram encontradas viaturas no histórico.</p> : null}
