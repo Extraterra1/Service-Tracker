@@ -1,6 +1,8 @@
 export const A4_SIZE_MM = Object.freeze({ width: 210, height: 297 });
 export const WHATSAPP_NUMBER = '+351927491323';
 export const SORA_FONT_NAME = 'Sora SemiBold';
+export const KEYRING_ROWS_PER_PAGE = 8;
+export const KEYRING_ROW_GAP_MM = 2.2;
 
 export const KEYRING_PDF_LAYOUT = Object.freeze({
   strip: Object.freeze({ x: 20.7, top: 24.8, width: 167.5, height: 28.4 }),
@@ -25,29 +27,59 @@ function formatPlate(value) {
   return compactPlate.match(/.{1,2}/g).join('-');
 }
 
+export function normalizePlateList(plates) {
+  const values = Array.isArray(plates) ? plates : [plates];
+  const seen = new Set();
+  return values.reduce((normalized, value) => {
+    if (String(value ?? '').trim() === '') return normalized;
+    const displayPlate = formatPlate(value);
+    if (seen.has(displayPlate)) return normalized;
+    seen.add(displayPlate);
+    normalized.push(displayPlate);
+    return normalized;
+  }, []);
+}
+
 export function buildKeyringPdfModel(plate) {
-  const displayPlate = formatPlate(plate);
+  const displayPlates = normalizePlateList(plate);
+  if (displayPlates.length === 0) {
+    throw new Error('Seleciona uma matrícula antes de gerar o PDF.');
+  }
   const { strip } = KEYRING_PDF_LAYOUT;
   const cellWidth = strip.width / 4;
-  const cells = Array.from({ length: 4 }, (_, index) => ({
-    x: strip.x + cellWidth * index,
-    top: strip.top,
-    width: cellWidth,
-    height: strip.height
-  }));
+  const rows = displayPlates.map((displayPlate, rowIndex) => {
+    const rowTop = strip.top + rowIndex * (strip.height + KEYRING_ROW_GAP_MM);
+    const cells = Array.from({ length: 4 }, (_, index) => ({
+      x: strip.x + cellWidth * index,
+      top: rowTop,
+      width: cellWidth,
+      height: strip.height
+    }));
+
+    return {
+      plate: displayPlate,
+      strip: { ...strip, top: rowTop },
+      cells,
+      dividers: cells.slice(1).map((cell) => cell.x),
+      plates: [cells[0], cells[2]].map((cell) => ({ text: displayPlate, cell })),
+      phones: [cells[1], cells[3]].map((cell) => ({ text: WHATSAPP_NUMBER, cell }))
+    };
+  });
 
   return {
     page: A4_SIZE_MM,
     strip,
-    cells,
-    dividers: cells.slice(1).map((cell) => cell.x),
-    plates: [cells[0], cells[2]].map((cell) => ({ text: displayPlate, cell })),
-    phones: [cells[1], cells[3]].map((cell) => ({ text: WHATSAPP_NUMBER, cell }))
+    rows,
+    cells: rows[0].cells,
+    dividers: rows[0].dividers,
+    plates: rows.flatMap((row) => row.plates),
+    phones: rows.flatMap((row) => row.phones)
   };
 }
 
 export function getKeyringPdfFilename(plate) {
-  return `porta-chaves-${formatPlate(plate)}.pdf`;
+  const plates = normalizePlateList(plate);
+  return plates.length === 1 ? `porta-chaves-${plates[0]}.pdf` : `porta-chaves-${plates.length}-viaturas.pdf`;
 }
 
 function topToPdfY(top, height = 0) {
@@ -72,7 +104,7 @@ export async function createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBy
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const model = buildKeyringPdfModel(plate);
   const document = await PDFDocument.create();
-  const page = document.addPage([mmToPoints(A4_SIZE_MM.width), mmToPoints(A4_SIZE_MM.height)]);
+  document.addPage([mmToPoints(A4_SIZE_MM.width), mmToPoints(A4_SIZE_MM.height)]);
   let printFont;
   if (soraFontBytes) {
     const { default: fontkit } = await import('@pdf-lib/fontkit');
@@ -83,50 +115,59 @@ export async function createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBy
   }
   const [logo, whatsapp] = await Promise.all([document.embedPng(logoPngBytes), document.embedPng(whatsappPngBytes)]);
   const black = rgb(0, 0, 0);
-  const { strip } = model;
+  Array.from({ length: Math.ceil(model.rows.length / KEYRING_ROWS_PER_PAGE) }, (_, pageIndex) => {
+    const page = pageIndex === 0 ? document.getPages()[0] : document.addPage([mmToPoints(A4_SIZE_MM.width), mmToPoints(A4_SIZE_MM.height)]);
+    const rows = model.rows.slice(pageIndex * KEYRING_ROWS_PER_PAGE, (pageIndex + 1) * KEYRING_ROWS_PER_PAGE);
 
-  page.drawRectangle({
-    x: mmToPoints(strip.x),
-    y: topToPdfY(strip.top, strip.height),
-    width: mmToPoints(strip.width),
-    height: mmToPoints(strip.height),
-    borderColor: black,
-    borderWidth: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
-  });
+    rows.forEach((row, rowIndex) => {
+      const rowOffset = rowIndex * (KEYRING_ROW_GAP_MM + KEYRING_PDF_LAYOUT.strip.height);
+      const rowTop = KEYRING_PDF_LAYOUT.strip.top + rowOffset;
+      const cells = row.cells.map((cell) => ({ ...cell, top: rowTop }));
+      const strip = { ...KEYRING_PDF_LAYOUT.strip, top: rowTop };
 
-  model.dividers.forEach((x) => {
-    page.drawLine({
-      start: { x: mmToPoints(x), y: topToPdfY(strip.top, strip.height) },
-      end: { x: mmToPoints(x), y: topToPdfY(strip.top) },
-      color: black,
-      thickness: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
+      page.drawRectangle({
+        x: mmToPoints(strip.x),
+        y: topToPdfY(strip.top, strip.height),
+        width: mmToPoints(strip.width),
+        height: mmToPoints(strip.height),
+        borderColor: black,
+        borderWidth: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
+      });
+      cells.slice(1).forEach((cell) => {
+        page.drawLine({
+          start: { x: mmToPoints(cell.x), y: topToPdfY(strip.top, strip.height) },
+          end: { x: mmToPoints(cell.x), y: topToPdfY(strip.top) },
+          color: black,
+          thickness: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
+        });
+      });
+
+      [cells[0], cells[2]].forEach((cell) => {
+        const logoWidth = mmToPoints(KEYRING_PDF_LAYOUT.logo.width);
+        const logoScale = logoWidth / logo.width;
+        const logoHeight = logo.height * logoScale;
+        const logoHeightMm = (logoHeight * 25.4) / 72;
+        const logoTop = cell.top + KEYRING_PDF_LAYOUT.logo.zoneTop + (KEYRING_PDF_LAYOUT.logo.zoneHeight - logoHeightMm) / 2;
+        page.drawImage(logo, {
+          x: mmToPoints(cell.x + cell.width / 2) - logoWidth / 2,
+          y: topToPdfY(logoTop) - logoHeight,
+          width: logoWidth,
+          height: logoHeight
+        });
+        drawCenteredText(page, printFont, row.plate, cell, 20.1, 15.8);
+      });
+
+      [cells[1], cells[3]].forEach((cell) => {
+        const iconSize = mmToPoints(10.7);
+        page.drawImage(whatsapp, {
+          x: mmToPoints(cell.x + cell.width / 2) - iconSize / 2,
+          y: topToPdfY(cell.top + 4.1) - iconSize,
+          width: iconSize,
+          height: iconSize
+        });
+        drawCenteredText(page, printFont, WHATSAPP_NUMBER, cell, 20.3, 12.8);
+      });
     });
-  });
-
-  model.plates.forEach(({ text, cell }) => {
-    const logoWidth = mmToPoints(KEYRING_PDF_LAYOUT.logo.width);
-    const logoScale = logoWidth / logo.width;
-    const logoHeight = logo.height * logoScale;
-    const logoHeightMm = (logoHeight * 25.4) / 72;
-    const logoTop = cell.top + KEYRING_PDF_LAYOUT.logo.zoneTop + (KEYRING_PDF_LAYOUT.logo.zoneHeight - logoHeightMm) / 2;
-    page.drawImage(logo, {
-      x: mmToPoints(cell.x + cell.width / 2) - logoWidth / 2,
-      y: topToPdfY(logoTop) - logoHeight,
-      width: logoWidth,
-      height: logoHeight
-    });
-    drawCenteredText(page, printFont, text, cell, 20.1, 15.8);
-  });
-
-  model.phones.forEach(({ text, cell }) => {
-    const iconSize = mmToPoints(10.7);
-    page.drawImage(whatsapp, {
-      x: mmToPoints(cell.x + cell.width / 2) - iconSize / 2,
-      y: topToPdfY(cell.top + 4.1) - iconSize,
-      width: iconSize,
-      height: iconSize
-    });
-    drawCenteredText(page, printFont, text, cell, 20.3, 12.8);
   });
 
   return document.save({ useObjectStreams: false });

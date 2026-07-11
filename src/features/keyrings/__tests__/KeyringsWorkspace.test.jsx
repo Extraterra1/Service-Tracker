@@ -49,7 +49,28 @@ describe('KeyringsWorkspace', () => {
     expect(combobox).toHaveValue('BF-07-JZ');
     expect(screen.getAllByText('BF-07-JZ')).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Gerar PDF' }));
-    expect(downloadKeyringPdf).toHaveBeenCalledWith('BF-07-JZ');
+    expect(downloadKeyringPdf).toHaveBeenCalledWith(['BF-07-JZ']);
+  });
+
+  it('adds multiple plates in order, ignores duplicates, and removes one pill', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<KeyringsWorkspace plateOptions={plates} />);
+    const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
+
+    await user.type(combobox, 'BF');
+    await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
+    await user.clear(combobox);
+    await user.type(combobox, 'AA');
+    await user.click(screen.getByRole('option', { name: 'AA-11-BB' }));
+    await user.clear(combobox);
+    await user.type(combobox, 'BF');
+    await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
+
+    expect(screen.getAllByRole('button', { name: /Remover matrícula/ })).toHaveLength(2);
+    expect(container.querySelectorAll('.keyring-strip')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'Remover matrícula BF-07-JZ' }));
+    expect(screen.queryByRole('button', { name: 'Remover matrícula BF-07-JZ' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remover matrícula AA-11-BB' })).toBeInTheDocument();
   });
 
   it('supports keyboard selection, Escape, and focus reopening', async () => {
@@ -81,7 +102,7 @@ describe('KeyringsWorkspace', () => {
     expect(fireEvent.pointerDown(option)).toBe(false);
     fireEvent.click(option);
 
-    expect(screen.getByText('Viatura selecionada')).toBeInTheDocument();
+    expect(screen.getByText('Selecionada')).toBeInTheDocument();
     expect(screen.getByText('BF-07-JZ', { selector: '.keyrings-selected-plate strong' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeEnabled();
   });
@@ -93,7 +114,7 @@ describe('KeyringsWorkspace', () => {
     await user.type(combobox, 'AA11');
     await user.click(screen.getByRole('option', { name: 'AA-11-BB' }));
 
-    await user.click(screen.getByRole('button', { name: 'Limpar matrícula AA-11-BB' }));
+    await user.click(screen.getByRole('button', { name: 'Remover matrícula AA-11-BB' }));
 
     expect(combobox).toHaveValue('');
     expect(screen.queryByText('Viatura selecionada')).not.toBeInTheDocument();

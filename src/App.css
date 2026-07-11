@@ -191,6 +191,16 @@
   background: color-mix(in oklab, var(--accent), transparent 91%);
 }
 
+.keyrings-selected-plates {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+
+.keyrings-selected-plates .keyrings-selected-plate {
+  margin-top: 0;
+}
+
 .keyrings-selected-plate span {
   min-width: 0;
   display: flex;
@@ -288,6 +298,11 @@
   overflow: hidden;
   background: #fff;
   box-shadow: 0 12px 28px rgba(20, 25, 31, 0.17), 0 0 0 1px rgba(20, 25, 31, 0.08);
+}
+
+.keyrings-preview-pages {
+  display: grid;
+  gap: 1rem;
 }
 
 .keyring-strip {

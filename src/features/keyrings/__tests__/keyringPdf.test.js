@@ -3,9 +3,12 @@ import { PDFDocument } from 'pdf-lib';
 import {
   A4_SIZE_MM,
   KEYRING_PDF_LAYOUT,
+  KEYRING_ROW_GAP_MM,
+  KEYRING_ROWS_PER_PAGE,
   SORA_FONT_NAME,
   WHATSAPP_NUMBER,
   buildKeyringPdfModel,
+  normalizePlateList,
   createKeyringPdfBytes,
   getKeyringPdfFilename,
   mmToPoints
@@ -24,6 +27,13 @@ describe('keyring PDF specification', () => {
     expect(KEYRING_PDF_LAYOUT.logo.zoneTop).toBe(2.5);
     expect(KEYRING_PDF_LAYOUT.logo.zoneHeight).toBe(15.5);
     expect(SORA_FONT_NAME).toBe('Sora SemiBold');
+  });
+
+  it('models eight rows per page with safe vertical spacing and duplicate-safe plates', () => {
+    expect(KEYRING_ROWS_PER_PAGE).toBe(8);
+    expect(KEYRING_ROW_GAP_MM).toBe(2.2);
+    expect(normalizePlateList(['BF-07-JZ', 'AA-11-BB', 'BF07JZ'])).toEqual(['BF-07-JZ', 'AA-11-BB']);
+    expect(buildKeyringPdfModel(['BF-07-JZ', 'AA-11-BB']).rows).toHaveLength(2);
   });
 
   it('builds four equal cells with three internal dividers', () => {
@@ -63,5 +73,18 @@ describe('keyring PDF specification', () => {
     expect(page.getWidth()).toBeCloseTo(mmToPoints(210), 1);
     expect(page.getHeight()).toBeCloseTo(mmToPoints(297), 1);
     expect(bytes.byteLength).toBeGreaterThan(500);
+  });
+
+  it('creates a second A4 page after eight selected plates', async () => {
+    const pixel = Uint8Array.from(
+      atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+      (character) => character.charCodeAt(0)
+    );
+    const plates = Array.from({ length: 9 }, (_, index) => `AA-${String(index + 1).padStart(2, '0')}-BB`);
+    const bytes = await createKeyringPdfBytes(plates, { logoPngBytes: pixel, whatsappPngBytes: pixel });
+    const document = await PDFDocument.load(bytes);
+
+    expect(document.getPageCount()).toBe(2);
+    expect(document.getPages().every((page) => page.getWidth() === mmToPoints(210))).toBe(true);
   });
 });
