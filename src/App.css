@@ -27,9 +27,8 @@
 .keyrings-control-panel {
   align-self: start;
   padding: clamp(1rem, 3vw, 1.65rem);
-  overflow: visible;
+  overflow: hidden;
   position: relative;
-  z-index: 5;
 }
 
 .keyrings-control-panel::after {
@@ -37,8 +36,8 @@
   position: absolute;
   width: 9rem;
   height: 9rem;
-  right: 1rem;
-  top: 1rem;
+  right: -4rem;
+  top: -4rem;
   border: 1.25rem solid color-mix(in oklab, var(--accent), transparent 88%);
   border-radius: 50%;
   pointer-events: none;
@@ -138,13 +137,8 @@
   padding: 0.3rem;
   border: 1px solid var(--stroke);
   border-radius: 7px;
-  background: var(--bg);
+  background: var(--panel-bg-strong);
   box-shadow: 0 12px 28px color-mix(in oklab, var(--shadow), transparent 30%);
-}
-
-.keyrings-preview-panel {
-  position: relative;
-  z-index: 1;
 }
 
 .keyrings-combobox-results button {
