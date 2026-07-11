@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CircleAlert, ExternalLink, PlaneLanding } from 'lucide-react'
-import ReactCountryFlag from 'react-country-flag'
-import { FaWhatsapp } from 'react-icons/fa'
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, CircleAlert, ExternalLink, PlaneLanding } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
+import { FaWhatsapp } from 'react-icons/fa';
 
-import { detectPhoneCountryCode, getWhatsAppHref } from '../../lib/phone'
-import { fetchFlightArrivals } from './flightsApi'
-import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers'
-import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton'
+import { detectPhoneCountryCode, getWhatsAppHref } from '../../lib/phone';
+import { fetchFlightArrivals } from './flightsApi';
+import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers';
+import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton';
 
 const STATUS_LABELS = {
   planned: 'Planeado',
@@ -16,42 +16,42 @@ const STATUS_LABELS = {
   estimated: 'Estimado',
   cancelled: 'Cancelado',
   canceled: 'Cancelado',
-  unknown: 'Desconhecido',
-}
+  unknown: 'Desconhecido'
+};
 
 const ERROR_LABELS = {
   not_found: 'Voo não encontrado',
   ambiguous_match: 'Foram encontrados vários voos possíveis',
   flightview_unavailable: 'FlightView temporariamente indisponível',
-  parse_failed: 'Não foi possível interpretar os dados do voo',
-}
+  parse_failed: 'Não foi possível interpretar os dados do voo'
+};
 
 function formatTime(value) {
-  const match = String(value ?? '').match(/(?:T|\s|^)([01]\d|2[0-3]):([0-5]\d)/)
-  return match ? `${match[1]}:${match[2]}` : '--:--'
+  const match = String(value ?? '').match(/(?:T|\s|^)([01]\d|2[0-3]):([0-5]\d)/);
+  return match ? `${match[1]}:${match[2]}` : '--:--';
 }
 
 function localizeStatus(status) {
-  const normalized = String(status ?? '').trim()
-  if (!normalized) return STATUS_LABELS.unknown
-  return STATUS_LABELS[normalized.toLowerCase()] ?? normalized
+  const normalized = String(status ?? '').trim();
+  if (!normalized) return STATUS_LABELS.unknown;
+  return STATUS_LABELS[normalized.toLowerCase()] ?? normalized;
 }
 
 function getSafeSourceUrl(value) {
   try {
-    const url = new URL(String(value ?? ''))
-    return url.protocol === 'https:' && url.hostname === 'www.flightview.com' ? url.href : ''
+    const url = new URL(String(value ?? ''));
+    return url.protocol === 'https:' && url.hostname === 'www.flightview.com' ? url.href : '';
   } catch {
-    return ''
+    return '';
   }
 }
 
 function getSafeReservationUrl(value) {
   try {
-    const url = new URL(String(value ?? ''))
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : ''
+    const url = new URL(String(value ?? ''));
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
   } catch {
-    return ''
+    return '';
   }
 }
 
@@ -61,29 +61,34 @@ function FlightTime({ label, value }) {
       <dt>{label}</dt>
       <dd>{formatTime(value)}</dd>
     </div>
-  )
+  );
 }
 
 function FlightClient({ client }) {
-  const name = String(client?.name ?? '').trim() || '—'
-  const car = String(client?.car ?? '').trim() || '—'
-  const plate = String(client?.plate ?? '').trim().toUpperCase() || '—'
-  const phone = String(client?.phone ?? '').trim()
-  const countryCode = detectPhoneCountryCode(phone)
-  const whatsappUrl = getWhatsAppHref(phone)
-  const reservationId = String(client?.id ?? '').trim()
-  const reservationUrl = getSafeReservationUrl(client?.reservationUrl)
+  const name = String(client?.name ?? '').trim() || '—';
+  const car = String(client?.car ?? '').trim() || '—';
+  const plate =
+    String(client?.plate ?? '')
+      .trim()
+      .toUpperCase() || '—';
+  const phone = String(client?.phone ?? '').trim();
+  const countryCode = detectPhoneCountryCode(phone);
+  const whatsappUrl = getWhatsAppHref(phone);
+  const reservationId = String(client?.id ?? '').trim();
+  const reservationUrl = getSafeReservationUrl(client?.reservationUrl);
 
   return (
     <div className="flight-client" data-testid="flight-client">
-      <span className="flight-client-flag">
-        {countryCode ? (
-          <ReactCountryFlag countryCode={countryCode} svg title={countryCode} />
-        ) : '—'}
-      </span>
+      <span className="flight-client-flag">{countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryCode} /> : '—'}</span>
       <strong className="flight-client-name">{name}</strong>
-      <span className="flight-client-detail"><small>Carro</small>{car}</span>
-      <span className="flight-client-detail flight-client-plate"><small>Matrícula</small>{plate}</span>
+      <span className="flight-client-detail">
+        <small>Carro</small>
+        {car}
+      </span>
+      <span className="flight-client-detail flight-client-plate">
+        <small>Matrícula</small>
+        {plate}
+      </span>
       {whatsappUrl ? (
         <a className="flight-client-phone" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${phone}`}>
           <FaWhatsapp aria-hidden="true" />
@@ -107,31 +112,30 @@ function FlightClient({ client }) {
         <span className="flight-client-reservation flight-client-reservation--disabled">—</span>
       )}
     </div>
-  )
+  );
 }
 
 function FlightResult({ result, index, clients = [] }) {
-  const flightNumber = String(result?.flightNumber ?? '').trim() || '—'
-  const hasError = Boolean(result?.error)
-  const status = hasError
-    ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo')
-    : localizeStatus(result?.status)
-  const sourceUrl = getSafeSourceUrl(result?.sourceUrl)
+  const flightNumber = String(result?.flightNumber ?? '').trim() || '—';
+  const hasError = Boolean(result?.error);
+  const status = hasError ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo') : localizeStatus(result?.status);
+  const sourceUrl = getSafeSourceUrl(result?.sourceUrl);
 
   return (
-    <article
-      className={`flight-row ${hasError ? 'flight-row--error' : ''}`}
-      style={{ '--flight-index': index }}
-      aria-label={`Voo ${flightNumber}`}
-    >
+    <article className={`flight-row ${hasError ? 'flight-row--error' : ''}`} style={{ '--flight-index': index }} aria-label={`Voo ${flightNumber}`}>
       <div className="flight-identity">
-        <span className="flight-route-mark" aria-hidden="true"><PlaneLanding /></span>
+        <span className="flight-route-mark" aria-hidden="true">
+          <PlaneLanding />
+        </span>
         <strong>{flightNumber}</strong>
         <span>FNC</span>
       </div>
 
       {hasError ? (
-        <p className="flight-inline-error"><CircleAlert aria-hidden="true" />{status}</p>
+        <p className="flight-inline-error">
+          <CircleAlert aria-hidden="true" />
+          {status}
+        </p>
       ) : (
         <dl className="flight-times">
           <FlightTime label="Programado" value={result.scheduledArrivalLocal} />
@@ -153,77 +157,70 @@ function FlightResult({ result, index, clients = [] }) {
 
       {clients.length > 0 ? (
         <div className="flight-clients" aria-label={`Clientes do voo ${flightNumber}`}>
-          <span className="flight-clients-label">Clients</span>
+          <span className="flight-clients-label">Clientes</span>
           {clients.map((client, clientIndex) => (
             <FlightClient client={client} key={client?.itemId ?? client?.id ?? clientIndex} />
           ))}
         </div>
       ) : null}
     </article>
-  )
+  );
 }
 
-function FlightsWorkspace({
-  selectedDate,
-  allServiceItems = [],
-  serviceDataLoading = false,
-  serviceDataReady = true,
-  onRetryServiceData,
-  onWorkspaceChange,
-}) {
-  const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems])
+function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoading = false, serviceDataReady = true, onRetryServiceData, onWorkspaceChange }) {
+  const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems]);
   const clientsByFlight = useMemo(() => {
-    const groupedClients = new Map()
+    const groupedClients = new Map();
 
     allServiceItems.forEach((item) => {
-      if (item?.serviceType !== 'pickup') return
-      const flightNumber = normalizeFlightNumber(item?.flightNumber)
-      if (!flightNumber) return
-      groupedClients.set(flightNumber, [...(groupedClients.get(flightNumber) ?? []), item])
-    })
+      if (item?.serviceType !== 'pickup') return;
+      const flightNumber = normalizeFlightNumber(item?.flightNumber);
+      if (!flightNumber) return;
+      groupedClients.set(flightNumber, [...(groupedClients.get(flightNumber) ?? []), item]);
+    });
 
-    return groupedClients
-  }, [allServiceItems])
-  const flightListKey = flightNumbers.join('|')
-  const requestIdRef = useRef(0)
-  const [retryVersion, setRetryVersion] = useState(0)
-  const [state, setState] = useState({ requestToken: null, status: 'idle', results: [], error: '' })
-  const currentRequestKey = `${selectedDate}:${flightListKey}:${retryVersion}:${serviceDataReady ? 'ready' : 'waiting'}`
-  const requestToken = useMemo(() => ({ key: currentRequestKey }), [currentRequestKey])
+    return groupedClients;
+  }, [allServiceItems]);
+  const flightListKey = flightNumbers.join('|');
+  const requestIdRef = useRef(0);
+  const [retryVersion, setRetryVersion] = useState(0);
+  const [state, setState] = useState({ requestToken: null, status: 'idle', results: [], error: '' });
+  const currentRequestKey = `${selectedDate}:${flightListKey}:${retryVersion}:${serviceDataReady ? 'ready' : 'waiting'}`;
+  const requestToken = useMemo(() => ({ key: currentRequestKey }), [currentRequestKey]);
 
   useEffect(() => {
-    const requestId = ++requestIdRef.current
+    const requestId = ++requestIdRef.current;
 
     if (!serviceDataReady || !flightListKey) {
       return () => {
-        requestIdRef.current += 1
-      }
+        requestIdRef.current += 1;
+      };
     }
 
-    const currentFlights = flightListKey.split('|')
+    const currentFlights = flightListKey.split('|');
 
     fetchFlightArrivals({ arrivalDate: selectedDate, flightNumbers: currentFlights })
       .then((payload) => {
-        if (requestId !== requestIdRef.current) return
-        setState({ requestToken, status: 'success', results: payload?.results ?? [], error: '' })
+        if (requestId !== requestIdRef.current) return;
+        setState({ requestToken, status: 'success', results: payload?.results ?? [], error: '' });
       })
       .catch(() => {
-        if (requestId !== requestIdRef.current) return
-        setState({ requestToken, status: 'error', results: [], error: 'Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.' })
-      })
+        if (requestId !== requestIdRef.current) return;
+        setState({ requestToken, status: 'error', results: [], error: 'Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.' });
+      });
 
     return () => {
-      requestIdRef.current += 1
-    }
-  }, [selectedDate, flightListKey, requestToken, serviceDataReady])
+      requestIdRef.current += 1;
+    };
+  }, [selectedDate, flightListKey, requestToken, serviceDataReady]);
 
-  const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestToken !== requestToken
-  const isPreparingDay = serviceDataLoading && !serviceDataReady
-  const isServiceDataUnavailable = !serviceDataLoading && !serviceDataReady
+  const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestToken !== requestToken;
+  const isPreparingDay = serviceDataLoading && !serviceDataReady;
+  const isServiceDataUnavailable = !serviceDataLoading && !serviceDataReady;
 
   const retryServiceData = () => {
-    Promise.resolve(onRetryServiceData?.()).catch(() => {})
-  }
+    Promise.resolve(onRetryServiceData?.()).catch(() => {});
+  };
 
   return (
     <main className="flights-workspace" aria-busy={isLoading || isPreparingDay}>
@@ -233,11 +230,14 @@ function FlightsWorkspace({
           <h1>Chegadas ao Funchal</h1>
         </div>
         <div className="flights-header-controls">
-          <span className="flights-total">
-            {serviceDataReady ? `${flightNumbers.length} ${flightNumbers.length === 1 ? 'voo' : 'voos'}` : '— voos'}
-          </span>
+          <span className="flights-total">{serviceDataReady ? `${flightNumbers.length} ${flightNumbers.length === 1 ? 'voo' : 'voos'}` : '— voos'}</span>
           <time dateTime={selectedDate}>{selectedDate}</time>
-          <button type="button" className="ghost-btn compact-btn flights-back-btn" onClick={() => onWorkspaceChange?.('services')} aria-label="Voltar à lista de serviços">
+          <button
+            type="button"
+            className="ghost-btn compact-btn flights-back-btn"
+            onClick={() => onWorkspaceChange?.('services')}
+            aria-label="Voltar à lista de serviços"
+          >
             <ArrowLeft aria-hidden="true" />
             <span>Lista</span>
           </button>
@@ -250,7 +250,9 @@ function FlightsWorkspace({
         <div className="flights-request-error" role="alert">
           <CircleAlert aria-hidden="true" />
           <p>Não foi possível obter os serviços deste dia.</p>
-          <button type="button" className="primary-btn compact-btn" onClick={retryServiceData}>Tentar novamente</button>
+          <button type="button" className="primary-btn compact-btn" onClick={retryServiceData}>
+            Tentar novamente
+          </button>
         </div>
       ) : !flightListKey ? (
         <div className="flights-empty">
@@ -263,21 +265,26 @@ function FlightsWorkspace({
         <div className="flights-request-error" role="alert">
           <CircleAlert aria-hidden="true" />
           <p>{state.error}</p>
-          <button type="button" className="primary-btn compact-btn" onClick={() => setRetryVersion((version) => version + 1)}>Tentar novamente</button>
+          <button type="button" className="primary-btn compact-btn" onClick={() => setRetryVersion((version) => version + 1)}>
+            Tentar novamente
+          </button>
         </div>
       ) : (
         <section className="flights-board" aria-label="Lista de chegadas">
-          <div className="flights-board-rule" aria-hidden="true"><span>ARR</span><span>RWY 05</span></div>
+          <div className="flights-board-rule" aria-hidden="true">
+            <span>ARR</span>
+            <span>RWY 05</span>
+          </div>
           <div className="flights-list">
             {state.results.map((result, index) => {
-              const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? []
-              return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} />
+              const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? [];
+              return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} />;
             })}
           </div>
         </section>
       )}
     </main>
-  )
+  );
 }
 
-export default FlightsWorkspace
+export default FlightsWorkspace;
