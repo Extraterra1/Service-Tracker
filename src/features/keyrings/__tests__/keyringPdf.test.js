@@ -3,6 +3,7 @@ import { PDFDocument } from 'pdf-lib';
 import {
   A4_SIZE_MM,
   KEYRING_PDF_LAYOUT,
+  SORA_FONT_NAME,
   WHATSAPP_NUMBER,
   buildKeyringPdfModel,
   createKeyringPdfBytes,
@@ -16,6 +17,13 @@ describe('keyring PDF specification', () => {
     expect(KEYRING_PDF_LAYOUT.strip).toEqual({ x: 20.7, top: 24.8, width: 167.5, height: 28.4 });
     expect(mmToPoints(210)).toBeCloseTo(595.28, 1);
     expect(mmToPoints(297)).toBeCloseTo(841.89, 1);
+  });
+
+  it('uses a larger logo centered in the upper artwork zone and Sora typography', () => {
+    expect(KEYRING_PDF_LAYOUT.logo.width).toBe(34);
+    expect(KEYRING_PDF_LAYOUT.logo.zoneTop).toBe(2.5);
+    expect(KEYRING_PDF_LAYOUT.logo.zoneHeight).toBe(15.5);
+    expect(SORA_FONT_NAME).toBe('Sora SemiBold');
   });
 
   it('builds four equal cells with three internal dividers', () => {
