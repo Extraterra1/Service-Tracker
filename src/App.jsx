@@ -160,7 +160,14 @@ function App() {
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
   const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
-  const requestedWorkspaceHash = requestedWorkspace === 'reservations' ? '#reservas' : requestedWorkspace === 'flights' ? '#voos' : '';
+  const requestedWorkspaceHash =
+    requestedWorkspace === 'reservations'
+      ? '#reservas'
+      : requestedWorkspace === 'flights'
+        ? '#voos'
+        : requestedWorkspace === 'keyrings'
+          ? '#porta-chaves'
+          : '';
   const activeWorkspace = resolveWorkspace(requestedWorkspaceHash, canManageAccess);
 
   useEffect(() => {
@@ -177,11 +184,11 @@ function App() {
   }, [accessState, canManageAccess, requestedWorkspace]);
 
   const handleWorkspaceChange = useCallback((workspace) => {
-    const nextWorkspace = (workspace === 'flights' || workspace === 'reservations') && canManageAccess ? workspace : 'services';
+    const nextWorkspace = workspace === 'keyrings' || ((workspace === 'flights' || workspace === 'reservations') && canManageAccess) ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
     setRequestedWorkspace(nextWorkspace);
-    if (nextWorkspace === 'reservations' || nextWorkspace === 'flights') {
-      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : '#voos');
+    if (nextWorkspace === 'reservations' || nextWorkspace === 'flights' || nextWorkspace === 'keyrings') {
+      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : nextWorkspace === 'flights' ? '#voos' : '#porta-chaves');
     } else {
       window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
     }

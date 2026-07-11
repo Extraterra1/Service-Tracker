@@ -19,4 +19,10 @@ describe('workspaceNavigation', () => {
     expect(resolveWorkspace('', true)).toBe('services')
     expect(resolveWorkspace('#unknown', true)).toBe('services')
   })
+
+  it('allows every authorized user to resolve the keyring hash', () => {
+    expect(resolveWorkspace('#porta-chaves', true)).toBe('keyrings')
+    expect(resolveWorkspace('#porta-chaves', false)).toBe('keyrings')
+    expect(resolveWorkspace('#unknown', false)).toBe('services')
+  })
 })
