@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { PDFDocument } from 'pdf-lib';
 import {
   A4_SIZE_MM,
   KEYRING_PDF_LAYOUT,
   WHATSAPP_NUMBER,
   buildKeyringPdfModel,
+  createKeyringPdfBytes,
   getKeyringPdfFilename,
   mmToPoints
 } from '../keyringPdf';
@@ -35,5 +37,23 @@ describe('keyring PDF specification', () => {
   it('rejects empty plates and creates a stable filename', () => {
     expect(() => buildKeyringPdfModel('  ')).toThrow('Seleciona uma matrícula');
     expect(getKeyringPdfFilename('BF 07 JZ')).toBe('porta-chaves-BF-07-JZ.pdf');
+  });
+
+  it('creates a single exact-size A4 PDF using both supplied artworks', async () => {
+    const pixel = Uint8Array.from(
+      atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+      (character) => character.charCodeAt(0)
+    );
+    const bytes = await createKeyringPdfBytes('BF-07-JZ', {
+      logoPngBytes: pixel,
+      whatsappPngBytes: pixel
+    });
+    const document = await PDFDocument.load(bytes);
+    const [page] = document.getPages();
+
+    expect(document.getPageCount()).toBe(1);
+    expect(page.getWidth()).toBeCloseTo(mmToPoints(210), 1);
+    expect(page.getHeight()).toBeCloseTo(mmToPoints(297), 1);
+    expect(bytes.byteLength).toBeGreaterThan(500);
   });
 });
