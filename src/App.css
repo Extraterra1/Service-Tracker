@@ -1867,6 +1867,20 @@ h1 {
   display: block;
 }
 
+.menu-group-body {
+  display: grid;
+  gap: 0.38rem;
+  background: color-mix(in oklab, var(--panel-bg-strong), var(--panel-bg) 45%);
+}
+
+.menu-section-group[open] > .menu-group-body {
+  max-height: 70rem;
+}
+
+.menu-group-body > .menu-section {
+  box-shadow: none;
+}
+
 .menu-section-summary {
   width: 100%;
   display: flex;
@@ -1932,11 +1946,11 @@ h1 {
   content: none;
 }
 
-.menu-section[open] .menu-section-summary::after {
+.menu-section[open] > .menu-section-summary::after {
   transform: rotate(180deg);
 }
 
-.menu-section.is-closing .menu-section-summary::after {
+.menu-section.is-closing > .menu-section-summary::after {
   transform: rotate(0deg);
 }
 
@@ -1955,7 +1969,7 @@ h1 {
     border-top-width 220ms ease;
 }
 
-.menu-section[open] .menu-section-body {
+.menu-section[open] > .menu-section-body {
   max-height: 26rem;
   opacity: 1;
   transform: translateY(0);
@@ -1964,7 +1978,7 @@ h1 {
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.menu-section.is-closing .menu-section-body {
+.menu-section.is-closing > .menu-section-body {
   max-height: 0;
   opacity: 0;
   transform: translateY(-4px);
@@ -1975,7 +1989,7 @@ h1 {
   transition-delay: 0ms, 80ms, 0ms, 0ms, 0ms;
 }
 
-.menu-section:not([open]) .menu-section-body {
+.menu-section:not([open]) > .menu-section-body {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 340ms, 260ms, 340ms, 340ms, 340ms;
   transition-delay: 0ms, 80ms, 0ms, 0ms, 0ms;

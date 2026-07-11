@@ -57,11 +57,42 @@ function createProps(overrides = {}) {
 }
 
 describe('AppHeaderMenu accordion animations', () => {
+  it('groups account controls under an expandable Conta section', async () => {
+    const user = userEvent.setup();
+    render(<AppHeaderMenu {...createProps({ canManageAccess: true })} />);
+
+    const accountGroupSummary = screen.getByText('Conta', { selector: 'summary' });
+    const accountGroup = accountGroupSummary.closest('details');
+    expect(accountGroup).not.toHaveAttribute('open');
+
+    await user.click(accountGroupSummary);
+
+    expect(accountGroup).toHaveAttribute('open');
+    expect(within(accountGroup).getByText('Conta e PIN')).toBeInTheDocument();
+    expect(within(accountGroup).getByText('Pedidos de Acesso')).toBeInTheDocument();
+  });
+
+  it('groups service controls under an expandable Gerir Serviço section', async () => {
+    const user = userEvent.setup();
+    render(<AppHeaderMenu {...createProps()} />);
+
+    const serviceGroupSummary = screen.getByText('Gerir Serviço');
+    const serviceGroup = serviceGroupSummary.closest('details');
+    expect(serviceGroup).not.toHaveAttribute('open');
+
+    await user.click(serviceGroupSummary);
+
+    expect(serviceGroup).toHaveAttribute('open');
+    expect(within(serviceGroup).getByText('Alterar Hora')).toBeInTheDocument();
+    expect(within(serviceGroup).getByText('Atividade do Dia')).toBeInTheDocument();
+    expect(within(serviceGroup).getByText('Histórico de Viaturas')).toBeInTheDocument();
+  });
+
   it('keeps section in temporary closing state when closing', async () => {
     const user = userEvent.setup();
     render(<AppHeaderMenu {...createProps()} />);
 
-    const completedSummary = screen.getByText('Finalizados');
+    const completedSummary = screen.getByText('Arquivar Item');
     await user.click(completedSummary);
 
     const completedSection = completedSummary.closest('details');
@@ -376,7 +407,7 @@ describe('AppHeaderMenu accordion animations', () => {
       />
     );
 
-    await user.click(screen.getByText('Finalizados'));
+    await user.click(screen.getByText('Arquivar Item'));
     expect(screen.getAllByRole('combobox')[0]).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
 
