@@ -25,3 +25,16 @@
 
 **Step 4:** Run the focused reservation tests and then the full test suite.
 
+### Task 2: Recognize all baby seat labels
+
+**Files:**
+- Modify: `src/features/reservations/ReservationDetailsPopup.jsx`
+- Test: `src/features/reservations/__tests__/ReservationsWorkspace.test.jsx`
+
+**Step 1:** Extend the grouping test with Maxi-Cosi, Grupo I, Grupo II, and Assento Elevatório.
+
+**Step 2:** Run the focused test and confirm those labels incorrectly appear under Outros.
+
+**Step 3:** Expand normalized Baby Seat matching to cover the additional labels and numeric group variants.
+
+**Step 4:** Run the focused test and full suite.

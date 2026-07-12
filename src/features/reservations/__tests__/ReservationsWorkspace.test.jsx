@@ -195,7 +195,7 @@ describe('ReservationsWorkspace', () => {
       ...payload,
       reservations: [{
         ...payload.reservations[0],
-        deliveryComments: 'Extras:\n1x GPS\nSeguro de pneus\n1x Baby Seat\nCondutor adicional\nProteção total',
+        deliveryComments: 'Extras:\n1x GPS\nGrupo II\nSeguro de pneus\nMaxi-Cosi\nGrupo I\nAssento Elevatório\n1x Baby Seat\nCondutor adicional\nProteção total',
       }],
     })
     render(<ReservationsWorkspace />)
@@ -208,6 +208,10 @@ describe('ReservationsWorkspace', () => {
     expect(Array.from(contractGroup.querySelectorAll('li'), (element) => element.textContent)).toEqual([
       'Proteção total',
       'Condutor adicional',
+      'Grupo II',
+      'Maxi-Cosi',
+      'Grupo I',
+      'Assento Elevatório',
       '1x Baby Seat',
       '1x GPS',
     ])

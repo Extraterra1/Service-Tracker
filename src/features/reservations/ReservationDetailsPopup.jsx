@@ -368,7 +368,7 @@ function ExtrasGroup({ extras }) {
   const contractPatterns = [
     /protecao total/,
     /condutor adicional/,
-    /(?:baby seat|cadeira (?:de )?bebe)/,
+    /(?:baby seat|cadeira (?:de )?bebe|maxi[ -]?cosi|grupo (?:i{1,2}|[12])\b|assento elevatorio)/,
     /\bgps\b/,
   ];
   const normalizeExtra = (extra) => extra
