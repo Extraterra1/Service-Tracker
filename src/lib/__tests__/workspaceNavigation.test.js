@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
+let getFutureFlightsStartDate
 let resolveWorkspace
 try {
-  ;({ resolveWorkspace } = await import('../workspaceNavigation'))
+  ;({ getFutureFlightsStartDate, resolveWorkspace } = await import('../workspaceNavigation'))
 } catch {
   // The first TDD run intentionally happens before navigation exists.
 }
@@ -24,5 +25,9 @@ describe('workspaceNavigation', () => {
     expect(resolveWorkspace('#porta-chaves', true)).toBe('keyrings')
     expect(resolveWorkspace('#porta-chaves', false)).toBe('keyrings')
     expect(resolveWorkspace('#unknown', false)).toBe('services')
+  })
+
+  it('starts future flights on the day after the service date', () => {
+    expect(getFutureFlightsStartDate('2026-07-12')).toBe('2026-07-13')
   })
 })

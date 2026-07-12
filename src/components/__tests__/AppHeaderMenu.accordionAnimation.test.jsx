@@ -187,14 +187,14 @@ describe('AppHeaderMenu accordion animations', () => {
     render(<AppHeaderMenu {...createProps({ canManageAccess: true, onWorkspaceChange })} />);
 
     expect(screen.queryByRole('link', { name: 'Aviability Lookup' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Voos' }));
+    await user.click(screen.getByRole('button', { name: 'Voos futuros' }));
     expect(onWorkspaceChange).toHaveBeenCalledWith('flights');
   });
 
   it('hides the flights workspace action from non-admin users', () => {
     render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
 
-    expect(screen.queryByRole('button', { name: 'Voos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voos futuros' })).not.toBeInTheDocument();
   });
 
   it('opens Porta-chaves for non-admin users', async () => {
@@ -294,7 +294,7 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.getByRole('heading', { name: 'Voos' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
     expect(onWorkspaceChange).toHaveBeenCalledWith('services');
-    expect(screen.queryByRole('button', { name: 'Voos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voos futuros' })).not.toBeInTheDocument();
   });
 
   it('hides the pending request group when admins have no pending requests', async () => {

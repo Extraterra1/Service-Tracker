@@ -30,7 +30,7 @@ import { useLeaderboardData } from './hooks/useLeaderboardData';
 import { usePinSync } from './hooks/usePinSync';
 import { useServiceDayData } from './hooks/useServiceDayData';
 import { toDateValue } from './lib/timestamp';
-import { resolveWorkspace } from './lib/workspaceNavigation';
+import { getFutureFlightsStartDate, resolveWorkspace } from './lib/workspaceNavigation';
 import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleton';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
@@ -140,7 +140,9 @@ function ServiceWorkspaceLocked({ lockedMessage }) {
 
 function App() {
   const menuPanelRef = useRef(null);
-  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [selectedDate, setSelectedDate] = useState(() => (
+    window.location.hash === '#voos' ? getFutureFlightsStartDate(getTodayDate()) : getTodayDate()
+  ));
   const [requestedWorkspace, setRequestedWorkspace] = useState(() => resolveWorkspace(window.location.hash, true));
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
@@ -170,9 +172,16 @@ function App() {
           ? '#porta-chaves'
           : '';
   const activeWorkspace = resolveWorkspace(requestedWorkspaceHash, canManageAccess);
+  const futureFlightsStartDate = getFutureFlightsStartDate(getTodayDate());
 
   useEffect(() => {
-    const handleHashChange = () => setRequestedWorkspace(resolveWorkspace(window.location.hash, true));
+    const handleHashChange = () => {
+      const nextWorkspace = resolveWorkspace(window.location.hash, true);
+      if (nextWorkspace === 'flights') {
+        setSelectedDate(getFutureFlightsStartDate(getTodayDate()));
+      }
+      setRequestedWorkspace(nextWorkspace);
+    };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -187,6 +196,9 @@ function App() {
   const handleWorkspaceChange = useCallback((workspace) => {
     const nextWorkspace = workspace === 'keyrings' || ((workspace === 'flights' || workspace === 'reservations') && canManageAccess) ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
+    if (nextWorkspace === 'flights') {
+      setSelectedDate(getFutureFlightsStartDate(getTodayDate()));
+    }
     setRequestedWorkspace(nextWorkspace);
     if (nextWorkspace === 'reservations' || nextWorkspace === 'flights' || nextWorkspace === 'keyrings') {
       window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : nextWorkspace === 'flights' ? '#voos' : '#porta-chaves');
@@ -1059,6 +1071,9 @@ function App() {
             onManualRefresh={manualRefresh}
             loading={loadingServices}
             showRefresh={activeWorkspace === 'services'}
+            minimumDate={activeWorkspace === 'flights' ? futureFlightsStartDate : ''}
+            presetDate={activeWorkspace === 'flights' ? futureFlightsStartDate : undefined}
+            presetLabel={activeWorkspace === 'flights' ? 'Próximos' : 'Hoje'}
           />
         ) : null}
       </AppHeaderMenu>

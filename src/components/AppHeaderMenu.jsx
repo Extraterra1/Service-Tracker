@@ -244,7 +244,7 @@ function AppHeaderMenu({
                     onClick={() => onWorkspaceChange?.('flights')}
                   >
                     <Plane aria-hidden="true" />
-                    Voos
+                    Voos futuros
                   </button>
                 </div>
               ) : null}
