@@ -1,9 +1,11 @@
-import { useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Download, KeyRound, Search, X } from 'lucide-react';
 import logoUrl from '../../assets/Logo Base.svg';
 import whatsappUrl from '../../assets/whatsapp.svg';
 import { openKeyringPdf } from './keyringPdf';
 import { rankPlateOptions } from './keyringSearch';
+
+const KEYRING_VIEWPORT_CONTENT = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
 
 function KeyringStripPreview({ plate, rowIndex = 0 }) {
   return (
@@ -33,6 +35,16 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
   const [generationError, setGenerationError] = useState('');
   const pickerRef = useRef(null);
   const listboxId = useId();
+
+  useEffect(() => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) return undefined;
+
+    const originalContent = viewport.getAttribute('content') ?? '';
+    viewport.setAttribute('content', KEYRING_VIEWPORT_CONTENT);
+    return () => viewport.setAttribute('content', originalContent);
+  }, []);
+
   const filteredOptions = useMemo(() => rankPlateOptions(plateOptions, query), [plateOptions, query]);
   const selectedPlates = selectedValues
     .map((value) => plateOptions.find((option) => option.value === value)?.label ?? '')

@@ -13,6 +13,7 @@
   display: grid;
   grid-template-columns: minmax(16rem, 0.72fr) minmax(24rem, 1.28fr);
   gap: 0.55rem;
+  touch-action: pan-x pan-y;
 }
 
 .keyrings-control-panel,
@@ -342,6 +343,7 @@
 @media (max-width: 760px) {
   .keyrings-workspace { grid-template-columns: 1fr; }
   .keyrings-preview-panel { padding: 0.75rem; }
+  .keyrings-input-shell input { font-size: 16px; }
   .keyring-cell strong { font-size: clamp(0.28rem, 2.2vw, 0.68rem); }
   .keyring-phone-cell strong { font-size: clamp(0.22rem, 1.7vw, 0.5rem); }
 }

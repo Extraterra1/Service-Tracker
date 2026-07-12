@@ -18,6 +18,20 @@ const plates = [
 describe('KeyringsWorkspace', () => {
   beforeEach(() => openKeyringPdf.mockReset());
 
+  it('locks the mobile viewport while the Porta-chaves workspace is mounted', () => {
+    const viewport = document.createElement('meta');
+    viewport.name = 'viewport';
+    viewport.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+    document.head.appendChild(viewport);
+
+    render(<KeyringsWorkspace plateOptions={plates} />);
+
+    expect(viewport).toHaveAttribute('content', expect.stringContaining('maximum-scale=1'));
+    expect(viewport).toHaveAttribute('content', expect.stringContaining('user-scalable=no'));
+
+    viewport.remove();
+  });
+
   it('fuzzy-matches plates despite missing separators and characters', () => {
     expect(rankPlateOptions(plates, 'bf7').map((option) => option.label)).toEqual(['BF-07-JZ']);
     expect(rankPlateOptions(plates, 'bf 07').map((option) => option.label)).toEqual(['BF-07-JZ']);
