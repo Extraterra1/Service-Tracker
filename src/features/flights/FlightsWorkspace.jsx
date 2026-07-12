@@ -227,7 +227,7 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
       <header className="flights-board-header">
         <div>
           <span className="flights-kicker">Voos · FNC</span>
-          <h1>Chegadas ao Funchal</h1>
+          <h1>Chegadas</h1>
         </div>
         <div className="flights-header-controls">
           <span className="flights-total">{serviceDataReady ? `${flightNumbers.length} ${flightNumbers.length === 1 ? 'voo' : 'voos'}` : '— voos'}</span>
