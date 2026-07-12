@@ -1446,10 +1446,26 @@
   white-space: pre-wrap;
 }
 
-.reservation-details-extras ul {
+.reservation-details-extra-groups {
   margin: 0;
   padding: 0.55rem 0 0;
   border-top: 1px solid var(--stroke);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.reservation-details-extra-group h4 {
+  margin: 0 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.reservation-details-extras ul {
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;

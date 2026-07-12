@@ -365,13 +365,44 @@ function DetailGroup({ title, fields, countryCode = '', countryName = '', emptyL
 }
 
 function ExtrasGroup({ extras }) {
+  const contractPatterns = [
+    /protecao total/,
+    /condutor adicional/,
+    /(?:baby seat|cadeira (?:de )?bebe)/,
+    /\bgps\b/,
+  ];
+  const normalizeExtra = (extra) => extra
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const rankedExtras = extras.map((extra, sourceIndex) => ({
+    extra,
+    sourceIndex,
+    contractRank: contractPatterns.findIndex((pattern) => pattern.test(normalizeExtra(extra))),
+  }));
+  const contractExtras = rankedExtras
+    .filter(({ contractRank }) => contractRank >= 0)
+    .sort((first, second) => first.contractRank - second.contractRank || first.sourceIndex - second.sourceIndex);
+  const otherExtras = rankedExtras.filter(({ contractRank }) => contractRank < 0);
+
   return (
     <section className="reservation-details-group reservation-details-extras">
       <h3>Extras</h3>
       {extras.length ? (
-        <ul>
-          {extras.map((extra) => <li key={extra}>{extra}</li>)}
-        </ul>
+        <div className="reservation-details-extra-groups">
+          {contractExtras.length ? (
+            <div className="reservation-details-extra-group">
+              <h4>Contrato</h4>
+              <ul>{contractExtras.map(({ extra }) => <li key={extra}>{extra}</li>)}</ul>
+            </div>
+          ) : null}
+          {otherExtras.length ? (
+            <div className="reservation-details-extra-group">
+              <h4>Outros</h4>
+              <ul>{otherExtras.map(({ extra }) => <li key={extra}>{extra}</li>)}</ul>
+            </div>
+          ) : null}
+        </div>
       ) : <p className="reservation-details-empty-section">Sem extras</p>}
     </section>
   );

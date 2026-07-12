@@ -189,6 +189,33 @@ describe('ReservationsWorkspace', () => {
     expect(item).toHaveFocus()
   })
 
+  it('groups contract extras in the required order and keeps remaining extras under Outros', async () => {
+    const user = userEvent.setup()
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        deliveryComments: 'Extras:\n1x GPS\nSeguro de pneus\n1x Baby Seat\nCondutor adicional\nProteção total',
+      }],
+    })
+    render(<ReservationsWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
+
+    const extrasSection = screen.getByRole('heading', { name: 'Extras' }).closest('section')
+    const contractGroup = within(extrasSection).getByRole('heading', { name: 'Contrato' }).closest('div')
+    const otherGroup = within(extrasSection).getByRole('heading', { name: 'Outros' }).closest('div')
+    expect(Array.from(contractGroup.querySelectorAll('li'), (element) => element.textContent)).toEqual([
+      'Proteção total',
+      'Condutor adicional',
+      '1x Baby Seat',
+      '1x GPS',
+    ])
+    expect(Array.from(otherGroup.querySelectorAll('li'), (element) => element.textContent)).toEqual([
+      'Seguro de pneus',
+    ])
+  })
+
   it('warns in the header when no reservation extra contains IMT', async () => {
     const user = userEvent.setup()
     fetchReservations.mockResolvedValue({
