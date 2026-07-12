@@ -13,7 +13,6 @@
   display: grid;
   grid-template-columns: minmax(16rem, 0.72fr) minmax(24rem, 1.28fr);
   gap: 0.55rem;
-  touch-action: pan-x pan-y;
 }
 
 .keyrings-control-panel,
@@ -37,8 +36,8 @@
   position: absolute;
   width: 9rem;
   height: 9rem;
-  right: -4rem;
-  top: -4rem;
+  right: 0;
+  top: 0;
   border: 1.25rem solid color-mix(in oklab, var(--accent), transparent 88%);
   border-radius: 50%;
   pointer-events: none;
