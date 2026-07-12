@@ -69,6 +69,30 @@ Notes:
 - menu sections use custom open/close timing rather than default details behavior
 - mutation controls are disabled for non-current dates
 
+## Primary bottom navigation
+
+Visible behavior:
+
+- fixed three-item navigation for `Mapa`, `Voos`, and `Reservas`
+- available to every approved user, independent of staff/admin role
+- active state follows the URL hash and browser navigation
+- `Mapa` opens the service list, `Voos` opens the coming-soon workspace, and `Reservas` opens the reservations workspace
+
+Main files:
+
+- `src/components/AppTabBar.jsx`
+- `src/components/TabBar/TabBar.jsx`
+- `src/components/TabBar/TabBar.css`
+- `src/lib/workspaceNavigation.js`
+- `src/App.jsx`
+
+Notes:
+
+- `#voos` and `#reservas` are not client-side admin-only destinations
+- admin-only `Voos futuros` remains a separate header-menu workspace at `#voos-futuros`
+- `#porta-chaves` remains outside the bottom navigation and is available from the header menu
+- signed-out and access-gate screens do not render the bottom navigation
+
 ## Date navigation and refresh
 
 Visible behavior:
@@ -115,17 +139,15 @@ Notes:
 
 Visible behavior:
 
-- admin-only, same-tab `#voos` workspace opened from the header menu
-- selected-date FNC arrival board derived only from pickup services
-- loading, empty, service-data unavailable, retry, and per-flight failure states
-- scheduled, estimated, and actual arrival times with live status and optional FlightView link
-- successful rows remain visible when other flight lookups fail
+- same-tab `#voos` workspace opened from the bottom navigation
+- `Proximamente` placeholder for the future flights experience
 
 Main files:
 
 - `src/App.jsx`
 - `src/components/AppHeaderMenu.jsx`
-- `src/features/flights/FlightsWorkspace.jsx`
+- `src/features/flights/FlightsComingSoonWorkspace.jsx`
+- `src/features/flights/FlightsWorkspace.jsx` (mounted only by the separate `Voos futuros` menu destination)
 - `src/features/flights/flightNumbers.js`
 - `src/features/flights/flightsApi.js`
 - the external Aviability repository - public CORS API and FlightView lookup implementation
@@ -134,8 +156,9 @@ Notes:
 
 - flight inputs are trimmed, stripped of internal whitespace, uppercased, and deduplicated; return-service flights are excluded
 - the board does not look up flights until the current selected day's service snapshot is ready
-- non-admin users do not see the action and are redirected if they enter `#voos` directly
-- the company logo returns to the service list and flight loading uses an arrivals-board skeleton
+- all approved users can open `#voos`
+- the company logo returns to the service list
+- the arrival board remains admin-only and separate from the bottom-bar `Voos` placeholder
 - the client posts directly to the public Aviability API sequentially in batches of at most 20
 - Service Tracker fixes the destination to FNC in the request; Firebase is not part of the flight lookup
 - FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date

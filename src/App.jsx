@@ -4,6 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
 import AccessGateScreen from './components/AccessGateScreen';
 import ActivityPopup from './components/ActivityPopup';
+import AppTabBar from './components/AppTabBar';
 import AppHeaderMenu from './components/AppHeaderMenu';
 import CarHistoryPopup from './components/CarHistoryPopup';
 import DateNavigator from './components/DateNavigator';
@@ -35,6 +36,7 @@ import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleto
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
+const FlightsComingSoonWorkspace = lazy(() => import('./features/flights/FlightsComingSoonWorkspace'));
 const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
 const KeyringsWorkspace = lazy(() => import('./features/keyrings/KeyringsWorkspace'));
 
@@ -140,10 +142,8 @@ function ServiceWorkspaceLocked({ lockedMessage }) {
 
 function App() {
   const menuPanelRef = useRef(null);
-  const [selectedDate, setSelectedDate] = useState(() => (
-    window.location.hash === '#voos' ? getFutureFlightsStartDate(getTodayDate()) : getTodayDate()
-  ));
-  const [requestedWorkspace, setRequestedWorkspace] = useState(() => resolveWorkspace(window.location.hash, true));
+  const [selectedDate, setSelectedDate] = useState(getTodayDate);
+  const [requestedWorkspace, setRequestedWorkspace] = useState(() => resolveWorkspace(window.location.hash));
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
   const [updatingItemId, setUpdatingItemId] = useState('');
@@ -168,16 +168,16 @@ function App() {
       ? '#reservas'
       : requestedWorkspace === 'flights'
         ? '#voos'
+        : requestedWorkspace === 'futureFlights'
+          ? '#voos-futuros'
         : requestedWorkspace === 'keyrings'
           ? '#porta-chaves'
           : '';
   const activeWorkspace = resolveWorkspace(requestedWorkspaceHash, canManageAccess);
-  const futureFlightsStartDate = getFutureFlightsStartDate(getTodayDate());
-
   useEffect(() => {
     const handleHashChange = () => {
-      const nextWorkspace = resolveWorkspace(window.location.hash, true);
-      if (nextWorkspace === 'flights') {
+      const nextWorkspace = resolveWorkspace(window.location.hash);
+      if (nextWorkspace === 'futureFlights') {
         setSelectedDate(getFutureFlightsStartDate(getTodayDate()));
       }
       setRequestedWorkspace(nextWorkspace);
@@ -186,22 +186,17 @@ function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  useEffect(() => {
-    if (accessState === 'allowed' && (requestedWorkspace === 'reservations' || requestedWorkspace === 'flights') && !canManageAccess) {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-      setRequestedWorkspace('services');
-    }
-  }, [accessState, canManageAccess, requestedWorkspace]);
-
   const handleWorkspaceChange = useCallback((workspace) => {
-    const nextWorkspace = workspace === 'keyrings' || ((workspace === 'flights' || workspace === 'reservations') && canManageAccess) ? workspace : 'services';
+    const nextWorkspace = workspace === 'futureFlights'
+      ? (canManageAccess ? 'futureFlights' : 'services')
+      : ['keyrings', 'flights', 'reservations'].includes(workspace) ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
-    if (nextWorkspace === 'flights') {
+    if (nextWorkspace === 'futureFlights') {
       setSelectedDate(getFutureFlightsStartDate(getTodayDate()));
     }
     setRequestedWorkspace(nextWorkspace);
-    if (nextWorkspace === 'reservations' || nextWorkspace === 'flights' || nextWorkspace === 'keyrings') {
-      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : nextWorkspace === 'flights' ? '#voos' : '#porta-chaves');
+    if (['reservations', 'flights', 'futureFlights', 'keyrings'].includes(nextWorkspace)) {
+      window.history.pushState(null, '', nextWorkspace === 'reservations' ? '#reservas' : nextWorkspace === 'flights' ? '#voos' : nextWorkspace === 'futureFlights' ? '#voos-futuros' : '#porta-chaves');
     } else {
       window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
     }
@@ -1064,16 +1059,16 @@ function App() {
         statusLine={statusLine}
         canMutateSelectedDate={canMutateSelectedDate}
       >
-        {activeWorkspace === 'services' || activeWorkspace === 'flights' ? (
+        {activeWorkspace === 'services' || activeWorkspace === 'futureFlights' ? (
           <DateNavigator
             date={selectedDate}
             onDateChange={setSelectedDate}
             onManualRefresh={manualRefresh}
             loading={loadingServices}
             showRefresh={activeWorkspace === 'services'}
-            minimumDate={activeWorkspace === 'flights' ? futureFlightsStartDate : ''}
-            presetDate={activeWorkspace === 'flights' ? futureFlightsStartDate : undefined}
-            presetLabel={activeWorkspace === 'flights' ? 'Próximos' : 'Hoje'}
+            minimumDate={activeWorkspace === 'futureFlights' ? getFutureFlightsStartDate(getTodayDate()) : ''}
+            presetDate={activeWorkspace === 'futureFlights' ? getFutureFlightsStartDate(getTodayDate()) : undefined}
+            presetLabel={activeWorkspace === 'futureFlights' ? 'Próximos' : 'Hoje'}
           />
         ) : null}
       </AppHeaderMenu>
@@ -1109,7 +1104,11 @@ function App() {
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
-        <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
+        <Suspense fallback={<main className="flights-coming-soon" aria-busy="true">A carregar…</main>}>
+          <FlightsComingSoonWorkspace />
+        </Suspense>
+      ) : activeWorkspace === 'futureFlights' ? (
+        <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos futuros"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
           <FlightsWorkspace
             selectedDate={selectedDate}
             allServiceItems={allServiceItems}
@@ -1143,6 +1142,8 @@ function App() {
       ) : (
         <ServiceWorkspaceLocked lockedMessage={lockedListMessage} />
       )}
+
+      <AppTabBar activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} />
 
       {activityPopupOpen ? (
         <ActivityPopup

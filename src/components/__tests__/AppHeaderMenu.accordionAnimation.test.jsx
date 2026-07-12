@@ -181,17 +181,18 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(onOpenLeaderboardPopup).toHaveBeenCalled();
   });
 
-  it('opens the native flights workspace without an external lookup link', async () => {
+  it('keeps future flights as a separate admin menu destination', async () => {
     const user = userEvent.setup();
     const onWorkspaceChange = vi.fn();
     render(<AppHeaderMenu {...createProps({ canManageAccess: true, onWorkspaceChange })} />);
 
-    expect(screen.queryByRole('link', { name: 'Aviability Lookup' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Voos futuros' }));
-    expect(onWorkspaceChange).toHaveBeenCalledWith('flights');
+    expect(onWorkspaceChange).toHaveBeenCalledWith('futureFlights');
+    expect(screen.queryByRole('button', { name: 'Reservas' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Lista de Serviço' })).not.toBeInTheDocument();
   });
 
-  it('hides the flights workspace action from non-admin users', () => {
+  it('hides future flights from non-admin users', () => {
     render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
 
     expect(screen.queryByRole('button', { name: 'Voos futuros' })).not.toBeInTheDocument();
@@ -206,14 +207,10 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(onWorkspaceChange).toHaveBeenCalledWith('keyrings');
   });
 
-  it('offers Lista de Serviço and updates the title in the keyring workspace', async () => {
-    const user = userEvent.setup();
-    const onWorkspaceChange = vi.fn();
-    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'keyrings', onWorkspaceChange })} />);
+  it('updates the title in the keyring workspace', () => {
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'keyrings' })} />);
 
     expect(screen.getByRole('heading', { name: 'Porta-chaves' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
-    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
     expect(screen.queryByRole('button', { name: 'Porta-chaves' })).not.toBeInTheDocument();
   });
 
@@ -257,43 +254,22 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.queryByText('Pedidos de Acesso')).not.toBeInTheDocument();
   });
 
-  it('shows the reservations workspace action only to admins', async () => {
-    const user = userEvent.setup();
-    const onWorkspaceChange = vi.fn();
-    const { rerender } = render(
-      <AppHeaderMenu {...createProps({ canManageAccess: false, onWorkspaceChange })} />
-    );
-
-    expect(screen.queryByRole('button', { name: 'Reservas' })).not.toBeInTheDocument();
-
-    rerender(<AppHeaderMenu {...createProps({ canManageAccess: true, onWorkspaceChange })} />);
-    await user.click(screen.getByRole('button', { name: 'Reservas' }));
-
-    expect(onWorkspaceChange).toHaveBeenCalledWith('reservations');
-  });
-
-  it('offers Lista de Serviço and updates the title in the reservations workspace', async () => {
-    const user = userEvent.setup();
-    const onWorkspaceChange = vi.fn();
-    render(
-      <AppHeaderMenu
-        {...createProps({ canManageAccess: true, activeWorkspace: 'reservations', onWorkspaceChange })}
-      />
-    );
+  it('updates the title in the reservations workspace', () => {
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'reservations' })} />);
 
     expect(screen.getByRole('heading', { name: 'Reservas' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
-    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
   });
 
-  it('offers Lista de Serviço and updates the title in the flights workspace', async () => {
-    const user = userEvent.setup();
-    const onWorkspaceChange = vi.fn();
-    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'flights', onWorkspaceChange })} />);
+  it('updates the title in the flights workspace', () => {
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'flights' })} />);
 
     expect(screen.getByRole('heading', { name: 'Voos' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Lista de Serviço' }));
-    expect(onWorkspaceChange).toHaveBeenCalledWith('services');
+  });
+
+  it('updates the title in the future flights workspace', () => {
+    render(<AppHeaderMenu {...createProps({ activeWorkspace: 'futureFlights' })} />);
+
+    expect(screen.getByRole('heading', { name: 'Voos futuros' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Voos futuros' })).not.toBeInTheDocument();
   });
 

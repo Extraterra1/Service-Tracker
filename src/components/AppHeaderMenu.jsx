@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Check, KeyRound, ListChecks, Menu, MoonStar, Plane, Star, SunMedium, UserX, X } from 'lucide-react';
+import { Check, KeyRound, Menu, MoonStar, Plane, Star, SunMedium, UserX, X } from 'lucide-react';
 import AuthPanel from './AuthPanel';
 import justDriveLogo from '../assets/Logo Base.svg';
 
@@ -177,6 +177,8 @@ function AppHeaderMenu({
           <h1>
             {activeWorkspace === 'reservations'
               ? 'Reservas'
+              : activeWorkspace === 'futureFlights'
+                ? 'Voos futuros'
               : activeWorkspace === 'flights'
                 ? 'Voos'
                 : activeWorkspace === 'keyrings'
@@ -212,18 +214,6 @@ function AppHeaderMenu({
             </div>
 
             <div className="menu-sections">
-              {activeWorkspace !== 'services' ? (
-                <div className="menu-section">
-                  <button
-                    type="button"
-                    className="menu-section-summary menu-section-summary--action menu-workspace-action"
-                    onClick={() => onWorkspaceChange?.('services')}
-                  >
-                    <ListChecks aria-hidden="true" />
-                    Lista de Serviço
-                  </button>
-                </div>
-              ) : null}
               {activeWorkspace !== 'keyrings' ? (
                 <div className="menu-section">
                   <button
@@ -236,27 +226,15 @@ function AppHeaderMenu({
                   </button>
                 </div>
               ) : null}
-              {canManageAccess && activeWorkspace !== 'flights' ? (
+              {canManageAccess && activeWorkspace !== 'futureFlights' ? (
                 <div className="menu-section">
                   <button
                     type="button"
                     className="menu-section-summary menu-section-summary--action menu-workspace-action"
-                    onClick={() => onWorkspaceChange?.('flights')}
+                    onClick={() => onWorkspaceChange?.('futureFlights')}
                   >
                     <Plane aria-hidden="true" />
                     Voos futuros
-                  </button>
-                </div>
-              ) : null}
-              {canManageAccess && activeWorkspace !== 'reservations' ? (
-                <div className="menu-section">
-                  <button
-                    type="button"
-                    className="menu-section-summary menu-section-summary--action menu-workspace-action"
-                    onClick={() => onWorkspaceChange?.('reservations')}
-                  >
-                    <CalendarDays aria-hidden="true" />
-                    Reservas
                   </button>
                 </div>
               ) : null}
