@@ -27,7 +27,7 @@
 .keyrings-control-panel {
   align-self: start;
   padding: clamp(1rem, 3vw, 1.65rem);
-  overflow: hidden;
+  overflow: visible;
   position: relative;
 }
 

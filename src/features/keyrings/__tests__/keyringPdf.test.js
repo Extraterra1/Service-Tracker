@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import {
   A4_SIZE_MM,
@@ -9,6 +9,7 @@ import {
   WHATSAPP_NUMBER,
   buildKeyringPdfModel,
   normalizePlateList,
+  openPdfBytesInNewTab,
   createKeyringPdfBytes,
   getKeyringPdfFilename,
   mmToPoints
@@ -86,5 +87,29 @@ describe('keyring PDF specification', () => {
 
     expect(document.getPageCount()).toBe(2);
     expect(document.getPages().every((page) => page.getWidth() === mmToPoints(210))).toBe(true);
+  });
+
+  it('opens generated PDF bytes in a new tab instead of creating a download link', () => {
+    const pdfWindow = { location: { href: '' }, close: vi.fn() };
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(pdfWindow);
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:keyring');
+    const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const timeoutSpy = vi.spyOn(window, 'setTimeout').mockImplementation((callback) => {
+      callback();
+      return 1;
+    });
+
+    openPdfBytesInNewTab(new Uint8Array([1, 2, 3]));
+
+    expect(openSpy).toHaveBeenCalledWith('', '_blank');
+    expect(pdfWindow.location.href).toBe('blob:keyring');
+    expect(createObjectUrlSpy).toHaveBeenCalledOnce();
+    expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:keyring');
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 60_000);
+
+    timeoutSpy.mockRestore();
+    revokeObjectUrlSpy.mockRestore();
+    createObjectUrlSpy.mockRestore();
+    openSpy.mockRestore();
   });
 });

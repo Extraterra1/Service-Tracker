@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import KeyringsWorkspace from '../KeyringsWorkspace';
 import { rankPlateOptions } from '../keyringSearch';
 
-const downloadKeyringPdf = vi.fn();
+const openKeyringPdf = vi.fn();
 vi.mock('../keyringPdf', async (importOriginal) => ({
   ...(await importOriginal()),
-  downloadKeyringPdf: (...arguments_) => downloadKeyringPdf(...arguments_)
+  openKeyringPdf: (...arguments_) => openKeyringPdf(...arguments_)
 }));
 
 const plates = [
@@ -16,7 +16,7 @@ const plates = [
 ];
 
 describe('KeyringsWorkspace', () => {
-  beforeEach(() => downloadKeyringPdf.mockReset());
+  beforeEach(() => openKeyringPdf.mockReset());
 
   it('fuzzy-matches plates despite missing separators and characters', () => {
     expect(rankPlateOptions(plates, 'bf7').map((option) => option.label)).toEqual(['BF-07-JZ']);
@@ -49,7 +49,7 @@ describe('KeyringsWorkspace', () => {
     expect(combobox).toHaveValue('BF-07-JZ');
     expect(screen.getAllByText('BF-07-JZ')).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Gerar PDF' }));
-    expect(downloadKeyringPdf).toHaveBeenCalledWith(['BF-07-JZ']);
+    expect(openKeyringPdf).toHaveBeenCalledWith(['BF-07-JZ']);
   });
 
   it('adds multiple plates in order, ignores duplicates, and removes one pill', async () => {
@@ -134,7 +134,7 @@ describe('KeyringsWorkspace', () => {
   });
 
   it('recovers from a PDF generation error', async () => {
-    downloadKeyringPdf.mockRejectedValueOnce(new Error('Canvas indisponível'));
+    openKeyringPdf.mockRejectedValueOnce(new Error('Canvas indisponível'));
     const user = userEvent.setup();
     render(<KeyringsWorkspace plateOptions={plates} />);
 

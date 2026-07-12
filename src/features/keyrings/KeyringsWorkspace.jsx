@@ -2,7 +2,7 @@ import { useId, useMemo, useRef, useState } from 'react';
 import { Download, KeyRound, Search, X } from 'lucide-react';
 import logoUrl from '../../assets/Logo Base.svg';
 import whatsappUrl from '../../assets/whatsapp.svg';
-import { downloadKeyringPdf } from './keyringPdf';
+import { openKeyringPdf } from './keyringPdf';
 import { rankPlateOptions } from './keyringSearch';
 
 function KeyringStripPreview({ plate, rowIndex = 0 }) {
@@ -76,7 +76,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
     setGenerating(true);
     setGenerationError('');
     try {
-      await downloadKeyringPdf(selectedPlates);
+      await openKeyringPdf(selectedPlates);
     } catch (nextError) {
       setGenerationError(nextError?.message || 'Não foi possível gerar o PDF. Tenta novamente.');
     } finally {

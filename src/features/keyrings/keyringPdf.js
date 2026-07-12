@@ -200,22 +200,43 @@ export function svgUrlToPngBytes(url, width = 1600) {
   });
 }
 
-export async function downloadKeyringPdf(plate) {
-  const [logoPngBytes, whatsappPngBytes, soraFontBytes] = await Promise.all([
-    svgUrlToPngBytes(logoUrl),
-    svgUrlToPngBytes(whatsappUrl, 800),
-    fetch(soraFontUrl).then((response) => {
-      if (!response.ok) throw new Error('Não foi possível carregar a tipografia do PDF.');
-      return response.arrayBuffer();
-    })
-  ]);
-  const bytes = await createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBytes, soraFontBytes });
+export function openPdfBytesInNewTab(bytes, existingWindow = null) {
+  if (typeof window === 'undefined' || typeof window.open !== 'function') {
+    throw new Error('Não foi possível abrir o PDF numa nova aba.');
+  }
+
+  const pdfWindow = existingWindow || window.open('', '_blank');
+  if (!pdfWindow) {
+    throw new Error('Permite pop-ups para abrir o PDF numa nova aba.');
+  }
+
   const blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = getKeyringPdfFilename(plate);
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+  pdfWindow.location.href = blobUrl;
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  return pdfWindow;
+}
+
+export async function openKeyringPdf(plate) {
+  const pdfWindow = typeof window !== 'undefined' && typeof window.open === 'function' ? window.open('', '_blank') : null;
+  if (!pdfWindow) {
+    throw new Error('Permite pop-ups para abrir o PDF numa nova aba.');
+  }
+
+  try {
+    const [logoPngBytes, whatsappPngBytes, soraFontBytes] = await Promise.all([
+      svgUrlToPngBytes(logoUrl),
+      svgUrlToPngBytes(whatsappUrl, 800),
+      fetch(soraFontUrl).then((response) => {
+        if (!response.ok) throw new Error('Não foi possível carregar a tipografia do PDF.');
+        return response.arrayBuffer();
+      })
+    ]);
+    const bytes = await createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBytes, soraFontBytes });
+    openPdfBytesInNewTab(bytes, pdfWindow);
+  } catch (error) {
+    pdfWindow.close?.();
+    throw error;
+  }
 }
 import logoUrl from '../../assets/Logo Base.svg';
 import soraFontUrl from '../../assets/fonts/Sora-SemiBold.ttf?url';
