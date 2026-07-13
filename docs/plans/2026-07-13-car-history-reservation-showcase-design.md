@@ -12,7 +12,7 @@ Open the existing reservation showcase when a reservation number is selected in 
 
 ## Interaction and accessibility
 
-The reservation number will retain its compact visual treatment while gaining button semantics, a descriptive accessible name, and visible hover/focus feedback. Empty reservation references will remain non-interactive.
+The reservation number will retain its compact visual treatment while gaining button semantics, a descriptive accessible name, visible hover/focus feedback, and the same Lucide eye icon used by reservation actions in the main service list. Empty reservation references will remain non-interactive.
 
 ## Testing
 

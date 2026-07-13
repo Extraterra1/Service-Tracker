@@ -85,3 +85,27 @@ Expected: zero errors.
 **Step 4: Review the diff**
 
 Confirm the history popup remains mounted, the existing reservation showcase is reused, unrelated user changes are untouched, and the interaction is keyboard accessible.
+
+### Task 4: Match the main-list reservation icon
+
+**Files:**
+- Modify: `src/components/CarHistoryPopup.jsx`
+- Modify: `src/components/__tests__/CarHistoryPopup.test.jsx`
+
+**Step 1: Write the failing test**
+
+Assert that the vehicle-history reservation button contains a Lucide eye icon with the shared `item-reservation-link-icon` class and `aria-hidden="true"`.
+
+**Step 2: Run the focused test to verify it fails**
+
+Run: `npm test -- src/components/__tests__/CarHistoryPopup.test.jsx`
+
+Expected: FAIL because the button does not yet render the eye icon.
+
+**Step 3: Write the minimal implementation**
+
+Import `Eye` from `lucide-react` and render `<Eye className="item-reservation-link-icon" aria-hidden="true" />` after the reservation reference.
+
+**Step 4: Run focused and full verification**
+
+Run the vehicle-history test, production build, and full suite. Expected: the focused test and build pass; report any unrelated failures from the existing current-flights work separately.
