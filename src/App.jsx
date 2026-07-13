@@ -7,6 +7,7 @@ import ActivityPopup from './components/ActivityPopup';
 import AppTabBar from './components/AppTabBar';
 import AppHeaderMenu from './components/AppHeaderMenu';
 import CarHistoryPopup from './components/CarHistoryPopup';
+import ServiceReservationPopup from './features/service-workspace/ServiceReservationPopup';
 import DateNavigator from './components/DateNavigator';
 import LeaderboardPopup from './components/LeaderboardPopup';
 import SignedOutLanding from './components/SignedOutLanding';
@@ -152,6 +153,7 @@ function App() {
   const [timeOverrideValue, setTimeOverrideValue] = useState('');
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
   const [carHistoryPopupOpen, setCarHistoryPopupOpen] = useState(false);
+  const [carHistoryReservationReference, setCarHistoryReservationReference] = useState('');
   const [leaderboardPopupOpen, setLeaderboardPopupOpen] = useState(false);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('weekly');
   const [leaderboardAnchors, setLeaderboardAnchors] = useState(() => ({
@@ -887,7 +889,16 @@ function App() {
   );
 
   const handleCloseCarHistoryPopup = useCallback(() => {
+    setCarHistoryReservationReference('');
     setCarHistoryPopupOpen(false);
+  }, []);
+
+  const handleOpenCarHistoryReservation = useCallback((reference) => {
+    setCarHistoryReservationReference(String(reference ?? '').trim());
+  }, []);
+
+  const handleCloseCarHistoryReservation = useCallback(() => {
+    setCarHistoryReservationReference('');
   }, []);
 
   const handleOpenLeaderboardPopup = useCallback(() => {
@@ -1166,7 +1177,16 @@ function App() {
           rangeEnd={carHistoryRangeEnd}
           initialPlateKey={carHistoryInitialPlateKey}
           onApplyDateRange={loadCarHistory}
+          onOpenReservation={handleOpenCarHistoryReservation}
           onClose={handleCloseCarHistoryPopup}
+        />
+      ) : null}
+
+      {carHistoryReservationReference ? (
+        <ServiceReservationPopup
+          reference={carHistoryReservationReference}
+          onClose={handleCloseCarHistoryReservation}
+          canManageAccess={canManageAccess}
         />
       ) : null}
 

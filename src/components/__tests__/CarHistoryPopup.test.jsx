@@ -57,6 +57,7 @@ function createProps(overrides = {}) {
     rangeStart: '2026-02-26',
     rangeEnd: '2026-03-28',
     onApplyDateRange: vi.fn(),
+    onOpenReservation: vi.fn(),
     onClose: vi.fn(),
     ...overrides
   };
@@ -111,6 +112,24 @@ describe('CarHistoryPopup', () => {
     await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
 
     expect(screen.getByText('Hoje')).toBeInTheDocument();
+  });
+
+  it('opens reservation details when a reservation number is clicked', async () => {
+    const user = userEvent.setup();
+    const onOpenReservation = vi.fn();
+    Element.prototype.scrollIntoView = vi.fn();
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    render(<CarHistoryPopup {...createProps({ onOpenReservation })} />);
+
+    await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
+    await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes da reserva RES-001' }));
+
+    expect(onOpenReservation).toHaveBeenCalledWith('RES-001');
+    expect(onOpenReservation).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Histórico de viaturas' })).toBeInTheDocument();
+
+    scrollIntoView.mockRestore();
   });
 
   it('highlights rows for the day before and day after today', async () => {
