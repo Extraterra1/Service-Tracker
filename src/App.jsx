@@ -7,6 +7,7 @@ import ActivityPopup from './components/ActivityPopup';
 import AppTabBar from './components/AppTabBar';
 import AppHeaderMenu from './components/AppHeaderMenu';
 import CarHistoryPopup from './components/CarHistoryPopup';
+import KeepAliveWorkspace from './components/KeepAliveWorkspace';
 import ServiceReservationPopup from './features/service-workspace/ServiceReservationPopup';
 import DateNavigator from './components/DateNavigator';
 import LeaderboardPopup from './components/LeaderboardPopup';
@@ -1110,13 +1111,15 @@ function App() {
         </p>
       ) : null}
 
-      {activeWorkspace === 'keyrings' ? (
-        <Suspense fallback={<main className="keyrings-workspace" aria-busy="true">A carregar porta-chaves…</main>}>
-          <KeyringsWorkspace plateOptions={carHistoryPlateOptions} loading={loadingCarHistory} error={carHistoryErrorMessage} />
-        </Suspense>
-      ) : activeWorkspace === 'reservations' ? (
+      <KeepAliveWorkspace active={activeWorkspace === 'reservations'}>
         <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
           <ReservationsWorkspace canManageAccess={canManageAccess} />
+        </Suspense>
+      </KeepAliveWorkspace>
+
+      {activeWorkspace === 'reservations' ? null : activeWorkspace === 'keyrings' ? (
+        <Suspense fallback={<main className="keyrings-workspace" aria-busy="true">A carregar porta-chaves…</main>}>
+          <KeyringsWorkspace plateOptions={carHistoryPlateOptions} loading={loadingCarHistory} error={carHistoryErrorMessage} />
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
         <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos de hoje"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
