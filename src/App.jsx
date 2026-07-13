@@ -37,7 +37,7 @@ import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleto
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
-const FlightsComingSoonWorkspace = lazy(() => import('./features/flights/FlightsComingSoonWorkspace'));
+const CurrentFlightsWorkspace = lazy(() => import('./features/flights/CurrentFlightsWorkspace'));
 const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
 const KeyringsWorkspace = lazy(() => import('./features/keyrings/KeyringsWorkspace'));
 
@@ -179,7 +179,9 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const nextWorkspace = resolveWorkspace(window.location.hash);
-      if (nextWorkspace === 'futureFlights') {
+      if (nextWorkspace === 'flights') {
+        setSelectedDate(getTodayDate());
+      } else if (nextWorkspace === 'futureFlights') {
         setSelectedDate(getFutureFlightsStartDate(getTodayDate()));
       }
       setRequestedWorkspace(nextWorkspace);
@@ -193,7 +195,9 @@ function App() {
       ? (canManageAccess ? 'futureFlights' : 'services')
       : ['keyrings', 'flights', 'reservations'].includes(workspace) ? workspace : 'services';
     menuPanelRef.current?.removeAttribute('open');
-    if (nextWorkspace === 'futureFlights') {
+    if (nextWorkspace === 'flights') {
+      setSelectedDate(getTodayDate());
+    } else if (nextWorkspace === 'futureFlights') {
       setSelectedDate(getFutureFlightsStartDate(getTodayDate()));
     }
     setRequestedWorkspace(nextWorkspace);
@@ -1115,8 +1119,15 @@ function App() {
           <ReservationsWorkspace canManageAccess={canManageAccess} />
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
-        <Suspense fallback={<main className="flights-coming-soon" aria-busy="true">A carregar…</main>}>
-          <FlightsComingSoonWorkspace />
+        <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos de hoje"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
+          <CurrentFlightsWorkspace
+            selectedDate={selectedDate}
+            allServiceItems={allServiceItems}
+            serviceDataLoading={loadingDateData}
+            serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
+            onRetryServiceData={manualRefresh}
+            userUid={user?.uid ?? ''}
+          />
         </Suspense>
       ) : activeWorkspace === 'futureFlights' ? (
         <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos futuros"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>

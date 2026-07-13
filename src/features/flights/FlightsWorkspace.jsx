@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, CircleAlert, ExternalLink, PlaneLanding } from 'lucide-react';
+import { ArrowLeft, Check, CircleAlert, Clock3, ExternalLink, Eye, Plane, PlaneLanding } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -11,16 +11,20 @@ import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton';
 const STATUS_LABELS = {
   planned: 'Planeado',
   scheduled: 'Programado',
+  departed: 'No ar',
   arrived: 'Chegou',
   delayed: 'Atrasado',
   estimated: 'Estimado',
   cancelled: 'Cancelado',
   canceled: 'Cancelado',
+  diverted: 'Desviado',
   unknown: 'Desconhecido'
 };
 
 const ERROR_LABELS = {
   not_found: 'Voo não encontrado',
+  invalid_flight_number: 'Número de voo inválido',
+  flight_checker_unavailable: 'FR24 temporariamente indisponível',
   ambiguous_match: 'Foram encontrados vários voos possíveis',
   flightview_unavailable: 'FlightView temporariamente indisponível',
   parse_failed: 'Não foi possível interpretar os dados do voo'
@@ -79,8 +83,10 @@ function FlightClient({ client }) {
 
   return (
     <div className="flight-client" data-testid="flight-client">
-      <span className="flight-client-flag">{countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryCode} /> : '—'}</span>
-      <strong className="flight-client-name">{name}</strong>
+      <div className="flight-client-identity">
+        <span className="flight-client-flag">{countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryCode} /> : '—'}</span>
+        <strong className="flight-client-name">{name}</strong>
+      </div>
       <span className="flight-client-detail">
         <small>Carro</small>
         {car}
@@ -89,40 +95,59 @@ function FlightClient({ client }) {
         <small>Matrícula</small>
         {plate}
       </span>
-      {whatsappUrl ? (
-        <a className="flight-client-phone" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${phone}`}>
-          <FaWhatsapp aria-hidden="true" />
-          <span>{phone}</span>
-        </a>
-      ) : (
-        <span className="flight-client-phone flight-client-phone--disabled">{phone || '—'}</span>
-      )}
-      {reservationUrl ? (
-        <a
-          className="flight-client-reservation"
-          href={reservationUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={reservationId ? `Reservations ${reservationId}` : 'Reservations'}
-        >
-          Reservations
-          <ExternalLink aria-hidden="true" />
-        </a>
-      ) : (
-        <span className="flight-client-reservation flight-client-reservation--disabled">—</span>
-      )}
+      <div className="flight-client-actions">
+        {whatsappUrl ? (
+          <a className="flight-client-phone" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${phone}`}>
+            <FaWhatsapp aria-hidden="true" />
+            <span>{phone}</span>
+          </a>
+        ) : (
+          <span className="flight-client-phone flight-client-phone--disabled">{phone || '—'}</span>
+        )}
+        {reservationUrl ? (
+          <a
+            className="flight-client-reservation"
+            href={reservationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={reservationId ? `Reservations ${reservationId}` : 'Reservations'}
+          >
+            <span>#{reservationId || 'Reserva'}</span>
+            <Eye aria-hidden="true" />
+          </a>
+        ) : (
+          <span className="flight-client-reservation flight-client-reservation--disabled">—</span>
+        )}
+      </div>
     </div>
   );
 }
 
-function FlightResult({ result, index, clients = [] }) {
+function FlightStatusIcon({ status }) {
+  if (status === 'arrived') return <Check aria-hidden="true" />;
+  if (status === 'departed') return <Plane aria-hidden="true" />;
+  if (['cancelled', 'canceled', 'diverted', 'delayed', 'error'].includes(status)) return <CircleAlert aria-hidden="true" />;
+  return <Clock3 aria-hidden="true" />;
+}
+
+export function FlightResult({ result, index, clients = [], singleTime = false, prominentStatus = false }) {
   const flightNumber = String(result?.flightNumber ?? '').trim() || '—';
   const hasError = Boolean(result?.error);
   const status = hasError ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo') : localizeStatus(result?.status);
+  const statusKey = hasError ? 'error' : String(result?.status ?? 'unknown').toLowerCase();
   const sourceUrl = getSafeSourceUrl(result?.sourceUrl);
+  const singleTimeLabel = String(result?.status ?? '').toLowerCase() === 'arrived'
+    ? 'Chegou às'
+    : String(result?.status ?? '').toLowerCase() === 'departed'
+      ? 'Previsto'
+      : 'Programado';
+  const singleTimeValue = result?.arrivalTimeLocal
+    ?? result?.actualArrivalLocal
+    ?? result?.estimatedArrivalLocal
+    ?? result?.scheduledArrivalLocal;
 
   return (
-    <article className={`flight-row ${hasError ? 'flight-row--error' : ''}`} style={{ '--flight-index': index }} aria-label={`Voo ${flightNumber}`}>
+    <article className={`flight-row ${hasError ? 'flight-row--error' : ''} ${singleTime ? 'flight-row--single-time' : ''}`} style={{ '--flight-index': index }} aria-label={`Voo ${flightNumber}`}>
       <div className="flight-identity">
         <span className="flight-route-mark" aria-hidden="true">
           <PlaneLanding />
@@ -137,16 +162,26 @@ function FlightResult({ result, index, clients = [] }) {
           {status}
         </p>
       ) : (
-        <dl className="flight-times">
-          <FlightTime label="Programado" value={result.scheduledArrivalLocal} />
-          <FlightTime label="Estimado" value={result.estimatedArrivalLocal} />
-          <FlightTime label="Real" value={result.actualArrivalLocal} />
+        <dl className={`flight-times ${singleTime ? 'flight-times--single' : ''}`}>
+          {singleTime ? <FlightTime label={singleTimeLabel} value={singleTimeValue} /> : (
+            <>
+              <FlightTime label="Programado" value={result.scheduledArrivalLocal} />
+              <FlightTime label="Estimado" value={result.estimatedArrivalLocal} />
+              <FlightTime label="Real" value={result.actualArrivalLocal} />
+            </>
+          )}
         </dl>
       )}
 
-      <div className={`flight-status flight-status--${String(result?.status ?? 'unknown').toLowerCase()}`}>
+      <div
+        className={`flight-status flight-status--${statusKey} ${prominentStatus ? 'flight-status--prominent' : ''}`}
+        aria-label={prominentStatus ? `Estado: ${status}` : undefined}
+      >
         <span>Estado</span>
-        <strong>{status}</strong>
+        <strong>
+          {prominentStatus ? <FlightStatusIcon status={statusKey} /> : null}
+          {status}
+        </strong>
       </div>
 
       {!hasError && sourceUrl ? (

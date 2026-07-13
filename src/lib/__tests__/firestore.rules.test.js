@@ -113,6 +113,27 @@ function buildActivityPayload(date, actionType = 'status_toggle') {
   return basePayload;
 }
 
+function buildFlightCachePayload(date) {
+  return {
+    date,
+    flightNumbers: ['TP1685'],
+    results: [{ flightNumber: 'TP1685', status: 'scheduled' }],
+    source: 'fr24-unofficial',
+    cachedAt: Timestamp.fromDate(new Date()),
+    updatedByUid: STAFF_UID,
+  };
+}
+
+function buildFlightRefreshLockPayload(date) {
+  return {
+    date,
+    ownerUid: STAFF_UID,
+    cacheVersion: 'missing',
+    leaseUntil: Timestamp.fromMillis(Date.now() + 45_000),
+    updatedAt: Timestamp.fromDate(new Date()),
+  };
+}
+
 function buildPendingAccessRequestPayload(uid = PENDING_UID) {
   const now = Timestamp.fromDate(new Date());
 
@@ -317,6 +338,26 @@ describeRules('firestore current-day write rules', () => {
     await expect(assertSucceeds(setDoc(doc(db, 'service_activity', today, 'entries', 'entry-today'), buildActivityPayload(today)))).resolves.toBeUndefined();
     await expect(assertFails(setDoc(doc(db, 'service_activity', past, 'entries', 'entry-past'), buildActivityPayload(past)))).resolves.toBeDefined();
     await expect(assertFails(setDoc(doc(db, 'service_activity', future, 'entries', 'entry-future'), buildActivityPayload(future)))).resolves.toBeDefined();
+  });
+
+  it('allows validated current-day flight cache writes and blocks other days or owners', async () => {
+    const db = getAuthedDb();
+    const today = getTodayServiceDate();
+    const past = addDays(today, -1);
+
+    await expect(assertSucceeds(setDoc(doc(db, 'flight_status_cache', today), buildFlightCachePayload(today)))).resolves.toBeUndefined();
+    await expect(assertFails(setDoc(doc(db, 'flight_status_cache', past), buildFlightCachePayload(past)))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'flight_status_cache', today), { ...buildFlightCachePayload(today), updatedByUid: 'another-user' }))).resolves.toBeDefined();
+  });
+
+  it('allows only the current staff user to acquire today flight refresh lease', async () => {
+    const db = getAuthedDb();
+    const today = getTodayServiceDate();
+    const past = addDays(today, -1);
+
+    await expect(assertSucceeds(setDoc(doc(db, 'flight_status_refresh_locks', today), buildFlightRefreshLockPayload(today)))).resolves.toBeUndefined();
+    await expect(assertFails(setDoc(doc(db, 'flight_status_refresh_locks', past), buildFlightRefreshLockPayload(past)))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'flight_status_refresh_locks', today), { ...buildFlightRefreshLockPayload(today), ownerUid: 'another-user' }))).resolves.toBeDefined();
   });
 });
 

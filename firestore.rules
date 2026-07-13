@@ -233,6 +233,27 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp;
     }
 
+    function isValidFlightStatusCachePayload(date) {
+      return request.resource.data.keys().hasOnly([
+          'date',
+          'flightNumbers',
+          'results',
+          'source',
+          'cachedAt',
+          'updatedByUid'
+        ])
+        && request.resource.data.date == date
+        && isCurrentServiceDate(request.resource.data.date)
+        && request.resource.data.flightNumbers is list
+        && request.resource.data.flightNumbers.size() > 0
+        && request.resource.data.flightNumbers.size() <= 100
+        && request.resource.data.results is list
+        && request.resource.data.results.size() <= 100
+        && request.resource.data.source == 'fr24-unofficial'
+        && request.resource.data.cachedAt is timestamp
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
     function isValidNullableTimestamp(value) {
       return value == null || value is timestamp;
     }
@@ -460,6 +481,21 @@ service cloud.firestore {
     match /service_refresh_locks/{date} {
       allow read: if isActiveStaff();
       allow create, update: if isActiveStaff() && isValidRefreshLockPayload(date);
+      allow delete: if false;
+    }
+
+    match /flight_status_cache/{date} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff() && isValidFlightStatusCachePayload(date);
+      allow delete: if false;
+    }
+
+    match /flight_status_refresh_locks/{date} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff()
+        && isCurrentServiceDate(date)
+        && isValidRefreshLockPayload(date)
+        && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if false;
     }
 
