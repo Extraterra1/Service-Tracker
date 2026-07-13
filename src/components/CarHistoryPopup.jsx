@@ -55,7 +55,7 @@ function getRelativeDateHighlight(date, todayDate = getTodayDate()) {
   return null;
 }
 
-function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onClose, initialPlateKey = '' }) {
+function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeStart, rangeEnd, onApplyDateRange, onOpenReservation, onClose, initialPlateKey = '' }) {
   const [selectedPlateKeyState, setSelectedPlateKeyState] = useState('');
   const [searchValueState, setSearchValueState] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -447,7 +447,18 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                           </div>
                           <div className="car-history-popup-row car-history-popup-row-body">
                             <span className="car-history-popup-client">{entry.clientName}</span>
-                            <span className="car-history-popup-reservation">{entry.reservationId}</span>
+                            {String(entry.reservationId ?? '').trim() && onOpenReservation ? (
+                              <button
+                                type="button"
+                                className="car-history-popup-reservation"
+                                onClick={() => onOpenReservation(entry.reservationId)}
+                                aria-label={`Ver detalhes da reserva ${entry.reservationId}`}
+                              >
+                                {entry.reservationId}
+                              </button>
+                            ) : (
+                              <span className="car-history-popup-reservation">{entry.reservationId}</span>
+                            )}
                             <span className="car-history-popup-location">{entry.location}</span>
                           </div>
                         </li>

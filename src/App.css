@@ -3524,8 +3524,31 @@ h1 {
 
 .car-history-popup-reservation {
   grid-area: reservation;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
   font-size: 0.75rem;
   font-weight: 700;
+  font-family: inherit;
+  line-height: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+  transition: color 140ms ease, text-decoration-color 140ms ease;
+}
+
+.car-history-popup-reservation:hover {
+  color: var(--status-text);
+  text-decoration-color: currentColor;
+}
+
+.car-history-popup-reservation:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--status-text);
+  outline-offset: 3px;
 }
 
 .car-history-popup-location {
