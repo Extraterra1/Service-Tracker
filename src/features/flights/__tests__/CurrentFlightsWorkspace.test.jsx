@@ -121,12 +121,16 @@ describe('CurrentFlightsWorkspace', () => {
 
   it('renders session-cached flights immediately while Firestore reconnects after a tab switch', async () => {
     mocks.getFlightStatusMemoryCache.mockReturnValue(cachePayload())
-    mocks.subscribeToFlightStatusDay.mockImplementation(() => vi.fn())
+    mocks.subscribeToFlightStatusDay.mockImplementation((_date, _onData, _onMissing, onError) => {
+      onError(new Error('permission denied'))
+      return vi.fn()
+    })
 
     render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" />)
 
     expect(screen.getByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument()
     expect(screen.queryByLabelText('A carregar voos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Não foi possível ler os voos guardados.')).not.toBeInTheDocument()
     await act(async () => {})
     expect(mocks.fetchCurrentFlights).not.toHaveBeenCalled()
   })

@@ -86,8 +86,8 @@ export default function CurrentFlightsWorkspace({
         cacheRef.current = null
         setCacheScope(scope)
       },
-      () => {
-        setState((current) => ({ ...current, error: 'Não foi possível ler os voos guardados.' }))
+      (error) => {
+        console.warn('Shared flight cache could not be read. Continuing with local data.', error)
         setCacheScope(scope)
       },
     )

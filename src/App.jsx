@@ -37,7 +37,7 @@ import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleto
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
-const CurrentFlightsWorkspace = lazy(() => import('./features/flights/CurrentFlightsWorkspace'));
+const FlightsAccessWorkspace = lazy(() => import('./features/flights/FlightsAccessWorkspace'));
 const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
 const KeyringsWorkspace = lazy(() => import('./features/keyrings/KeyringsWorkspace'));
 
@@ -1120,7 +1120,8 @@ function App() {
         </Suspense>
       ) : activeWorkspace === 'flights' ? (
         <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos de hoje"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
-          <CurrentFlightsWorkspace
+          <FlightsAccessWorkspace
+            canManageAccess={canManageAccess}
             selectedDate={selectedDate}
             allServiceItems={allServiceItems}
             serviceDataLoading={loadingDateData}
