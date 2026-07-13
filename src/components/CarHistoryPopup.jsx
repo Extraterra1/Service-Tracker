@@ -455,7 +455,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                                 onClick={() => onOpenReservation(entry.reservationId)}
                                 aria-label={`Ver detalhes da reserva ${entry.reservationId}`}
                               >
-                                <span>{entry.reservationId}</span>
+                                <span>#{entry.reservationId}</span>
                                 <Eye className="item-reservation-link-icon" aria-hidden="true" />
                               </button>
                             ) : (

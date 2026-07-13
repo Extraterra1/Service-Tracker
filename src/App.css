@@ -429,6 +429,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.18rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
   color: inherit;
   font: inherit;
   text-align: left;
