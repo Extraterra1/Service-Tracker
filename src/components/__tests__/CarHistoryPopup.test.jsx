@@ -123,7 +123,12 @@ describe('CarHistoryPopup', () => {
 
     await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
     await user.click(screen.getByRole('option', { name: 'AA-00-AA' }));
-    await user.click(screen.getByRole('button', { name: 'Ver detalhes da reserva RES-001' }));
+    const reservationButton = screen.getByRole('button', { name: 'Ver detalhes da reserva RES-001' });
+    const eyeIcon = reservationButton.querySelector('.lucide-eye.item-reservation-link-icon');
+
+    expect(eyeIcon).toHaveAttribute('aria-hidden', 'true');
+
+    await user.click(reservationButton);
 
     expect(onOpenReservation).toHaveBeenCalledWith('RES-001');
     expect(onOpenReservation).toHaveBeenCalledTimes(1);
