@@ -99,7 +99,7 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByText('2026-03-08')).toBeInTheDocument();
     expect(screen.getByText('Recolha')).toBeInTheDocument();
     expect(screen.getByText('Joao Sousa')).toBeInTheDocument();
-    expect(screen.getByText('RET-200')).toBeInTheDocument();
+    expect(screen.getByText('#RET-200')).toBeInTheDocument();
     expect(screen.getByText('08:15')).toBeInTheDocument();
     expect(screen.getByText('Aeroporto da Madeira')).toBeInTheDocument();
   });
@@ -126,6 +126,8 @@ describe('CarHistoryPopup', () => {
     const reservationButton = screen.getByRole('button', { name: 'Ver detalhes da reserva RES-001' });
     const eyeIcon = reservationButton.querySelector('.lucide-eye.item-reservation-link-icon');
 
+    expect(reservationButton.children[0]).toHaveTextContent('#RES-001');
+    expect(reservationButton.children[1]).toBe(eyeIcon);
     expect(eyeIcon).toHaveAttribute('aria-hidden', 'true');
 
     await user.click(reservationButton);
