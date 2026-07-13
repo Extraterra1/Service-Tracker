@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { normalizePlate } from '../lib/plates';
 import { addDays, getTodayDate } from '../lib/date';
 
@@ -454,7 +455,8 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
                                 onClick={() => onOpenReservation(entry.reservationId)}
                                 aria-label={`Ver detalhes da reserva ${entry.reservationId}`}
                               >
-                                {entry.reservationId}
+                                <span>{entry.reservationId}</span>
+                                <Eye className="item-reservation-link-icon" aria-hidden="true" />
                               </button>
                             ) : (
                               <span className="car-history-popup-reservation">{entry.reservationId}</span>
