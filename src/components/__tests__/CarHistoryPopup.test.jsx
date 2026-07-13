@@ -1,8 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import CarHistoryPopup from '../CarHistoryPopup';
 import { addDays, getTodayDate } from '../../lib/date';
+
+const appCss = readFileSync('src/App.css', 'utf8');
 
 function createProps(overrides = {}) {
   return {
@@ -137,6 +140,12 @@ describe('CarHistoryPopup', () => {
     expect(screen.getByRole('dialog', { name: 'Histórico de viaturas' })).toBeInTheDocument();
 
     scrollIntoView.mockRestore();
+  });
+
+  it('keeps the reservation id and eye icon together on one row', () => {
+    expect(appCss).toMatch(
+      /\.car-history-popup-reservation\s*{[^}]*display:\s*inline-flex;[^}]*align-items:\s*center;[^}]*white-space:\s*nowrap;/
+    );
   });
 
   it('highlights rows for the day before and day after today', async () => {
