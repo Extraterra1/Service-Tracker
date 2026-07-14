@@ -627,6 +627,14 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.flight-times--single .flight-time dd {
+  margin-top: 0.08rem;
+  font-size: clamp(1.35rem, 3vw, 1.65rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+
 .flight-time { min-width: 0; }
 .flight-time dt,
 .flight-status span {
@@ -1142,6 +1150,10 @@
   .flight-row--single-time .flight-times {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  .flight-row--single-time .flight-time dd {
+    font-size: 1.45rem;
   }
 
   .flight-row--single-time .flight-status {

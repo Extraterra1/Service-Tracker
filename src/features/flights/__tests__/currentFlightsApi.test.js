@@ -80,6 +80,17 @@ describe('fetchCurrentFlights', () => {
     await expect(request).resolves.toHaveLength(26)
   })
 
+  it('sends canonical IATA numbers when pickup data contains ICAO prefixes', async () => {
+    vi.stubEnv('VITE_FR24_API_KEY', 'test-key')
+    fetchMock.mockResolvedValue(response({ results: [{ flightNumber: 'U21234', lookupState: 'not_found' }] }))
+    const { fetchCurrentFlights } = await loadApi()
+
+    await expect(fetchCurrentFlights({ date: '2026-07-14', flightNumbers: ['EZS 1234'] })).resolves.toEqual([
+      { flightNumber: 'U21234', error: { code: 'not_found' } },
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).flightNumbers).toEqual(['U21234'])
+  })
+
   it('maps partial not-found and source-error results without rejecting successful siblings', async () => {
     vi.stubEnv('VITE_FR24_API_KEY', 'test-key')
     fetchMock.mockResolvedValue(response({ results: [
