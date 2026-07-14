@@ -35,7 +35,6 @@ import { useServiceDayData } from './hooks/useServiceDayData';
 import { toDateValue } from './lib/timestamp';
 import { getFutureFlightsStartDate, resolveWorkspace } from './lib/workspaceNavigation';
 import FlightsWorkspaceSkeleton from './features/flights/FlightsWorkspaceSkeleton';
-import { canViewLiveFlights } from './features/flights/flightAccess';
 
 const ServiceWorkspace = lazy(() => import('./features/service-workspace/ServiceWorkspace'));
 const ReservationsWorkspace = lazy(() => import('./features/reservations/ReservationsWorkspace'));
@@ -167,12 +166,6 @@ function App() {
   const [diagnosticsStatusMessage, setDiagnosticsStatusMessage] = useState('');
   const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
   const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
-  const canViewCurrentFlights = canViewLiveFlights({
-    canManageAccess,
-    userEmail: user?.email,
-    devEmail: import.meta.env.VITE_LOCAL_AUTH_EMAIL,
-    isDev: import.meta.env.DEV,
-  });
   const requestedWorkspaceHash =
     requestedWorkspace === 'reservations'
       ? '#reservas'
@@ -1131,7 +1124,6 @@ function App() {
       ) : activeWorkspace === 'flights' ? (
         <Suspense fallback={<main className="flights-workspace" aria-busy="true" aria-label="Voos de hoje"><FlightsWorkspaceSkeleton label="A carregar voos" /></main>}>
           <FlightsAccessWorkspace
-            canViewLiveFlights={canViewCurrentFlights}
             selectedDate={selectedDate}
             allServiceItems={allServiceItems}
             serviceDataLoading={loadingDateData}

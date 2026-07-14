@@ -8,15 +8,8 @@ vi.mock('../CurrentFlightsWorkspace', () => ({
 import FlightsAccessWorkspace from '../FlightsAccessWorkspace'
 
 describe('FlightsAccessWorkspace', () => {
-  it('shows the coming-soon visual to non-admin users', () => {
-    render(<FlightsAccessWorkspace canManageAccess={false} />)
-
-    expect(screen.getByRole('heading', { name: 'Proximamente…' })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Voos atuais')).not.toBeInTheDocument()
-  })
-
-  it('shows the live flights workspace to authorized viewers', () => {
-    render(<FlightsAccessWorkspace canViewLiveFlights />)
+  it('shows live flights to every authenticated app user', () => {
+    render(<FlightsAccessWorkspace />)
 
     expect(screen.getByLabelText('Voos atuais')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Proximamente…' })).not.toBeInTheDocument()
