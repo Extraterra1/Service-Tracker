@@ -141,9 +141,10 @@ describe('CurrentFlightsWorkspace', () => {
 
     const scheduled = screen.getByRole('article', { name: 'Voo TP1685' })
     const airborne = screen.getByRole('article', { name: 'Voo U27654' })
-    expect(scheduled).toHaveClass('flight-row--single-time')
+    expect(scheduled).toHaveClass('flight-row--single-time', 'flight-row--status-scheduled')
+    expect(airborne).toHaveClass('flight-row--status-departed')
     expect(within(scheduled).getAllByRole('term')).toHaveLength(1)
-    expect(scheduled).toHaveTextContent('Programado16:30')
+    expect(scheduled).toHaveTextContent('Previsto16:30')
     expect(within(airborne).getAllByRole('term')).toHaveLength(1)
     expect(airborne).toHaveTextContent('Previsto17:45')
     expect(airborne).toHaveTextContent('No ar')
@@ -194,9 +195,22 @@ describe('CurrentFlightsWorkspace', () => {
     expect(mocks.fetchCurrentFlights).toHaveBeenCalledTimes(1)
     expect(mocks.tryAcquireFlightStatusRefreshLease).not.toHaveBeenCalled()
     expect(screen.getByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'A atualizar todos os voos' })).toHaveClass('is-refreshing')
+    expect(screen.getByRole('button', { name: 'A atualizar todos os voos' })).toHaveAttribute('aria-busy', 'true')
     expect(screen.getByRole('button', { name: 'A atualizar todos os voos' })).toBeDisabled()
     await act(async () => resolveRefresh(activeResults))
     expect(screen.getByRole('button', { name: 'Atualizar todos os voos' })).toBeEnabled()
+  })
+
+  it('releases refresh-button focus after a touch interaction', async () => {
+    render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" />)
+    await act(async () => {})
+
+    const refreshButton = screen.getByRole('button', { name: 'Atualizar todos os voos' })
+    refreshButton.focus()
+    expect(refreshButton).toHaveFocus()
+    fireEvent.pointerUp(refreshButton, { pointerType: 'touch' })
+    expect(refreshButton).not.toHaveFocus()
   })
 
   it('keeps a successful flight refresh successful when cache persistence fails', async () => {

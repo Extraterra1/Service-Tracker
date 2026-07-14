@@ -138,16 +138,14 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
   const sourceUrl = getSafeSourceUrl(result?.sourceUrl);
   const singleTimeLabel = String(result?.status ?? '').toLowerCase() === 'arrived'
     ? 'Chegou às'
-    : String(result?.status ?? '').toLowerCase() === 'departed'
-      ? 'Previsto'
-      : 'Programado';
+    : 'Previsto';
   const singleTimeValue = result?.arrivalTimeLocal
     ?? result?.actualArrivalLocal
     ?? result?.estimatedArrivalLocal
     ?? result?.scheduledArrivalLocal;
 
   return (
-    <article className={`flight-row ${hasError ? 'flight-row--error' : ''} ${singleTime ? 'flight-row--single-time' : ''}`} style={{ '--flight-index': index }} aria-label={`Voo ${flightNumber}`}>
+    <article className={`flight-row flight-row--status-${statusKey} ${hasError ? 'flight-row--error' : ''} ${singleTime ? 'flight-row--single-time' : ''}`} style={{ '--flight-index': index }} aria-label={`Voo ${flightNumber}`}>
       <div className="flight-identity">
         <span className="flight-route-mark" aria-hidden="true">
           <PlaneLanding />

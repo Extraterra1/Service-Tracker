@@ -519,10 +519,12 @@
 }
 
 .flights-refresh-btn {
+  position: relative;
   min-height: 2rem;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  transition: border-color 150ms cubic-bezier(0.25, 1, 0.5, 1), background-color 150ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .flights-refresh-btn svg {
@@ -530,8 +532,22 @@
   height: 0.9rem;
 }
 
-.flights-refresh-btn:disabled svg {
-  animation: spin 0.8s linear infinite;
+.flights-refresh-btn.is-refreshing {
+  cursor: progress;
+}
+
+.flights-refresh-btn.is-refreshing svg {
+  animation: flight-refresh-spin 0.72s linear infinite;
+  transform-origin: center;
+}
+
+.flights-refresh-btn:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), transparent 30%);
+  outline-offset: 2px;
+}
+
+@keyframes flight-refresh-spin {
+  to { transform: rotate(1turn); }
 }
 
 .flights-board {
@@ -633,6 +649,18 @@
   font-weight: 900;
   line-height: 0.95;
   letter-spacing: -0.035em;
+}
+
+.flight-row--single-time.flight-row--status-departed .flight-time dd {
+  color: #1d4ed8;
+}
+
+.flight-row--single-time.flight-row--status-arrived .flight-time dd {
+  color: var(--ready-green);
+}
+
+:root[data-theme='dark'] .flight-row--single-time.flight-row--status-departed .flight-time dd {
+  color: #60a5fa;
 }
 
 .flight-time { min-width: 0; }
@@ -1127,16 +1155,22 @@
 
   .flights-workspace--current .flights-refresh-btn {
     min-width: 2.75rem;
-    min-height: 2.75rem;
+    min-height: 2.15rem;
     padding-inline: 0.65rem;
     justify-content: center;
+  }
+
+  .flights-workspace--current .flights-refresh-btn::after {
+    content: '';
+    position: absolute;
+    inset: -0.3rem 0;
   }
 
   .flight-row--single-time,
   .flight-row--single-time.flight-row--error {
     min-height: 0;
     padding: 0.5rem 0.6rem;
-    grid-template-columns: minmax(6.75rem, 1fr) auto auto;
+    grid-template-columns: minmax(6.75rem, 1fr) 4.35rem 6.4rem;
     column-gap: 0.45rem;
     row-gap: 0.4rem;
     align-items: center;
@@ -1150,6 +1184,8 @@
   .flight-row--single-time .flight-times {
     grid-column: 2;
     grid-row: 1;
+    width: 4.35rem;
+    justify-self: start;
   }
 
   .flight-row--single-time .flight-time dd {
@@ -1159,6 +1195,8 @@
   .flight-row--single-time .flight-status {
     grid-column: 3;
     grid-row: 1;
+    width: 6.4rem;
+    justify-self: end;
   }
 
   .flight-row--single-time .flight-status > span {
@@ -1170,6 +1208,7 @@
     padding: 0.28rem 0.42rem;
     gap: 0.25rem;
     font-size: 0.74rem;
+    margin-left: auto;
   }
 
   .flight-row--single-time .flight-status--prominent strong svg {
@@ -1273,8 +1312,16 @@
   .flight-row--single-time,
   .flight-row--single-time.flight-row--error {
     padding-inline: 0.5rem;
-    grid-template-columns: minmax(5.8rem, 1fr) auto auto;
+    grid-template-columns: minmax(5.4rem, 1fr) 4rem 5.2rem;
     column-gap: 0.32rem;
+  }
+
+  .flight-row--single-time .flight-times {
+    width: 4rem;
+  }
+
+  .flight-row--single-time .flight-status {
+    width: 5.2rem;
   }
 
   .flight-row--single-time .flight-route-mark {
@@ -1314,8 +1361,14 @@
 @media (prefers-reduced-motion: reduce) {
   .flight-row { animation: none; }
   .flights-loading svg { animation: none; }
-  .flights-refresh-btn:disabled svg { animation: none; }
+  .flights-refresh-btn.is-refreshing svg { animation: none; }
   .flight-skeleton-row { animation: none; opacity: 0.72; }
+}
+
+@media (hover: none) {
+  .flights-refresh-btn:hover {
+    border-color: var(--stroke);
+  }
 }
 
 .reservations-workspace {

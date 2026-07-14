@@ -186,9 +186,13 @@ export default function CurrentFlightsWorkspace({
           <time dateTime={selectedDate}>{selectedDate}</time>
           <button
             type="button"
-            className="ghost-btn compact-btn flights-refresh-btn"
+            className={`ghost-btn compact-btn flights-refresh-btn ${state.refreshing ? 'is-refreshing' : ''}`}
             onClick={() => void refreshFlights({ force: true })}
+            onPointerUp={(event) => {
+              if (event.pointerType === 'touch' || event.pointerType === 'pen') event.currentTarget.blur()
+            }}
             disabled={state.refreshing || isInitialLoading || !flightListKey}
+            aria-busy={state.refreshing}
             aria-label={state.refreshing ? 'A atualizar todos os voos' : 'Atualizar todos os voos'}
           >
             <RefreshCw aria-hidden="true" /><span>{state.refreshing ? 'A atualizar' : 'Atualizar'}</span>
