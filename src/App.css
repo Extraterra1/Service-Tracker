@@ -610,6 +610,26 @@
   overflow-wrap: anywhere;
 }
 
+.flight-number-link {
+  width: fit-content;
+  min-width: 0;
+  padding: 0.22rem 0.15rem;
+  margin: -0.22rem -0.15rem;
+  display: inline-flex;
+  color: inherit;
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+.flight-number-link:hover strong {
+  color: var(--accent);
+}
+
+.flight-number-link:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), transparent 28%);
+  outline-offset: 2px;
+}
+
 .flight-identity > span:last-child {
   grid-column: 2;
   color: var(--text-muted);
@@ -1978,7 +1998,56 @@
   letter-spacing: 0.06em;
 }
 
-.reservation-details-extras ul {
+.reservation-contract-extras {
+  margin: 0;
+  padding: 0.2rem 0.65rem;
+  display: grid;
+  list-style: none;
+  background: color-mix(in oklab, var(--panel-bg-strong), var(--text) 2%);
+}
+
+.reservation-contract-extra-row {
+  min-height: 2.55rem;
+  padding: 0.38rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1.6rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--stroke);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.reservation-contract-extra-row:last-child {
+  border-bottom: 0;
+}
+
+.reservation-contract-checkbox {
+  width: 1.35rem;
+  height: 1.35rem;
+  justify-self: end;
+  border: 2px solid color-mix(in oklab, var(--text), transparent 18%);
+  border-radius: 2px;
+  background: var(--panel-bg-strong);
+  display: grid;
+  place-items: center;
+}
+
+.reservation-contract-checkbox.is-checked {
+  border-color: var(--text);
+  background: var(--text);
+}
+
+.reservation-contract-checkbox.is-checked::after {
+  content: '✓';
+  color: var(--panel-bg-strong);
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.reservation-details-other-extras {
   margin: 0;
   padding: 0;
   display: flex;
@@ -1987,7 +2056,7 @@
   list-style: none;
 }
 
-.reservation-details-extras li {
+.reservation-details-other-extras li {
   min-height: 1.65rem;
   padding: 0.25rem 0.55rem;
   border: 1px solid color-mix(in oklab, var(--accent), transparent 62%);

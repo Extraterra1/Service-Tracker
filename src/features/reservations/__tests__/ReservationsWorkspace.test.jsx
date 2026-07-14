@@ -172,10 +172,18 @@ describe('ReservationsWorkspace', () => {
     expect(within(vehicleSection).getByText('AA-00-AA').closest('dd').querySelector('.lucide-rectangle-horizontal')).not.toBeNull()
     expect(within(vehicleSection).queryByText('Marca')).not.toBeInTheDocument()
     const extrasSection = details.getByRole('heading', { name: 'Extras' }).closest('section')
-    expect(Array.from(extrasSection.querySelectorAll('li'), (element) => element.textContent)).toEqual([
-      '1x Cadeira de bebé',
-      '1x Taxa IMT',
+    expect(Array.from(extrasSection.querySelectorAll('.reservation-contract-extra-row'), (element) => element.textContent)).toEqual([
+      'C.D.W.',
+      'Vidros + Faróis + Rodas',
+      'Condutor adicional',
+      'Baby Seat',
+      'Navegador GPS',
     ])
+    expect(within(extrasSection).getByRole('checkbox', { name: 'C.D.W.' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).getByRole('checkbox', { name: 'Baby Seat' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).queryByRole('checkbox', { name: 'Capacetes' })).not.toBeInTheDocument()
+    expect(within(extrasSection).getByText('1x Taxa IMT')).toBeInTheDocument()
+    expect(within(extrasSection).queryByText('1x Cadeira de bebé')).not.toBeInTheDocument()
     const notesSection = details.getByRole('heading', { name: 'Notas' }).closest('section')
     expect(within(notesSection).getByText('Chega cedo')).toBeInTheDocument()
     expect(within(notesSection).getByText('Preparar cadeira')).toBeInTheDocument()
@@ -203,18 +211,16 @@ describe('ReservationsWorkspace', () => {
     await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
 
     const extrasSection = screen.getByRole('heading', { name: 'Extras' }).closest('section')
-    const contractGroup = within(extrasSection).getByRole('heading', { name: 'Contrato' }).closest('div')
     const otherGroup = within(extrasSection).getByRole('heading', { name: 'Outros' }).closest('div')
-    expect(Array.from(contractGroup.querySelectorAll('li'), (element) => element.textContent)).toEqual([
-      'Proteção total',
-      'Condutor adicional',
-      'Grupo II',
-      'Maxi-Cosi',
-      'Grupo I',
-      'Assento Elevatório',
-      '1x Baby Seat',
-      '1x GPS',
-    ])
+    expect(within(extrasSection).getByRole('checkbox', { name: 'C.D.W.' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).getByRole('checkbox', { name: 'Vidros + Faróis + Rodas' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).getByRole('checkbox', { name: 'Condutor adicional' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).getByRole('checkbox', {
+      name: 'Baby Seat (Grupo II, Maxi-Cosi, Grupo I, Assento Elevatório)',
+    })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).getByRole('checkbox', { name: 'Navegador GPS' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(extrasSection).queryByRole('checkbox', { name: 'Capacetes' })).not.toBeInTheDocument()
+    expect(within(extrasSection).getByText('Baby Seat (Grupo II, Maxi-Cosi, Grupo I, Assento Elevatório)')).toBeInTheDocument()
     expect(Array.from(otherGroup.querySelectorAll('li'), (element) => element.textContent)).toEqual([
       'Seguro de pneus',
     ])
@@ -374,7 +380,8 @@ describe('ReservationsWorkspace', () => {
       'Grupo',
     ])
     expect(within(vehicleSection).getAllByText('—')).toHaveLength(3)
-    expect(within(dialog).getByText('Sem extras')).toBeInTheDocument()
+    expect(within(dialog).getByRole('checkbox', { name: 'C.D.W.' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(dialog).getByRole('checkbox', { name: 'Baby Seat' })).toHaveAttribute('aria-checked', 'false')
     expect(within(dialog).getByText('Sem notas')).toBeInTheDocument()
   })
 

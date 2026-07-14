@@ -135,6 +135,7 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
   const hasError = Boolean(result?.error);
   const status = hasError ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo') : localizeStatus(result?.status);
   const statusKey = hasError ? 'error' : String(result?.status ?? 'unknown').toLowerCase();
+  const flightradarUrl = flightNumber === '—' ? '' : `https://www.flightradar24.com/${encodeURIComponent(flightNumber)}`;
   const sourceUrl = getSafeSourceUrl(result?.sourceUrl);
   const singleTimeLabel = String(result?.status ?? '').toLowerCase() === 'arrived'
     ? 'Chegou às'
@@ -150,7 +151,18 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
         <span className="flight-route-mark" aria-hidden="true">
           <PlaneLanding />
         </span>
-        <strong>{flightNumber}</strong>
+        {flightradarUrl ? (
+          <a
+            className="flight-number-link"
+            href={flightradarUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Abrir voo ${flightNumber} no Flightradar24 numa nova aba`}
+            title="Abrir voo no Flightradar24"
+          >
+            <strong>{flightNumber}</strong>
+          </a>
+        ) : <strong>{flightNumber}</strong>}
         <span>FNC</span>
       </div>
 

@@ -365,45 +365,77 @@ function DetailGroup({ title, fields, countryCode = '', countryName = '', emptyL
 }
 
 function ExtrasGroup({ extras }) {
-  const contractPatterns = [
-    /protecao total/,
-    /condutor adicional/,
-    /(?:baby seat|cadeira (?:de )?bebe|maxi[ -]?cosi|grupo (?:i{1,2}|[12])\b|assento elevatorio)/,
-    /\bgps\b/,
-  ];
   const normalizeExtra = (extra) => extra
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
-  const rankedExtras = extras.map((extra, sourceIndex) => ({
+  const normalizedExtras = extras.map((extra) => ({
     extra,
-    sourceIndex,
-    contractRank: contractPatterns.findIndex((pattern) => pattern.test(normalizeExtra(extra))),
+    normalized: normalizeExtra(extra),
   }));
-  const contractExtras = rankedExtras
-    .filter(({ contractRank }) => contractRank >= 0)
-    .sort((first, second) => first.contractRank - second.contractRank || first.sourceIndex - second.sourceIndex);
-  const otherExtras = rankedExtras.filter(({ contractRank }) => contractRank < 0);
+  const patterns = {
+    cdw: /\bcdw\b/,
+    protection: /protecao total|vidros.*farois.*rodas/,
+    additionalDriver: /condutor adicional/,
+    babySeat: /(?:baby seat|cadeira (?:de )?bebe|maxi[ -]?cosi|grupo (?:i{1,2}|[12])\b|assento elevatorio)/,
+    gps: /\bgps\b/,
+    helmets: /capacetes?/,
+  };
+  const representedPatterns = Object.values(patterns);
+  const hasExtra = (pattern) => normalizedExtras.some(({ normalized }) => pattern.test(normalized));
+  const babySeatVariants = normalizedExtras.reduce((variants, { normalized }) => {
+    const variant = normalized.includes('maxi-cosi') || normalized.includes('maxi cosi')
+      ? 'Maxi-Cosi'
+      : /grupo (?:ii|2)\b/.test(normalized)
+        ? 'Grupo II'
+        : /grupo (?:i|1)\b/.test(normalized)
+          ? 'Grupo I'
+          : normalized.includes('assento elevatorio')
+            ? 'Assento Elevatório'
+            : null;
+
+    return variant && !variants.includes(variant) ? [...variants, variant] : variants;
+  }, []);
+  const babySeatLabel = babySeatVariants.length
+    ? `Baby Seat (${babySeatVariants.join(', ')})`
+    : 'Baby Seat';
+  const contractRows = [
+    { label: 'C.D.W.', checked: true },
+    { label: 'Vidros + Faróis + Rodas', checked: hasExtra(patterns.protection) },
+    { label: 'Condutor adicional', checked: hasExtra(patterns.additionalDriver) },
+    { label: babySeatLabel, checked: hasExtra(patterns.babySeat) },
+    { label: 'Navegador GPS', checked: hasExtra(patterns.gps) },
+  ];
+  const otherExtras = normalizedExtras.filter(({ normalized }) => (
+    !representedPatterns.some((pattern) => pattern.test(normalized))
+  ));
 
   return (
     <section className="reservation-details-group reservation-details-extras">
       <h3>Extras</h3>
-      {extras.length ? (
-        <div className="reservation-details-extra-groups">
-          {contractExtras.length ? (
-            <div className="reservation-details-extra-group">
-              <h4>Contrato</h4>
-              <ul>{contractExtras.map(({ extra }) => <li key={extra}>{extra}</li>)}</ul>
-            </div>
-          ) : null}
-          {otherExtras.length ? (
-            <div className="reservation-details-extra-group">
-              <h4>Outros</h4>
-              <ul>{otherExtras.map(({ extra }) => <li key={extra}>{extra}</li>)}</ul>
-            </div>
-          ) : null}
-        </div>
-      ) : <p className="reservation-details-empty-section">Sem extras</p>}
+      <div className="reservation-details-extra-groups">
+        <ul className="reservation-contract-extras" aria-label="Extras do contrato">
+          {contractRows.map(({ label, checked }) => (
+            <li className="reservation-contract-extra-row" key={label}>
+              <span>{label}</span>
+              <span
+                className={`reservation-contract-checkbox${checked ? ' is-checked' : ''}`}
+                role="checkbox"
+                aria-label={label}
+                aria-checked={checked}
+              />
+            </li>
+          ))}
+        </ul>
+        {otherExtras.length ? (
+          <div className="reservation-details-extra-group">
+            <h4>Outros</h4>
+            <ul className="reservation-details-other-extras">
+              {otherExtras.map(({ extra }) => <li key={extra}>{extra}</li>)}
+            </ul>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

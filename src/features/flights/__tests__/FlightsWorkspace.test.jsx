@@ -69,6 +69,17 @@ describe('FlightsWorkspace', () => {
     );
   });
 
+  it('links each flight number to its Flightradar24 page', async () => {
+    fetchFlightArrivals.mockResolvedValue(response);
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
+
+    const flight = await screen.findByRole('article', { name: 'Voo TP1685' });
+    const link = within(flight).getByRole('link', { name: 'Abrir voo TP1685 no Flightradar24 numa nova aba' });
+    expect(link).toHaveAttribute('href', 'https://www.flightradar24.com/TP1685');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('shows the normalized flight total and returns to the service list from the header', async () => {
     const user = userEvent.setup();
     const onWorkspaceChange = vi.fn();
