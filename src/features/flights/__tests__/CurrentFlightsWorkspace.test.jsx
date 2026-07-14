@@ -213,6 +213,12 @@ describe('CurrentFlightsWorkspace', () => {
     expect(refreshButton).not.toHaveFocus()
   })
 
+  it('reserves space below mobile flight content for the fixed tab bar', () => {
+    expect(appCss).toMatch(
+      /@media \(max-width: 780px\)[\s\S]*?\.app-shell\s*{\s*padding: 0\.34rem 0\.34rem calc\(5\.4rem \+ env\(safe-area-inset-bottom\)\);/,
+    )
+  })
+
   it('keeps a successful flight refresh successful when cache persistence fails', async () => {
     mocks.saveFlightStatusCache.mockRejectedValueOnce(new Error('permission denied'))
     render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" />)

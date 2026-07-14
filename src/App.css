@@ -6111,7 +6111,7 @@ h1 {
   }
 
   .app-shell {
-    padding: 0.34rem;
+    padding: 0.34rem 0.34rem calc(5.4rem + env(safe-area-inset-bottom));
     gap: 0.34rem;
   }
 
