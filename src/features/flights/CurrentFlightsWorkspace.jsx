@@ -12,6 +12,7 @@ import { toTimestampMs } from '../../lib/timestamp'
 import { fetchCurrentFlights } from './currentFlightsApi'
 import { FlightResult } from './FlightsWorkspace'
 import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers'
+import { sortFlightsByArrivalTime } from './flightSorting'
 import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton'
 
 const CACHE_CHECK_MS = 120_000
@@ -160,7 +161,10 @@ export default function CurrentFlightsWorkspace({
     const current = []
     const previous = []
     visibleResults.forEach((result) => (isPreviousArrival(result, nowMs) ? previous : current).push(result))
-    return { currentResults: current, previousResults: previous }
+    return {
+      currentResults: sortFlightsByArrivalTime(current),
+      previousResults: sortFlightsByArrivalTime(previous),
+    }
   }, [nowMs, visibleResults])
   const isPreparingDay = serviceDataLoading && !serviceDataReady
   const isServiceDataUnavailable = !serviceDataLoading && !serviceDataReady

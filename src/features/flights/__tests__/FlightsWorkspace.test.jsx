@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +7,8 @@ const { fetchFlightArrivals } = vi.hoisted(() => ({ fetchFlightArrivals: vi.fn()
 vi.mock('../flightsApi', () => ({ fetchFlightArrivals }));
 
 import FlightsWorkspace from '../FlightsWorkspace';
+
+const appCss = readFileSync('src/App.css', 'utf8');
 
 const services = [
   { serviceType: 'pickup', flightNumber: ' TP 1685 ' },
@@ -46,6 +49,10 @@ function deferred() {
 }
 
 describe('FlightsWorkspace', () => {
+  it('uses a pointer cursor for flight numbers linked to FlightRadar24', () => {
+    expect(appCss).toMatch(/\.flight-number-link\s*{[^}]*cursor:\s*pointer;/);
+  });
+
   beforeEach(() => fetchFlightArrivals.mockReset());
   afterEach(cleanup);
 
@@ -69,6 +76,16 @@ describe('FlightsWorkspace', () => {
     );
   });
 
+  it('renders future flights by effective arrival time, earliest first', async () => {
+    fetchFlightArrivals.mockResolvedValue({ results: [...response.results].reverse() });
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
+
+    expect((await screen.findAllByRole('article')).map((flight) => flight.getAttribute('aria-label'))).toEqual([
+      'Voo TP1685',
+      'Voo U27654',
+    ]);
+  });
+
   it('links each flight number to its Flightradar24 page', async () => {
     fetchFlightArrivals.mockResolvedValue(response);
     render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
@@ -78,6 +95,13 @@ describe('FlightsWorkspace', () => {
     expect(link).toHaveAttribute('href', 'https://www.flightradar24.com/TP1685');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    const airlineLogo = within(flight).getByRole('img', { name: 'TAP Air Portugal' });
+    expect(airlineLogo).toHaveAttribute(
+      'src',
+      expect.stringMatching(/(?:\.svg$|^data:image\/svg\+xml)/),
+    );
+    expect(flight.querySelector('.flight-route-mark .lucide-plane-landing')).toBeInTheDocument();
+    expect(link.closest('.flight-number-line')).toContainElement(airlineLogo);
   });
 
   it('shows the normalized flight total and returns to the service list from the header', async () => {

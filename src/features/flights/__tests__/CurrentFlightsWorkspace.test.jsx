@@ -88,6 +88,20 @@ describe('CurrentFlightsWorkspace', () => {
     expect(mocks.fetchCurrentFlights).not.toHaveBeenCalled()
   })
 
+  it('renders current flights by effective arrival time, earliest first', async () => {
+    mocks.subscribeToFlightStatusDay.mockImplementation((_date, onData) => {
+      onData(cachePayload({ results: [...activeResults].reverse() }))
+      return vi.fn()
+    })
+    render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" />)
+    await act(async () => {})
+
+    expect(screen.getAllByRole('article').map((flight) => flight.getAttribute('aria-label'))).toEqual([
+      'Voo TP1685',
+      'Voo U27654',
+    ])
+  })
+
   it('groups mobile client identity and presents a quiet reservation id action', async () => {
     render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" />)
     await act(async () => {})
@@ -107,9 +121,12 @@ describe('CurrentFlightsWorkspace', () => {
     expect(actions?.children[1]).toBe(reservationLink)
   })
 
-  it('hides client actions in the compact current-flight mobile layout', () => {
+  it('shows compact client actions in the current-flight mobile layout', () => {
     expect(appCss).toMatch(
-      /\.flight-row--single-time \.flight-client-actions\s*{\s*display:\s*none;/
+      /\.flight-row--single-time \.flight-client-actions\s*{[^}]*grid-column:\s*2;[^}]*grid-row:\s*1;/
+    )
+    expect(appCss).toMatch(
+      /\.flight-row--single-time \.flight-client-phone:not\(\.flight-client-phone--disabled\) span\s*{[^}]*display:\s*none;/
     )
   })
 

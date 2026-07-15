@@ -6,7 +6,9 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../../lib/phone';
 import { fetchFlightArrivals } from './flightsApi';
 import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers';
+import { sortFlightsByArrivalTime } from './flightSorting';
 import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton';
+import { getAirlineBrand } from './airlineBrands';
 
 const STATUS_LABELS = {
   planned: 'Planeado',
@@ -136,6 +138,7 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
   const status = hasError ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo') : localizeStatus(result?.status);
   const statusKey = hasError ? 'error' : String(result?.status ?? 'unknown').toLowerCase();
   const flightradarUrl = flightNumber === '—' ? '' : `https://www.flightradar24.com/${encodeURIComponent(flightNumber)}`;
+  const airlineBrand = getAirlineBrand(flightNumber);
   const sourceUrl = getSafeSourceUrl(result?.sourceUrl);
   const singleTimeLabel = String(result?.status ?? '').toLowerCase() === 'arrived'
     ? 'Chegou às'
@@ -148,21 +151,24 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
   return (
     <article className={`flight-row flight-row--status-${statusKey} ${hasError ? 'flight-row--error' : ''} ${singleTime ? 'flight-row--single-time' : ''}`} style={{ '--flight-index': index }} aria-label={`Voo ${flightNumber}`}>
       <div className="flight-identity">
-        <span className="flight-route-mark" aria-hidden="true">
-          <PlaneLanding />
-        </span>
-        {flightradarUrl ? (
-          <a
-            className="flight-number-link"
-            href={flightradarUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Abrir voo ${flightNumber} no Flightradar24 numa nova aba`}
-            title="Abrir voo no Flightradar24"
-          >
-            <strong>{flightNumber}</strong>
-          </a>
-        ) : <strong>{flightNumber}</strong>}
+        <span className="flight-route-mark" aria-hidden="true"><PlaneLanding /></span>
+        <div className="flight-number-line">
+          {flightradarUrl ? (
+            <a
+              className="flight-number-link"
+              href={flightradarUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Abrir voo ${flightNumber} no Flightradar24 numa nova aba`}
+              title="Abrir voo no Flightradar24"
+            >
+              <strong>{flightNumber}</strong>
+            </a>
+          ) : <strong>{flightNumber}</strong>}
+          {airlineBrand ? (
+            <img className="flight-airline-logo" src={airlineBrand.logoUrl} alt={airlineBrand.name} />
+          ) : null}
+        </div>
         <span>FNC</span>
       </div>
 
@@ -230,6 +236,7 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
   const requestIdRef = useRef(0);
   const [retryVersion, setRetryVersion] = useState(0);
   const [state, setState] = useState({ requestToken: null, status: 'idle', results: [], error: '' });
+  const sortedResults = useMemo(() => sortFlightsByArrivalTime(state.results), [state.results]);
   const currentRequestKey = `${selectedDate}:${flightListKey}:${retryVersion}:${serviceDataReady ? 'ready' : 'waiting'}`;
   const requestToken = useMemo(() => ({ key: currentRequestKey }), [currentRequestKey]);
 
@@ -321,7 +328,7 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
             <span>RWY 05</span>
           </div>
           <div className="flights-list">
-            {state.results.map((result, index) => {
+            {sortedResults.map((result, index) => {
               const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? [];
               return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} />;
             })}

@@ -596,9 +596,23 @@
 .flight-identity {
   min-width: 0;
   display: grid;
-  grid-template-columns: 1.6rem 1fr;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
   align-items: center;
   column-gap: 0.45rem;
+}
+
+.flight-number-line {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.flight-airline-logo {
+  width: 1.85rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .flight-identity strong {
@@ -619,6 +633,7 @@
   color: inherit;
   border-radius: 3px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .flight-number-link:hover strong {
@@ -1275,7 +1290,7 @@
   }
 
   .flight-row--single-time .flight-client-identity {
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 1;
   }
 
@@ -1291,10 +1306,21 @@
   }
 
   .flight-row--single-time .flight-client-phone:not(.flight-client-phone--disabled) {
-    min-height: 2.75rem;
+    width: 2rem;
+    min-height: 2rem;
+    justify-content: center;
   }
 
   .flight-row--single-time .flight-client-actions {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 0.25rem;
+  }
+
+  .flight-row--single-time .flight-client-phone:not(.flight-client-phone--disabled) span {
     display: none;
   }
 
@@ -1344,16 +1370,13 @@
     width: 5.2rem;
   }
 
-  .flight-row--single-time .flight-route-mark {
-    display: none;
-  }
-
   .flight-row--single-time .flight-identity {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1.35rem minmax(0, 1fr);
+    column-gap: 0.3rem;
   }
 
   .flight-row--single-time .flight-identity > span:last-child {
-    grid-column: 1;
+    grid-column: 2;
   }
 
   .flight-row--single-time .flight-status--prominent strong {
