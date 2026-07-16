@@ -25,7 +25,12 @@ function displayValue(value) {
 }
 
 function displayVehicle(reservation) {
-  const vehicle = [reservation.carMake, reservation.carModel]
+  const carModel = String(reservation.carModel ?? '').trim()
+  const compactCarModel = carModel
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-PT') === 'automatico' ? '(A)' : carModel
+  const vehicle = [reservation.carMake, compactCarModel]
     .map((value) => String(value ?? '').trim())
     .filter(Boolean)
     .join(' ')

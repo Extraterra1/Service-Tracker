@@ -108,6 +108,22 @@ describe('ReservationsWorkspace', () => {
     expect(item).not.toHaveTextContent('TP123')
   })
 
+  it('shortens the automatic car model to a compact marker', async () => {
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        carModel: 'Automático',
+      }],
+    })
+
+    render(<ReservationsWorkspace />)
+
+    const item = await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i })
+    expect(item).toHaveTextContent('Fiat (A) - AA-00-AA')
+    expect(item).not.toHaveTextContent('Automático')
+  })
+
   it('opens every available booking detail and restores focus when closed', async () => {
     const user = userEvent.setup()
     render(<ReservationsWorkspace />)
@@ -487,6 +503,9 @@ describe('ReservationsWorkspace', () => {
     expect(appCss).toMatch(/\.reservation-item-skeleton\s*{[^}]*animation:/s)
     expect(appCss).toMatch(/\.reservation-details-backdrop\s*{[^}]*position:\s*fixed/s)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservation-item\s*{/)
+    expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/)
+    expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*grid-template-rows:\s*2rem\s+2\.35rem\s+2\.35rem/)
+    expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservation-item-datetime,[\s\S]*text-overflow:\s*ellipsis/)
     expect(appCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.reservation-item-skeleton/)
     expect(appCss).toMatch(/\.reservations-filter-row\s*{[^}]*grid-column:\s*1/s)
     expect(appCss).toMatch(/\.reservations-status-select\s*{[^}]*min-height:\s*2rem/s)

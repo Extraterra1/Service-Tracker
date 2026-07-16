@@ -2259,21 +2259,30 @@
   }
 
   .reservation-item {
-    min-height: 7.2rem;
-    padding: 0.65rem;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    position: relative;
+    height: 7.35rem;
+    min-height: 7.35rem;
+    padding: 0.35rem 2rem 0.35rem 0.65rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 2rem 2.35rem 2.35rem;
     grid-template-areas:
-      'client status chevron'
-      'pickup pickup pickup'
-      'dropoff group plate';
-    gap: 0.48rem 0.65rem;
+      'client status'
+      'pickup dropoff'
+      'group plate';
+    gap: 0.15rem 0.65rem;
   }
 
   .reservation-item-client {
     grid-area: client;
+    gap: 0.35rem;
   }
   .reservation-item > .reservation-status {
     grid-area: status;
+    max-width: 100%;
+    justify-self: end;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .reservation-item-datetime:nth-of-type(3) {
     grid-area: pickup;
@@ -2288,7 +2297,26 @@
     grid-area: plate;
   }
   .reservation-item-chevron {
-    grid-area: chevron;
+    position: absolute;
+    top: 0.85rem;
+    right: 0.55rem;
+  }
+
+  .reservation-item-datetime,
+  .reservation-item-vehicle,
+  .reservation-plate {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .reservation-item-reference {
+    font-size: 0.66rem;
+  }
+
+  .reservation-item-client strong {
+    font-size: 0.8rem;
   }
 
   .reservation-details-content {
