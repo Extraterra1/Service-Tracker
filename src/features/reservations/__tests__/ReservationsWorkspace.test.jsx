@@ -129,6 +129,28 @@ describe('ReservationsWorkspace', () => {
     expect(vehicleSection).not.toHaveTextContent('Automatico')
   })
 
+  it('shortens Volkswagen to VW in reservation vehicle labels', async () => {
+    fetchReservations.mockResolvedValue({
+      ...payload,
+      reservations: [{
+        ...payload.reservations[0],
+        carMake: 'Volkswagen',
+        carModel: 'Polo',
+      }],
+    })
+
+    render(<ReservationsWorkspace />)
+
+    const item = await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i })
+    expect(item).toHaveTextContent('VW Polo - AA-00-AA')
+    expect(item).not.toHaveTextContent('Volkswagen')
+
+    await userEvent.click(item)
+    const vehicleSection = screen.getByRole('heading', { name: 'Viatura' }).closest('section')
+    expect(within(vehicleSection).getByText('VW Polo')).toBeInTheDocument()
+    expect(vehicleSection).not.toHaveTextContent('Volkswagen')
+  })
+
   it('opens every available booking detail and restores focus when closed', async () => {
     const user = userEvent.setup()
     render(<ReservationsWorkspace />)

@@ -27,6 +27,11 @@ export function formatReservationCarModel(value) {
     .replace(/\bautom[aá]tico\b/giu, '(A)')
 }
 
+export function formatReservationCarMake(value) {
+  const make = String(value ?? '').trim()
+  return make.toLocaleLowerCase('pt-PT') === 'volkswagen' ? 'VW' : make
+}
+
 export function formatReservationField(key, value) {
   if (key === 'status') {
     return RESERVATION_STATUS_LABELS[value] ?? toTitleCase(value)
