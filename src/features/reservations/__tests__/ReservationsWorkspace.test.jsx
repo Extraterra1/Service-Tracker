@@ -108,20 +108,25 @@ describe('ReservationsWorkspace', () => {
     expect(item).not.toHaveTextContent('TP123')
   })
 
-  it('shortens the automatic car model to a compact marker', async () => {
+  it('shortens automatic transmission text inside the car model to a compact marker', async () => {
     fetchReservations.mockResolvedValue({
       ...payload,
       reservations: [{
         ...payload.reservations[0],
-        carModel: 'Automático',
+        carModel: 'Panda Automatico',
       }],
     })
 
     render(<ReservationsWorkspace />)
 
     const item = await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i })
-    expect(item).toHaveTextContent('Fiat (A) - AA-00-AA')
-    expect(item).not.toHaveTextContent('Automático')
+    expect(item).toHaveTextContent('Fiat Panda (A) - AA-00-AA')
+    expect(item).not.toHaveTextContent('Automatico')
+
+    await userEvent.click(item)
+    const vehicleSection = screen.getByRole('heading', { name: 'Viatura' }).closest('section')
+    expect(within(vehicleSection).getByText('Fiat Panda (A)')).toBeInTheDocument()
+    expect(vehicleSection).not.toHaveTextContent('Automatico')
   })
 
   it('opens every available booking detail and restores focus when closed', async () => {

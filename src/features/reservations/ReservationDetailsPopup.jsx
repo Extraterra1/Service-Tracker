@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
 import { getWhatsAppHref } from '../../lib/phone';
-import { formatReservationField, getReservationCountryCode } from './reservationDisplay';
+import { formatReservationCarModel, formatReservationField, getReservationCountryCode } from './reservationDisplay';
 
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' });
@@ -233,7 +233,7 @@ function getFieldValue(reservation, key) {
   if (key !== 'carModel') return reservation[key];
 
   const make = String(reservation.carMake ?? '').trim();
-  const model = String(reservation.carModel ?? '').trim();
+  const model = formatReservationCarModel(reservation.carModel);
   if (make && model.toLocaleLowerCase().startsWith(make.toLocaleLowerCase())) return model;
   return [make, model].filter(Boolean).join(' ');
 }

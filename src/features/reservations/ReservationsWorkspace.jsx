@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
 import { fetchReservations } from '../../lib/reservationsApi'
 import ReservationDetailsPopup from './ReservationDetailsPopup'
-import { formatReservationField, getReservationCountryCode, RESERVATION_STATUS_LABELS } from './reservationDisplay'
+import { formatReservationCarModel, formatReservationField, getReservationCountryCode, RESERVATION_STATUS_LABELS } from './reservationDisplay'
 
 const STATUS_OPTIONS = ['confirmed', 'pending', 'collected', 'completed', 'cancelled']
 const countryNames = new Intl.DisplayNames(['pt-PT'], { type: 'region' })
@@ -25,12 +25,7 @@ function displayValue(value) {
 }
 
 function displayVehicle(reservation) {
-  const carModel = String(reservation.carModel ?? '').trim()
-  const compactCarModel = carModel
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-PT') === 'automatico' ? '(A)' : carModel
-  const vehicle = [reservation.carMake, compactCarModel]
+  const vehicle = [reservation.carMake, formatReservationCarModel(reservation.carModel)]
     .map((value) => String(value ?? '').trim())
     .filter(Boolean)
     .join(' ')

@@ -21,6 +21,12 @@ export function formatReservationDateTime(value) {
   return `${day}/${month}/${year} ${hour}:${minute}`
 }
 
+export function formatReservationCarModel(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/\bautom[aá]tico\b/giu, '(A)')
+}
+
 export function formatReservationField(key, value) {
   if (key === 'status') {
     return RESERVATION_STATUS_LABELS[value] ?? toTitleCase(value)
