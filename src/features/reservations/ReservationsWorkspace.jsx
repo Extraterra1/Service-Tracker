@@ -227,6 +227,7 @@ export default function ReservationsWorkspace({ canManageAccess = false }) {
                   }}
                 >
                 <span className="reservation-item-client">
+                  <span className="reservation-item-reference">#{displayValue(reservation.reference)}</span>
                   {countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryName} /> : null}
                   <strong>{displayValue(reservation.customer)}</strong>
                 </span>
