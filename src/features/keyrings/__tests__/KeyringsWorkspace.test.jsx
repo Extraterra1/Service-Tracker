@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import KeyringsWorkspace from '../KeyringsWorkspace';
 import { rankPlateOptions } from '../keyringSearch';
@@ -71,6 +72,25 @@ describe('KeyringsWorkspace', () => {
     await user.click(screen.getByRole('button', { name: 'Remover matrícula BF-07-JZ' }));
     expect(screen.queryByRole('button', { name: 'Remover matrícula BF-07-JZ' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remover matrícula AA-11-BB' })).toBeInTheDocument();
+  });
+
+  it('previews nine gapless rows per page with one shared edge between adjacent rows', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<KeyringsWorkspace plateOptions={plates} />);
+    const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
+
+    await user.type(combobox, 'BF');
+    await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
+    await user.clear(combobox);
+    await user.type(combobox, 'AA');
+    await user.click(screen.getByRole('option', { name: 'AA-11-BB' }));
+
+    const strips = container.querySelectorAll('.keyring-strip');
+    expect(screen.getByText(/9 viaturas por página/)).toBeInTheDocument();
+    expect(strips[0]).toHaveStyle({ top: `${(24.8 / 297) * 100}%` });
+    expect(strips[1]).toHaveStyle({ top: `${((24.8 + 28.4) / 297) * 100}%` });
+    expect(strips[1]).toHaveClass('is-shared-edge');
+    expect(readFileSync('src/App.css', 'utf8')).toMatch(/\.keyring-strip\.is-shared-edge\s*\{[^}]*border-top:\s*0;/);
   });
 
   it('supports keyboard selection, Escape, and focus reopening', async () => {

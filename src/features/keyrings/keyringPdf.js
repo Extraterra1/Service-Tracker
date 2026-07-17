@@ -1,8 +1,7 @@
 export const A4_SIZE_MM = Object.freeze({ width: 210, height: 297 });
 export const WHATSAPP_NUMBER = '+351927491323';
 export const SORA_FONT_NAME = 'Sora SemiBold';
-export const KEYRING_ROWS_PER_PAGE = 8;
-export const KEYRING_ROW_GAP_MM = 2.2;
+export const KEYRING_ROWS_PER_PAGE = 9;
 
 export const KEYRING_PDF_LAYOUT = Object.freeze({
   strip: Object.freeze({ x: 20.7, top: 24.8, width: 167.5, height: 28.4 }),
@@ -48,7 +47,7 @@ export function buildKeyringPdfModel(plate) {
   const { strip } = KEYRING_PDF_LAYOUT;
   const cellWidth = strip.width / 4;
   const rows = displayPlates.map((displayPlate, rowIndex) => {
-    const rowTop = strip.top + rowIndex * (strip.height + KEYRING_ROW_GAP_MM);
+    const rowTop = strip.top + rowIndex * strip.height;
     const cells = Array.from({ length: 4 }, (_, index) => ({
       x: strip.x + cellWidth * index,
       top: rowTop,
@@ -118,21 +117,32 @@ export async function createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBy
   Array.from({ length: Math.ceil(model.rows.length / KEYRING_ROWS_PER_PAGE) }, (_, pageIndex) => {
     const page = pageIndex === 0 ? document.getPages()[0] : document.addPage([mmToPoints(A4_SIZE_MM.width), mmToPoints(A4_SIZE_MM.height)]);
     const rows = model.rows.slice(pageIndex * KEYRING_ROWS_PER_PAGE, (pageIndex + 1) * KEYRING_ROWS_PER_PAGE);
+    const { strip } = KEYRING_PDF_LAYOUT;
+
+    page.drawRectangle({
+      x: mmToPoints(strip.x),
+      y: topToPdfY(strip.top, rows.length * strip.height),
+      width: mmToPoints(strip.width),
+      height: mmToPoints(rows.length * strip.height),
+      borderColor: black,
+      borderWidth: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
+    });
+    rows.slice(1).forEach((_, rowIndex) => {
+      const boundaryTop = strip.top + (rowIndex + 1) * strip.height;
+      page.drawLine({
+        start: { x: mmToPoints(strip.x), y: topToPdfY(boundaryTop) },
+        end: { x: mmToPoints(strip.x + strip.width), y: topToPdfY(boundaryTop) },
+        color: black,
+        thickness: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
+      });
+    });
 
     rows.forEach((row, rowIndex) => {
-      const rowOffset = rowIndex * (KEYRING_ROW_GAP_MM + KEYRING_PDF_LAYOUT.strip.height);
+      const rowOffset = rowIndex * KEYRING_PDF_LAYOUT.strip.height;
       const rowTop = KEYRING_PDF_LAYOUT.strip.top + rowOffset;
       const cells = row.cells.map((cell) => ({ ...cell, top: rowTop }));
       const strip = { ...KEYRING_PDF_LAYOUT.strip, top: rowTop };
 
-      page.drawRectangle({
-        x: mmToPoints(strip.x),
-        y: topToPdfY(strip.top, strip.height),
-        width: mmToPoints(strip.width),
-        height: mmToPoints(strip.height),
-        borderColor: black,
-        borderWidth: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
-      });
       cells.slice(1).forEach((cell) => {
         page.drawLine({
           start: { x: mmToPoints(cell.x), y: topToPdfY(strip.top, strip.height) },

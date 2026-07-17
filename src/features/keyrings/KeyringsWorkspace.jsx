@@ -2,12 +2,18 @@ import { useId, useMemo, useRef, useState } from 'react';
 import { Download, KeyRound, Search, X } from 'lucide-react';
 import logoUrl from '../../assets/Logo Base.svg';
 import whatsappUrl from '../../assets/whatsapp.svg';
-import { openKeyringPdf } from './keyringPdf';
+import { A4_SIZE_MM, KEYRING_PDF_LAYOUT, KEYRING_ROWS_PER_PAGE, openKeyringPdf } from './keyringPdf';
 import { rankPlateOptions } from './keyringSearch';
 
 function KeyringStripPreview({ plate, rowIndex = 0 }) {
+  const top = ((KEYRING_PDF_LAYOUT.strip.top + rowIndex * KEYRING_PDF_LAYOUT.strip.height) / A4_SIZE_MM.height) * 100;
+  const height = (KEYRING_PDF_LAYOUT.strip.height / A4_SIZE_MM.height) * 100;
   return (
-    <div className="keyring-strip" style={{ top: `${8.35 + rowIndex * 10.3}%` }} aria-label={`Pré-visualização do porta-chaves ${plate}`}>
+    <div
+      className={`keyring-strip${rowIndex > 0 ? ' is-shared-edge' : ''}`}
+      style={{ top: `${top}%`, height: `${height}%` }}
+      aria-label={`Pré-visualização do porta-chaves ${plate}`}
+    >
       {[0, 1].map((copy) => (
         <div className="keyring-insert" key={copy}>
           <div className="keyring-cell keyring-plate-cell">
@@ -187,7 +193,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
         <button type="button" className="primary-btn keyrings-generate" onClick={handleGenerate} disabled={selectedPlates.length === 0 || generating}>
           <Download aria-hidden="true" /> {generating ? 'A gerar…' : 'Gerar PDF'}
         </button>
-        <p className="keyrings-note">A4 · 2 cópias · +351 927 491 323</p>
+        <p className="keyrings-note">A4 · 9 viaturas por página · 2 cópias por viatura</p>
       </section>
 
       <section className="keyrings-preview-panel" aria-labelledby="keyrings-preview-heading">
@@ -200,9 +206,9 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
         </div>
         <div className="keyrings-preview-pages">
           {selectedPlates.length > 0 ? selectedPlates.reduce((pages, plate, index) => {
-            const pageIndex = Math.floor(index / 8);
+            const pageIndex = Math.floor(index / KEYRING_ROWS_PER_PAGE);
             if (!pages[pageIndex]) pages[pageIndex] = [];
-            pages[pageIndex].push({ plate, rowIndex: index % 8 });
+            pages[pageIndex].push({ plate, rowIndex: index % KEYRING_ROWS_PER_PAGE });
             return pages;
           }, []).map((rows, pageIndex) => (
             <div className="keyring-page" aria-label={`Pré-visualização da folha A4 ${pageIndex + 1}`} key={pageIndex}>
