@@ -361,10 +361,13 @@ describe('ReservationsWorkspace', () => {
     await user.click(await screen.findByRole('button', { name: /Abrir reserva de Maria Silva/i }))
 
     const dialog = screen.getByRole('dialog', { name: /Reserva 000123/i })
+    const phoneLink = within(dialog).getByRole('link', { name: /Abrir conversa no WhatsApp para \+44 7700 900123/i })
     const popupHeader = within(dialog).getByRole('heading', { name: 'Reserva 000123' }).closest('header')
     const imtLink = within(popupHeader).getByRole('link', { name: /Enviar mensagem IMT por WhatsApp/i })
     const message = new URL(imtLink.href).searchParams.get('text')
 
+    expect(phoneLink).toHaveTextContent('+44 770 090 012 3')
+    expect(phoneLink).toHaveAttribute('href', 'https://wa.me/447700900123')
     expect(imtLink.href).toContain('https://wa.me/447700900123')
     expect(message).toContain('as the rental period is 12 days')
     expect(message).toContain('initially quoted amount of 100.00€')

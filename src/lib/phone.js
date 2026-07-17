@@ -346,6 +346,18 @@ function detectIso2FromInternationalDigits(digits) {
   return '';
 }
 
+function getCallingCodeFromInternationalDigits(digits) {
+  if (!detectIso2FromInternationalDigits(digits)) return '';
+  if (digits.startsWith('1')) return '1';
+
+  for (let len = 3; len >= 1; len -= 1) {
+    const code = digits.slice(0, len);
+    if (COUNTRY_BY_CALLING_CODE[code]) return code;
+  }
+
+  return '';
+}
+
 function detectIso2FromLocalDigits(digits) {
   if (!digits) {
     return '';
@@ -398,4 +410,17 @@ export function detectPhoneCountryCode(phoneRaw) {
 export function getWhatsAppHref(phoneRaw) {
   const digits = normalizePhoneForWhatsApp(phoneRaw);
   return digits ? `https://wa.me/${digits}` : '';
+}
+
+export function formatPhoneForDisplay(phoneRaw) {
+  const original = String(phoneRaw ?? '').trim();
+  const { internationalDigits } = normalizePhoneForDetection(original);
+  const callingCode = getCallingCodeFromInternationalDigits(internationalDigits);
+  if (!callingCode) return original;
+
+  const subscriberDigits = internationalDigits.slice(callingCode.length);
+  const groups = subscriberDigits.match(/.{1,3}/g);
+  if (!groups?.length) return original;
+
+  return `+${callingCode} ${groups.join(' ')}`;
 }

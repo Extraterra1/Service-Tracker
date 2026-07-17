@@ -2,7 +2,7 @@ import { Building2, CalendarArrowDown, CalendarArrowUp, CarFront, Clock3, Extern
 import { useEffect, useMemo, useRef } from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
-import { getWhatsAppHref } from '../../lib/phone';
+import { formatPhoneForDisplay, getWhatsAppHref } from '../../lib/phone';
 import { formatReservationCarMake, formatReservationCarModel, formatReservationField, getReservationCountryCode } from './reservationDisplay';
 
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
@@ -313,7 +313,7 @@ function DetailValue({ fieldKey, value, countryCode, countryName }) {
         rel="noreferrer"
         aria-label={`Abrir conversa no WhatsApp para ${value}`}
       >
-        <span>{formatValue(fieldKey, value)}</span>
+        <span>{formatPhoneForDisplay(value)}</span>
         <FaWhatsapp aria-hidden="true" />
       </a>
     );
