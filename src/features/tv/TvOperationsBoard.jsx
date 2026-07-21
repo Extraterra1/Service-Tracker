@@ -48,12 +48,12 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
   return (
     <main className="tv-board" aria-label="Próximos serviços">
       <section className="tv-board-section tv-board-delivery" role="region" aria-label="Próxima entrega">
-        <div className="tv-board-heading"><span className="tv-board-index">01</span><p>Próxima entrega</p></div>
+        <div className="tv-board-heading"><p>Próxima entrega</p></div>
         {delivery ? (
           <div className="tv-board-service">
             <div className="tv-board-time-wrap">
               <time className="tv-board-time" dateTime={deliveryTime.time}>{deliveryTime.time}</time>
-              <span className="tv-board-time-source">{deliveryTime.source === 'flight' ? 'Hora do voo' : 'Hora da reserva'}</span>
+              <span className={`tv-board-time-source${deliveryTime.source === 'flight' ? ' is-flight' : ''}`}>{deliveryTime.source === 'flight' ? 'Hora do voo' : 'Hora da reserva'}</span>
             </div>
             <ServiceDetails item={delivery} flight={deliveryFlight} />
           </div>
@@ -61,7 +61,7 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
       </section>
 
       <section className="tv-board-section tv-board-return" role="region" aria-label="Próxima recolha">
-        <div className="tv-board-heading"><span className="tv-board-index">02</span><p>Próxima recolha</p></div>
+        <div className="tv-board-heading"><p>Próxima recolha</p></div>
         {recolha ? (
           <div className="tv-board-service">
             <div className="tv-board-time-wrap">

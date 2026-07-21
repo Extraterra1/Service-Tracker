@@ -14,4 +14,14 @@ describe('TV board styles', () => {
     expect(appCss).toMatch(/@media \(max-width:[\s\S]*?\.tv-board-section\s*{[^}]*grid-template-columns:\s*7\.6rem minmax\(0, 1fr\);/)
     expect(appCss).toMatch(/@media \(max-width:[\s\S]*?\.tv-board-service\s*{[^}]*grid-template-columns:\s*minmax\(12\.5rem, 0\.72fr\) minmax\(0, 1\.28fr\);/)
   })
+
+  it('uses no decorative side stripe or ornamental index styling', () => {
+    expect(appCss).not.toMatch(/\.tv-board-delivery::before/)
+    expect(appCss).not.toMatch(/\.tv-board-index/)
+    expect(appCss).toMatch(/\.tv-board-time-source\.is-flight\s*{[^}]*color:\s*#b52f40;/s)
+  })
+
+  it('keeps compact empty states subordinate to service times', () => {
+    expect(appCss).toMatch(/@media \(max-width:[\s\S]*?\.tv-board-empty,[\s\S]*?\.tv-board-loading p\s*{[^}]*font-size:\s*1\.35rem;/)
+  })
 })
