@@ -382,7 +382,7 @@ describe('ServiceWorkspace', () => {
     const onToggleTransferred = vi.fn();
     render(
       <ServiceWorkspace
-        serviceData={{ pickups: [], returns: [{ itemId: 'return-1', serviceType: 'return', time: '18:00', name: 'Carlos', id: '0002', phone: '', car: 'Fiat', plate: 'AA-00-AA', location: 'Funchal', extras: [], notes: '' }] }}
+        serviceData={{ pickups: [], returns: [{ itemId: 'return-1', serviceType: 'return', time: '18:00', name: 'Carlos', id: '0002', phone: '', car: 'Fiat', plate: 'AA-00-AA', location: 'AEROPORTO DA MADEIRA', extras: [], notes: '' }] }}
         statusMap={{ 'return-1': { done: true } }}
         readyMap={{}}
         transferMap={{ 'return-1': { transferred: true } }}

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceItemCard from '../ServiceItemCard';
 
-const item = { itemId: 'return-1', serviceType: 'return', id: 'R1', name: 'Cliente', time: '10:00', plate: 'AA-00-AA', car: 'Fiat' };
+const item = { itemId: 'return-1', serviceType: 'return', id: 'R1', name: 'Cliente', time: '10:00', plate: 'AA-00-AA', car: 'Fiat', location: 'AEROPORTO DA MADEIRA' };
 
 function renderCard(status, transferState, onToggleTransferred = vi.fn()) {
   render(<ServiceItemCard item={item} status={status} transferState={transferState} sharedPlateMarkers={{}} onToggleDone={vi.fn()} onToggleTransferred={onToggleTransferred} onSaveTimeOverride={vi.fn()} />);
@@ -31,6 +31,17 @@ describe('ServiceItemCard recolha transfer status', () => {
     renderCard({ done: true }, { transferred: true });
     const button = screen.getByRole('button', { name: 'Marcar viatura AA-00-AA como aguardando transferência' });
     expect(button).toHaveClass('is-transferred');
+  });
+
+  it('keeps completed recolhas outside airport and office locations inert', () => {
+    render(<ServiceItemCard item={{ ...item, location: 'Hotel no Funchal' }} status={{ done: true }} transferState={{ transferred: false }} sharedPlateMarkers={{}} onToggleDone={vi.fn()} onToggleTransferred={vi.fn()} onSaveTimeOverride={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /transfer/ })).not.toBeInTheDocument();
+    expect(screen.getByText('- AA-00-AA')).toHaveClass('item-plate-text');
+  });
+
+  it('allows completed escritório recolhas to use transfer status', () => {
+    render(<ServiceItemCard item={{ ...item, location: 'Escritório Just Drive' }} status={{ done: true }} transferState={{ transferred: false }} sharedPlateMarkers={{}} onToggleDone={vi.fn()} onToggleTransferred={vi.fn()} onSaveTimeOverride={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Marcar viatura AA-00-AA como transferida' })).toHaveClass('is-awaiting-transfer');
   });
 
   it('uses Postman orange for awaiting transfer and keeps plates out of done line-through styling', () => {

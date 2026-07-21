@@ -114,7 +114,7 @@ Start here:
 
 Critical invariants:
 
-- only completed `return` items have an interactive transfer plate
+- only completed `return` items at airport or office locations have an interactive transfer plate
 - awaiting transfer is red; transferred is green
 - undoing a recolha resets transfer state to false in the status batch
 - transfer taps create `transfer_toggle` activity entries and score on the leaderboard

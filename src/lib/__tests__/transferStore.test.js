@@ -34,9 +34,10 @@ describe('transferStore', () => {
   afterEach(() => vi.useRealTimers());
 
   it.each([
-    ['non-current date', { date: '2026-03-06', item: { itemId: 'item-1', serviceType: 'return', plate: 'AA-00-AA' } }, 'Só é possível alterar o dia atual.'],
+    ['non-current date', { date: '2026-03-06', item: { itemId: 'item-1', serviceType: 'return', plate: 'AA-00-AA', location: 'AEROPORTO DA MADEIRA' } }, 'Só é possível alterar o dia atual.'],
     ['delivery item', { date: '2026-03-07', item: { itemId: 'item-1', serviceType: 'pickup', plate: 'AA-00-AA' } }, 'Transfer state is only available for returns.'],
-    ['missing plate', { date: '2026-03-07', item: { itemId: 'item-1', serviceType: 'return', plate: '' } }, 'Cannot update transfer state without license plate.']
+    ['missing plate', { date: '2026-03-07', item: { itemId: 'item-1', serviceType: 'return', plate: '', location: 'AEROPORTO DA MADEIRA' } }, 'Cannot update transfer state without license plate.'],
+    ['unsupported location', { date: '2026-03-07', item: { itemId: 'item-1', serviceType: 'return', plate: 'AA-00-AA', location: 'Hotel no Funchal' } }, 'Transfer state is only available for airport or office returns.']
   ])('rejects %s before touching Firestore', async (_label, input, message) => {
     await expect(setItemTransferredState({ ...input, transferred: true, user: { uid: 'user-1' } })).rejects.toThrow(message);
     expect(writeBatchMock).not.toHaveBeenCalled();
@@ -49,7 +50,7 @@ describe('transferStore', () => {
 
     await setItemTransferredState({
       date: '2026-03-07',
-      item: { itemId: 'item-1', id: 'reservation-1', serviceType: 'return', plate: ' AA-00-AA ', name: 'Cliente', time: '09:00' },
+      item: { itemId: 'item-1', id: 'reservation-1', serviceType: 'return', plate: ' AA-00-AA ', name: 'Cliente', time: '09:00', location: 'Escritório Just Drive' },
       transferred: true,
       user: { uid: 'user-1', email: 'maria@example.com', displayName: 'Maria Silva' }
     });

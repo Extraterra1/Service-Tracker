@@ -4,6 +4,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
+import { getServiceLocationKind, isTransferServiceLocation, normalizeServiceLocation } from '../lib/serviceLocations';
 import { toTimestampMs } from '../lib/timestamp';
 import { Check, Clock3, ExternalLink, Eye, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -30,38 +31,13 @@ function isValidTimeInput(value) {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value ?? '').trim());
 }
 
-function normalizeLocationText(value) {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
-
 function normalizeLocationLabel(value) {
   const text = String(value ?? '').trim();
   if (!text) {
     return text;
   }
 
-  return normalizeLocationText(text) === 'aeroporto da madeira' ? 'aeroporto' : text;
-}
-
-function getLocationKind(location) {
-  const normalizedLocation = normalizeLocationText(location);
-  if (!normalizedLocation) {
-    return '';
-  }
-
-  if (normalizedLocation.includes('aeroporto') || normalizedLocation.includes('airport')) {
-    return 'airport';
-  }
-
-  if (normalizedLocation.includes('escritorio')) {
-    return 'office';
-  }
-
-  return '';
+  return normalizeServiceLocation(text) === 'aeroporto da madeira' ? 'aeroporto' : text;
 }
 
 function getClampedClientName(name) {
@@ -88,7 +64,7 @@ function getGoogleMapsHref(location) {
     return '';
   }
 
-  if (getLocationKind(displayLocation)) {
+  if (getServiceLocationKind(displayLocation)) {
     return '';
   }
 
@@ -214,7 +190,7 @@ function ServiceItemCard({
   const clientDisplayName = getClampedClientName(item.name);
   const locationLabel = normalizeLocationLabel(item.location) || 'Localização não indicada';
   const accessibleClientName = clientDisplayName || item.id || item.itemId || 'Sem nome';
-  const locationKind = getLocationKind(item.location);
+  const locationKind = getServiceLocationKind(item.location);
   const locationHref = getGoogleMapsHref(item.location);
   const flightNumber = String(item.flightNumber ?? '').trim();
   const flightHref = isDelivery && locationKind === 'airport' ? getFlightradar24Href(flightNumber) : '';
@@ -239,7 +215,7 @@ function ServiceItemCard({
     </span>
   );
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
-  const canToggleTransferred = !isDelivery && done && Boolean(String(item.plate ?? '').trim()) && typeof onToggleTransferred === 'function';
+  const canToggleTransferred = !isDelivery && done && isTransferServiceLocation(item.location) && Boolean(String(item.plate ?? '').trim()) && typeof onToggleTransferred === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
   const timeMenuWrapRef = useRef(null);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);

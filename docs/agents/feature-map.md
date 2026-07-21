@@ -190,7 +190,7 @@ Main files:
 Behavior notes:
 
 - ready toggle only exists for `pickup` items that have a plate
-- transfer toggle only exists for completed `return` items with a plate; undo resets it
+- transfer toggle only exists for completed airport/office `return` items with a plate; undo resets it
 - car model button opens history by plate, independent of ready state
 - location becomes a Google Maps link for normal addresses
 - airport/escritorio-style locations remain plain text

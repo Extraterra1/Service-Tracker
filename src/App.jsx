@@ -24,6 +24,7 @@ import {
   sessionDiagnostics
 } from './lib/sessionDiagnostics';
 import { normalizePlate } from './lib/plates';
+import { isTransferServiceLocation } from './lib/serviceLocations';
 import { useAccessGate } from './hooks/useAccessGate';
 import { useAccessRequests } from './hooks/useAccessRequests';
 import { useActivityEntries } from './hooks/useActivityEntries';
@@ -769,7 +770,7 @@ function App() {
 
   const handleToggleTransferred = useCallback(
     async (item) => {
-      if (accessState !== 'allowed' || item?.serviceType !== 'return' || statusMap[item?.itemId]?.done !== true) return;
+      if (accessState !== 'allowed' || item?.serviceType !== 'return' || statusMap[item?.itemId]?.done !== true || !isTransferServiceLocation(item?.location)) return;
       if (!canMutateSelectedDate) {
         setErrorMessage(CURRENT_DAY_ONLY_MUTATION_ERROR);
         return;

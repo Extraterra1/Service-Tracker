@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebaseDb'
 import { CURRENT_DAY_ONLY_MUTATION_ERROR, isCurrentServiceDate } from './date'
+import { isTransferServiceLocation } from './serviceLocations'
 
 // Add a safety margin so the UI moves items immediately even if the local clock snapshot is up to ~1 minute stale.
 const FORCE_COMPLETED_OFFSET_MS = 65 * 60 * 1000
@@ -106,7 +107,7 @@ export async function setItemDoneState({ date, item, done, user, forceCompletedN
     { merge: true },
   )
 
-  if (item.serviceType === 'return' && done !== true && String(item.plate ?? '').trim()) {
+  if (item.serviceType === 'return' && done !== true && isTransferServiceLocation(item.location) && String(item.plate ?? '').trim()) {
     const transferRef = doc(db, 'service_transfer', docId)
     batch.set(
       transferRef,

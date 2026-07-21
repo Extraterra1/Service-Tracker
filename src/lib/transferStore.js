@@ -1,6 +1,7 @@
 import { collection, doc, onSnapshot, query, serverTimestamp, where, writeBatch } from 'firebase/firestore';
 import { db } from './firebaseDb';
 import { CURRENT_DAY_ONLY_MUTATION_ERROR, isCurrentServiceDate } from './date';
+import { isTransferServiceLocation } from './serviceLocations';
 
 function getUpdaterFirstName(user) {
   const displayName = String(user?.displayName ?? '').trim();
@@ -43,6 +44,7 @@ export async function setItemTransferredState({ date, item, transferred, user })
   if (!isCurrentServiceDate(date)) throw new Error(CURRENT_DAY_ONLY_MUTATION_ERROR);
   if (!item?.itemId) throw new Error('Cannot update transfer state without itemId.');
   if (item.serviceType !== 'return') throw new Error('Transfer state is only available for returns.');
+  if (!isTransferServiceLocation(item.location)) throw new Error('Transfer state is only available for airport or office returns.');
 
   const plate = String(item.plate ?? '').trim();
   if (!plate) throw new Error('Cannot update transfer state without license plate.');

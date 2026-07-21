@@ -115,7 +115,7 @@ describe('statusStore', () => {
 
     await setItemDoneState({
       date: '2026-03-07',
-      item: { itemId: 'return-1', serviceType: 'return', plate: 'AA-00-AA', name: 'Cliente', time: '10:00' },
+      item: { itemId: 'return-1', serviceType: 'return', plate: 'AA-00-AA', name: 'Cliente', time: '10:00', location: 'AEROPORTO DA MADEIRA' },
       done: false,
       user: { uid: 'user-1', displayName: 'Maria Silva', email: 'maria@example.com' },
     })
@@ -126,5 +126,20 @@ describe('statusStore', () => {
       date: '2026-03-07', itemId: 'return-1', serviceType: 'return', plate: 'AA-00-AA', transferred: false,
     })
     expect(set.mock.calls[2][1]).toMatchObject({ actionType: 'status_toggle', done: false })
+  })
+
+  it('does not create transfer state when undoing a recolha at another location', async () => {
+    const set = vi.fn()
+    writeBatchMock.mockReturnValue({ set, commit: vi.fn().mockResolvedValue(undefined) })
+
+    await setItemDoneState({
+      date: '2026-03-07',
+      item: { itemId: 'return-2', serviceType: 'return', plate: 'BB-00-BB', location: 'Hotel no Funchal' },
+      done: false,
+      user: { uid: 'user-1' },
+    })
+
+    expect(set).toHaveBeenCalledTimes(2)
+    expect(docMock).not.toHaveBeenCalledWith({ __name: 'mock-db' }, 'service_transfer', expect.any(String))
   })
 })

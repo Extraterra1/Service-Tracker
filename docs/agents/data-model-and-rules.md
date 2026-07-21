@@ -193,7 +193,7 @@ Fields:
 
 Purpose:
 
-- vehicle transfer state for completed recolha/return items
+- vehicle transfer state for completed airport/office recolha items
 
 Written by:
 
