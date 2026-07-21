@@ -5335,7 +5335,7 @@ h1 {
 
 .service-item .item-name,
 .service-item .item-subline > :not(.item-phone-inline),
-.service-item .item-carline,
+.service-item .item-carline-model,
 .service-item .item-note {
   text-decoration-line: line-through;
   text-decoration-thickness: 2px;
@@ -5348,7 +5348,7 @@ h1 {
 
 .service-item.is-done .item-name,
 .service-item.is-done .item-subline > :not(.item-phone-inline),
-.service-item.is-done .item-carline,
+.service-item.is-done .item-carline-model,
 .service-item.is-done .item-note {
   text-decoration-color: var(--line-through);
 }
@@ -5901,9 +5901,9 @@ h1 {
 }
 
 .item-plate-button.is-awaiting-transfer {
-  color: #a51d2d;
-  border-color: rgba(190, 45, 65, 0.4);
-  background: rgba(224, 73, 91, 0.17);
+  color: #ff6c37;
+  border-color: rgba(255, 108, 55, 0.42);
+  background: rgba(255, 108, 55, 0.16);
 }
 
 .item-plate-button.is-transferred {
@@ -5918,6 +5918,12 @@ h1 {
   outline-color: rgba(55, 148, 86, 0.7);
 }
 
+.item-plate-button.is-awaiting-transfer:not(:disabled):focus-visible {
+  border-color: rgba(255, 108, 55, 0.5);
+  background: rgba(255, 108, 55, 0.2);
+  outline-color: rgba(255, 108, 55, 0.72);
+}
+
 @media (hover: hover) {
   .item-plate-button:not(:disabled):hover {
     border-color: color-mix(in oklab, var(--item-service), transparent 56%);
@@ -5930,8 +5936,8 @@ h1 {
   }
 
   .item-plate-button.is-awaiting-transfer:not(:disabled):hover {
-    border-color: rgba(190, 45, 65, 0.5);
-    background: rgba(224, 73, 91, 0.22);
+    border-color: rgba(255, 108, 55, 0.5);
+    background: rgba(255, 108, 55, 0.2);
   }
 
   .item-plate-button.is-transferred:not(:disabled):hover {

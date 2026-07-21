@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceItemCard from '../ServiceItemCard';
@@ -29,5 +31,12 @@ describe('ServiceItemCard recolha transfer status', () => {
     renderCard({ done: true }, { transferred: true });
     const button = screen.getByRole('button', { name: 'Marcar viatura AA-00-AA como aguardando transferência' });
     expect(button).toHaveClass('is-transferred');
+  });
+
+  it('uses Postman orange for awaiting transfer and keeps plates out of done line-through styling', () => {
+    const appCss = fs.readFileSync(path.resolve(globalThis.process.cwd(), 'src/App.css'), 'utf8');
+    expect(appCss).toMatch(/\.item-plate-button\.is-awaiting-transfer\s*\{[\s\S]*?color:\s*#ff6c37;/i);
+    expect(appCss).toMatch(/\.service-item\.is-done \.item-carline-model,[\s\S]*?text-decoration-color:\s*var\(--line-through\);/);
+    expect(appCss).not.toMatch(/\.service-item\.is-done \.item-carline\s*[,\{]/);
   });
 });
