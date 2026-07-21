@@ -5,6 +5,7 @@ export const RESERVATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 const STORAGE_KEY = 'service-tracker:reservation-details:v1'
 const inFlightRequests = new Map()
 let storedEntries
+let prefetchTail = Promise.resolve()
 
 export function normalizeReservationReference(reference) {
   return String(reference ?? '').trim().replace(/^0+(?=\d)/, '')
@@ -48,23 +49,33 @@ function persistEntries() {
   }
 }
 
+function pruneEntries(entries, now) {
+  let changed = false
+
+  Object.entries(entries).forEach(([cacheKey, entry]) => {
+    const isValid = entry
+      && typeof entry === 'object'
+      && entry.reservation
+      && Number.isFinite(entry.cachedAt)
+      && now - entry.cachedAt < RESERVATION_CACHE_TTL_MS
+
+    if (!isValid) {
+      delete entries[cacheKey]
+      changed = true
+    }
+  })
+
+  return changed
+}
+
 export function readCachedReservation(reference, now = Date.now()) {
   const cacheKey = normalizeReservationReference(reference)
   if (!cacheKey) return null
 
   const entries = loadEntries()
+  if (pruneEntries(entries, now)) persistEntries()
   const entry = entries[cacheKey]
-  if (!entry || typeof entry !== 'object' || !entry.reservation || !Number.isFinite(entry.cachedAt)) {
-    return null
-  }
-
-  if (now - entry.cachedAt >= RESERVATION_CACHE_TTL_MS) {
-    delete entries[cacheKey]
-    persistEntries()
-    return null
-  }
-
-  return entry.reservation
+  return entry?.reservation ?? null
 }
 
 export function fetchAndCacheReservation(reference) {
@@ -77,6 +88,7 @@ export function fetchAndCacheReservation(reference) {
   const request = fetchReservationDetails(reference)
     .then((reservation) => {
       const entries = loadEntries()
+      pruneEntries(entries, Date.now())
       entries[cacheKey] = { reservation, cachedAt: Date.now() }
       persistEntries()
       return reservation
@@ -89,7 +101,7 @@ export function fetchAndCacheReservation(reference) {
   return request
 }
 
-export async function prefetchReservationDetails(references, { concurrency = 3 } = {}) {
+async function runPrefetch(references, concurrency) {
   const uniqueReferences = []
   const seen = new Set()
 
@@ -112,4 +124,13 @@ export async function prefetchReservationDetails(references, { concurrency = 3 }
   }
 
   await Promise.all(Array.from({ length: workerCount }, () => worker()))
+}
+
+export function prefetchReservationDetails(references, { concurrency = 3 } = {}) {
+  const prefetch = prefetchTail.then(
+    () => runPrefetch(references, concurrency),
+    () => runPrefetch(references, concurrency)
+  )
+  prefetchTail = prefetch.catch(() => null)
+  return prefetch
 }
