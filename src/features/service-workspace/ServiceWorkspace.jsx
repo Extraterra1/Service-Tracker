@@ -1,6 +1,7 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import ServicePane from '../../components/ServicePane';
 import { normalizePlate } from '../../lib/plates';
+import { normalizeReservationReference, prefetchReservationDetails } from '../../lib/reservationDetailsCache';
 import ServiceReservationPopup from './ServiceReservationPopup';
 
 function getPlateColor(index) {
@@ -49,6 +50,26 @@ function ServiceWorkspace({
 }) {
   const [plateInfoPopup, setPlateInfoPopup] = useState(null);
   const [reservationPopupReference, setReservationPopupReference] = useState('');
+
+  const reservationReferences = useMemo(() => {
+    const references = [];
+    const seen = new Set();
+
+    [...serviceData.pickups, ...serviceData.returns].forEach((item) => {
+      const reference = String(item?.id ?? '').trim();
+      const cacheKey = normalizeReservationReference(reference);
+      if (!cacheKey || seen.has(cacheKey)) return;
+      seen.add(cacheKey);
+      references.push(reference);
+    });
+
+    return references;
+  }, [serviceData.pickups, serviceData.returns]);
+
+  useEffect(() => {
+    if (loading || reservationReferences.length === 0) return;
+    void prefetchReservationDetails(reservationReferences);
+  }, [loading, reservationReferences]);
 
   const sharedPlateMarkers = useMemo(() => {
     const pickupByPlate = new Map();

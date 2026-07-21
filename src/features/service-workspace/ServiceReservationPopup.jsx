@@ -1,68 +1,70 @@
 import { RotateCw, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchReservationDetails } from '../../lib/reservationsApi';
+import { fetchAndCacheReservation, readCachedReservation } from '../../lib/reservationDetailsCache';
 import ReservationDetailsPopup from '../reservations/ReservationDetailsPopup';
 
-const reservationDetailsCache = new Map();
-
-function getCacheKey(reference) {
-  return String(reference ?? '').trim().replace(/^0+(?=\d)/, '');
-}
-
 export default function ServiceReservationPopup({ reference, onClose, canManageAccess = false }) {
-  const cacheKey = getCacheKey(reference);
-  const cachedReservation = reservationDetailsCache.get(cacheKey) ?? null;
-  const [state, setState] = useState(() => (
-    cachedReservation
-      ? { status: 'success', reservation: cachedReservation }
-      : { status: 'loading', reservation: null }
-  ));
+  const [state, setState] = useState(() => {
+    const cachedReservation = readCachedReservation(reference);
+    return cachedReservation
+      ? { status: 'success', reservation: cachedReservation, isRefreshing: true }
+      : { status: 'loading', reservation: null, isRefreshing: false };
+  });
   const requestIdRef = useRef(0);
 
   const loadReservation = useCallback(async () => {
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
-    setState({ status: 'loading', reservation: null });
+    setState((current) => current.reservation
+      ? { ...current, status: 'success', isRefreshing: true }
+      : { status: 'loading', reservation: null, isRefreshing: false });
 
     try {
-      const reservation = await fetchReservationDetails(reference);
+      const reservation = await fetchAndCacheReservation(reference);
       if (requestIdRef.current === requestId) {
-        reservationDetailsCache.set(cacheKey, reservation);
-        setState({ status: 'success', reservation });
+        setState({ status: 'success', reservation, isRefreshing: false });
       }
     } catch {
       if (requestIdRef.current === requestId) {
-        setState({ status: 'error', reservation: null });
+        setState((current) => current.reservation
+          ? { ...current, status: 'success', isRefreshing: false }
+          : { status: 'error', reservation: null, isRefreshing: false });
       }
     }
-  }, [cacheKey, reference]);
+  }, [reference]);
 
   useEffect(() => {
-    if (cachedReservation) return undefined;
-
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
 
-    fetchReservationDetails(reference)
+    fetchAndCacheReservation(reference)
       .then((reservation) => {
         if (requestIdRef.current === requestId) {
-          reservationDetailsCache.set(cacheKey, reservation);
-          setState({ status: 'success', reservation });
+          setState({ status: 'success', reservation, isRefreshing: false });
         }
       })
       .catch(() => {
         if (requestIdRef.current === requestId) {
-          setState({ status: 'error', reservation: null });
+          setState((current) => current.reservation
+            ? { ...current, status: 'success', isRefreshing: false }
+            : { status: 'error', reservation: null, isRefreshing: false });
         }
       });
 
     return () => {
       requestIdRef.current += 1;
     };
-  }, [cacheKey, cachedReservation, reference]);
+  }, [reference]);
 
   if (state.status === 'success') {
-    return <ReservationDetailsPopup reservation={state.reservation} onClose={onClose} canManageAccess={canManageAccess} />;
+    return (
+      <ReservationDetailsPopup
+        reservation={state.reservation}
+        onClose={onClose}
+        canManageAccess={canManageAccess}
+        isRefreshing={state.isRefreshing}
+      />
+    );
   }
 
   const isLoading = state.status === 'loading';
