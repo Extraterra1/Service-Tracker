@@ -18,9 +18,11 @@ function EmptyService({ type }) {
 }
 
 function ServiceDetails({ item, flight }) {
+  const clientName = String(item.name || 'Cliente sem nome').toLocaleUpperCase('pt-PT')
+
   return (
     <div className="tv-board-details">
-      <h2>{item.name || 'Cliente sem nome'}</h2>
+      <h2>{clientName}</h2>
       <p className="tv-board-location">{item.location || 'Local por confirmar'}</p>
       <div className="tv-board-meta">
         <MetaItem label="Viatura">{item.car}</MetaItem>

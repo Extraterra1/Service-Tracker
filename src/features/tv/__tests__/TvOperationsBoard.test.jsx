@@ -25,11 +25,11 @@ describe('TvOperationsBoard', () => {
     const recolhaPanel = screen.getByRole('region', { name: 'Próxima recolha' })
     expect(within(deliveryPanel).getByText('10:42')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('Hora do voo')).toHaveClass('is-flight')
-    expect(within(deliveryPanel).getByText('Maria Silva')).toBeInTheDocument()
+    expect(within(deliveryPanel).getByText('MARIA SILVA')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('TP1685')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('AA-00-AA')).toBeInTheDocument()
     expect(within(recolhaPanel).getByText('13:30')).toBeInTheDocument()
-    expect(within(recolhaPanel).getByText('João Costa')).toBeInTheDocument()
+    expect(within(recolhaPanel).getByText('JOÃO COSTA')).toBeInTheDocument()
   })
 
   it('falls back to the delivery reservation time when there is no flight result', () => {
