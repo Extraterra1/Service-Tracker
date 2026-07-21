@@ -9,6 +9,10 @@ describe('TV board styles', () => {
     expect(appCss).toMatch(/\.tv-board-return\s*{[^}]*background:\s*#e9e2d7;/s)
   })
 
+  it('uses the rounded Nunito family only within the TV board', () => {
+    expect(appCss).toMatch(/\.tv-board\s*{[^}]*font-family:\s*'Nunito Variable', 'Nunito', ui-rounded, sans-serif;/s)
+  })
+
   it('keeps a compact two-column layout around the 961 by 541 target', () => {
     expect(appCss).toMatch(/@media \(max-width:\s*1100px\) and \(max-height:\s*650px\) and \(min-aspect-ratio:\s*4 \/ 3\)/)
     expect(appCss).toMatch(/@media \(max-width:[\s\S]*?\.tv-board-section\s*{[^}]*grid-template-columns:\s*7\.6rem minmax\(0, 1fr\);/)

@@ -27,7 +27,7 @@
   overflow: hidden;
   color: var(--tv-ink);
   background: #f4efe5;
-  font-family: 'Sora', 'Urbanist', sans-serif;
+  font-family: 'Nunito Variable', 'Nunito', ui-rounded, sans-serif;
 }
 
 .tv-board-section {

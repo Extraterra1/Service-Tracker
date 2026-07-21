@@ -1,3 +1,5 @@
+import '@fontsource-variable/nunito/wght.css'
+
 import TvOperationsBoard from './TvOperationsBoard'
 import { useTvFlightData } from './useTvFlightData'
 
