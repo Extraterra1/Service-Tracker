@@ -1,4 +1,5 @@
 import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinished } from './tvBoard'
+import justDriveLogo from '../../assets/Logo Base.svg'
 
 const STATUS_LABELS = {
   arrived: 'Aterrou',
@@ -15,6 +16,10 @@ function MetaItem({ label, children }) {
 
 function EmptyService({ type }) {
   return <p className="tv-board-empty">Sem {type === 'delivery' ? 'entregas' : 'recolhas'} pendentes</p>
+}
+
+function BrandLogo() {
+  return <img className="tv-board-brand" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
 }
 
 function ServiceDetails({ item, flight }) {
@@ -44,11 +49,12 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
     : null
 
   if (loading) {
-    return <main className="tv-board tv-board-loading" aria-busy="true"><p>A preparar o próximo serviço</p></main>
+    return <main className="tv-board tv-board-loading" aria-busy="true"><BrandLogo /><p>A preparar o próximo serviço</p></main>
   }
 
   return (
     <main className="tv-board" aria-label="Próximos serviços">
+      <BrandLogo />
       <section className="tv-board-section tv-board-delivery" role="region" aria-label="Próxima entrega">
         <div className="tv-board-heading"><p>Próxima entrega</p></div>
         {delivery ? (

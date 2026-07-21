@@ -23,6 +23,7 @@ describe('TvOperationsBoard', () => {
 
     const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
     const recolhaPanel = screen.getByRole('region', { name: 'Próxima recolha' })
+    expect(screen.getByRole('img', { name: 'JustDrive Madeira Rent-A-Car' })).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('10:42')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('Hora do voo')).toHaveClass('is-flight')
     expect(within(deliveryPanel).getByText('MARIA SILVA')).toBeInTheDocument()
@@ -52,5 +53,6 @@ describe('TvOperationsBoard', () => {
   it('shows a board loading state', () => {
     render(<TvOperationsBoard loading serviceData={{ pickups: [], returns: [] }} statusMap={{}} />)
     expect(screen.getByText('A preparar o próximo serviço')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'JustDrive Madeira Rent-A-Car' })).toBeInTheDocument()
   })
 })

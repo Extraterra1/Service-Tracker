@@ -17,17 +17,27 @@
 }
 
 .tv-board {
-  --tv-ink: #211f1b;
-  --tv-muted: #756f65;
-  --tv-line: rgba(33, 31, 27, 0.16);
+  --tv-brand: #fe3a4f;
+  --tv-ink: #3f3b3a;
+  --tv-muted: #756d6e;
   width: 100%;
   min-height: 100dvh;
+  position: relative;
   display: grid;
   grid-template-rows: minmax(0, 7fr) minmax(0, 3fr);
   overflow: hidden;
   color: var(--tv-ink);
-  background: #f4efe5;
+  background: #fff0f2;
   font-family: 'Barlow', system-ui, sans-serif;
+}
+
+.tv-board-brand {
+  position: absolute;
+  z-index: 1;
+  top: clamp(1.05rem, 3.2vh, 2.4rem);
+  right: clamp(1.7rem, 4.5vw, 5.5rem);
+  width: clamp(8.5rem, 16vw, 13rem);
+  height: auto;
 }
 
 .tv-board-section {
@@ -41,12 +51,12 @@
 }
 
 .tv-board-delivery {
-  background: #f4efe5;
+  background: #fff0f2;
 }
 
 .tv-board-return {
-  border-top: 1px solid var(--tv-line);
-  background: #e9e2d7;
+  border-top: 2px solid var(--tv-brand);
+  background: #f3eeea;
 }
 
 .tv-board-heading {
@@ -58,7 +68,7 @@
 
 .tv-board-heading p {
   margin: 0;
-  color: var(--tv-muted);
+  color: var(--tv-brand);
   font-size: clamp(0.85rem, 1.25vw, 1.55rem);
   font-weight: 700;
   letter-spacing: 0.11em;
@@ -96,7 +106,7 @@
   text-transform: uppercase;
 }
 
-.tv-board-time-source.is-flight { color: #b52f40; }
+.tv-board-time-source.is-flight { color: var(--tv-brand); }
 
 .tv-board-details { min-width: 0; }
 
