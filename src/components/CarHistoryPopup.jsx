@@ -206,7 +206,7 @@ function CarHistoryPopup({ loading, error, plateOptions, entriesByPlate, rangeSt
     }
 
     requestAnimationFrame(() => {
-      historyItemRefs.current.get(targetEntry.id)?.scrollIntoView({
+      historyItemRefs.current.get(targetEntry.id)?.scrollIntoView?.({
         block: 'center',
         behavior: 'smooth'
       });

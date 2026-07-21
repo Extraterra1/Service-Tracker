@@ -227,6 +227,26 @@ describe('CarHistoryPopup', () => {
     scrollIntoView.mockRestore();
   });
 
+  it('does not fail when the browser does not expose scrollIntoView', async () => {
+    const user = userEvent.setup();
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    const animationFrame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    delete Element.prototype.scrollIntoView;
+
+    render(<CarHistoryPopup {...createProps()} />);
+
+    await user.click(screen.getByRole('combobox', { name: 'Selecionar matrícula' }));
+    await expect(user.click(screen.getByRole('option', { name: 'AA-00-AA' }))).resolves.toBeUndefined();
+
+    if (originalScrollIntoView) {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
+    animationFrame.mockRestore();
+  });
+
   it('supports fuzzy searching plates before selecting another history list', async () => {
     const user = userEvent.setup();
     render(<CarHistoryPopup {...createProps()} />);
