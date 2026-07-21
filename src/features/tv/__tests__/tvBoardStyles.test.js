@@ -9,8 +9,8 @@ describe('TV board styles', () => {
     expect(appCss).toMatch(/\.tv-board-return\s*{[^}]*background:\s*#e9e2d7;/s)
   })
 
-  it('uses the rounded Nunito family only within the TV board', () => {
-    expect(appCss).toMatch(/\.tv-board\s*{[^}]*font-family:\s*'Nunito Variable', 'Nunito', ui-rounded, sans-serif;/s)
+  it('uses the squared Barlow family only within the TV board', () => {
+    expect(appCss).toMatch(/\.tv-board\s*{[^}]*font-family:\s*'Barlow', system-ui, sans-serif;/s)
   })
 
   it('keeps a compact two-column layout around the 961 by 541 target', () => {

@@ -1,4 +1,6 @@
-import '@fontsource-variable/nunito/wght.css'
+import '@fontsource/barlow/500.css'
+import '@fontsource/barlow/600.css'
+import '@fontsource/barlow/700.css'
 
 import TvOperationsBoard from './TvOperationsBoard'
 import { useTvFlightData } from './useTvFlightData'
