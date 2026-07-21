@@ -189,6 +189,36 @@ Fields:
 - `updatedByName`
 - `updatedByEmail`
 
+### `service_transfer/{date}_{itemId}`
+
+Purpose:
+
+- vehicle transfer state for completed recolha/return items
+
+Written by:
+
+- `setItemTransferredState` for plate taps
+- `setItemDoneState` when undoing a recolha, which resets `transferred` to `false`
+
+Rules:
+
+- same current-day and doc-id constraints
+- only `serviceType == "return"`
+- plate required
+- delete denied
+
+Fields:
+
+- `date`
+- `itemId`
+- `serviceType`
+- `plate`
+- `transferred`
+- `updatedAt`
+- `updatedByUid`
+- `updatedByName`
+- `updatedByEmail`
+
 ### `service_activity/{date}/entries/{entryId}`
 
 Purpose:
@@ -212,6 +242,7 @@ Action types:
 - `status_toggle`
 - `time_change`
 - `ready_toggle`
+- `transfer_toggle`
 
 Shared fields:
 

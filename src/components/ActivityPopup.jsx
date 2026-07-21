@@ -35,12 +35,17 @@ function ActivityPopup({ selectedDate, loadingActivity, activityEntries, plateBy
               const itemLabel = entry.itemName || `Serviço ${entry.itemId}`;
               const isTimeChange = entry.actionType === 'time_change';
               const isReadyToggle = entry.actionType === 'ready_toggle';
+              const isTransferToggle = entry.actionType === 'transfer_toggle';
               const actionLabel = isTimeChange
                 ? 'alterou hora'
                 : isReadyToggle
                   ? entry.ready
                     ? 'viatura pronta'
                     : 'viatura não pronta'
+                  : isTransferToggle
+                    ? entry.transferred
+                      ? 'viatura transferida'
+                      : 'aguarda transferência'
                   : entry.done
                     ? 'fez'
                     : 'desfez';
@@ -50,7 +55,7 @@ function ActivityPopup({ selectedDate, loadingActivity, activityEntries, plateBy
               const plateLabel = entry.plate || fallbackPlate || 'Sem matrícula';
               const metaLabel = isTimeChange
                 ? [itemLabel, plateLabel, `${oldTimeLabel} → ${newTimeLabel}`, actionTimeLabel].join(' · ')
-                : isReadyToggle
+                : isReadyToggle || isTransferToggle
                   ? [itemLabel, plateLabel, actionTimeLabel].join(' · ')
                   : [itemLabel, plateLabel, entry.itemTime || '--:--', actionTimeLabel].join(' · ');
               const actionClass = isTimeChange
@@ -59,6 +64,10 @@ function ActivityPopup({ selectedDate, loadingActivity, activityEntries, plateBy
                   ? entry.ready
                     ? 'is-ready-on'
                     : 'is-ready-off'
+                  : isTransferToggle
+                    ? entry.transferred
+                      ? 'is-ready-on'
+                      : 'is-ready-off'
                   : entry.done
                     ? 'is-done'
                     : 'is-undone';

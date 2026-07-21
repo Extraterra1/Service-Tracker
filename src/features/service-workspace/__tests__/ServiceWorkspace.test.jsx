@@ -257,4 +257,24 @@ describe('ServiceWorkspace', () => {
     expect(footer?.querySelector('.item-footer-time')?.textContent).toBe('às 09:15');
     expect(screen.queryByText('VENCEU A SEMANA PASSADA')).not.toBeInTheDocument();
   });
+
+  it('passes transfer state and toggle behavior to completed recolhas', async () => {
+    const onToggleTransferred = vi.fn();
+    render(
+      <ServiceWorkspace
+        serviceData={{ pickups: [], returns: [{ itemId: 'return-1', serviceType: 'return', time: '18:00', name: 'Carlos', id: '0002', phone: '', car: 'Fiat', plate: 'AA-00-AA', location: 'Funchal', extras: [], notes: '' }] }}
+        statusMap={{ 'return-1': { done: true } }}
+        readyMap={{}}
+        transferMap={{ 'return-1': { transferred: true } }}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onToggleTransferred={onToggleTransferred}
+        onSaveTimeOverride={vi.fn()}
+        disabled={false}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Marcar viatura AA-00-AA como aguardando transferência' }));
+    expect(onToggleTransferred).toHaveBeenCalledWith(expect.objectContaining({ itemId: 'return-1' }));
+  });
 });

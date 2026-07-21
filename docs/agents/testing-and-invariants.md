@@ -32,6 +32,7 @@ Protected behavior:
 - status writes only for current service day
 - time override writes only for current service day
 - ready writes only for current service day
+- transfer writes only for current service day and return items
 - activity writes only for current service day
 
 Meaning:
@@ -74,7 +75,7 @@ Protected behavior:
 - first completion per `date + itemId` scores once
 - undo events do not score
 - duplicate completions across users still only score once globally
-- `ready_toggle` and `time_change` score
+- `ready_toggle`, `transfer_toggle`, and `time_change` score
 - tie-breaking uses `__entryId` when timestamps match
 - weekly/monthly ranges are anchored to Madeira timezone
 - all-time limit is 10,000
@@ -125,6 +126,7 @@ Protected behavior:
 - time editing uses native time input
 - invalid/empty time disables save
 - car-model click opens history without interfering with ready toggle
+- completed recolha plates toggle between awaiting-transfer and transferred states; incomplete plates stay inert
 - normal addresses become Google Maps links
 - airport/escritorio stay plain text
 - haptics differ for done vs undone

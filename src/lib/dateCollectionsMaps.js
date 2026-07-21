@@ -208,3 +208,71 @@ export function applyReadyChanges(previousMap, changes) {
 
   return hasChanges ? nextMap : previousMap;
 }
+
+function normalizeTransferEntry(transfer) {
+  return {
+    transferred: transfer?.transferred === true,
+    plate: String(transfer?.plate ?? '').trim(),
+    updatedAt: transfer?.updatedAt ?? null,
+    updatedByUid: transfer?.updatedByUid ?? '',
+    updatedByName: transfer?.updatedByName ?? '',
+    updatedByEmail: transfer?.updatedByEmail ?? ''
+  };
+}
+
+function isSameTransferEntry(previousEntry, nextEntry) {
+  return (
+    (previousEntry?.transferred ?? false) === (nextEntry?.transferred ?? false) &&
+    (previousEntry?.plate ?? '') === (nextEntry?.plate ?? '') &&
+    (previousEntry?.updatedByUid ?? '') === (nextEntry?.updatedByUid ?? '') &&
+    (previousEntry?.updatedByName ?? '') === (nextEntry?.updatedByName ?? '') &&
+    (previousEntry?.updatedByEmail ?? '') === (nextEntry?.updatedByEmail ?? '') &&
+    toTimestampMs(previousEntry?.updatedAt) === toTimestampMs(nextEntry?.updatedAt)
+  );
+}
+
+export function applyTransferChanges(previousMap, changes) {
+  if (!Array.isArray(changes) || changes.length === 0) {
+    return previousMap;
+  }
+
+  let nextMap = previousMap;
+  let hasChanges = false;
+
+  changes.forEach((change) => {
+    const baseMap = hasChanges ? nextMap : previousMap;
+    const itemId = String(change?.itemId ?? '').trim();
+    if (!itemId) {
+      return;
+    }
+
+    if (change.changeType === 'removed') {
+      if (!Object.prototype.hasOwnProperty.call(baseMap, itemId)) {
+        return;
+      }
+
+      if (!hasChanges) {
+        nextMap = { ...previousMap };
+        hasChanges = true;
+      }
+
+      delete nextMap[itemId];
+      return;
+    }
+
+    const normalizedEntry = normalizeTransferEntry(change.transfer);
+    const currentEntry = baseMap[itemId];
+    if (isSameTransferEntry(currentEntry, normalizedEntry)) {
+      return;
+    }
+
+    if (!hasChanges) {
+      nextMap = { ...previousMap };
+      hasChanges = true;
+    }
+
+    nextMap[itemId] = normalizedEntry;
+  });
+
+  return hasChanges ? nextMap : previousMap;
+}

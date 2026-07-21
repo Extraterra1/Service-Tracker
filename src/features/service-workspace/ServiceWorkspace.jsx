@@ -33,9 +33,11 @@ function ServiceWorkspace({
   serviceData,
   statusMap,
   readyMap,
+  transferMap = {},
   lastWeekWinnerKeys,
   onToggleDone,
   onToggleReady,
+  onToggleTransferred,
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   canManageAccess = false,
@@ -141,11 +143,13 @@ function ServiceWorkspace({
           items={serviceData.pickups}
           statusMap={statusMap}
           readyMap={readyMap}
+          transferMap={transferMap}
           lastWeekWinnerKeys={lastWeekWinnerKeys}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
           onToggleReady={onToggleReady}
+          onToggleTransferred={onToggleTransferred}
           onSaveTimeOverride={onSaveTimeOverride}
           onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
           onOpenReservation={handleOpenReservation}
@@ -161,11 +165,13 @@ function ServiceWorkspace({
           items={serviceData.returns}
           statusMap={statusMap}
           readyMap={readyMap}
+          transferMap={transferMap}
           lastWeekWinnerKeys={lastWeekWinnerKeys}
           sharedPlateMarkers={sharedPlateMarkers}
           onSharedPlateTap={handleShowPlateInfo}
           onToggleDone={onToggleDone}
           onToggleReady={onToggleReady}
+          onToggleTransferred={onToggleTransferred}
           onSaveTimeOverride={onSaveTimeOverride}
           onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
           onOpenReservation={handleOpenReservation}

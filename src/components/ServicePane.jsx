@@ -33,11 +33,13 @@ function ServicePane({
   items,
   statusMap,
   readyMap = {},
+  transferMap = {},
   lastWeekWinnerKeys = EMPTY_WINNER_KEYS,
   sharedPlateMarkers,
   onSharedPlateTap,
   onToggleDone,
   onToggleReady,
+  onToggleTransferred,
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   onOpenReservation,
@@ -214,17 +216,20 @@ function ServicePane({
                   item={item}
                   status={statusMap[item.itemId]}
                   readyState={readyMap[item.itemId]}
+                  transferState={transferMap[item.itemId]}
                   showLastWeekWinnerMedal={lastWeekWinnerKeys.has(
                     getLatestUpdateIdentityKey({
                       item,
                       status: statusMap[item.itemId],
                       readyState: readyMap[item.itemId],
+                      transferState: transferMap[item.itemId],
                     })
                   )}
                   sharedPlateMarkers={sharedPlateMarkers}
                   onSharedPlateTap={onSharedPlateTap}
                   onToggleDone={onToggleDone}
                   onToggleReady={onToggleReady}
+                  onToggleTransferred={onToggleTransferred}
                   onSaveTimeOverride={onSaveTimeOverride}
                   onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
                   onOpenReservation={onOpenReservation}
@@ -250,17 +255,20 @@ function ServicePane({
               item={item}
               status={statusMap[item.itemId]}
               readyState={readyMap[item.itemId]}
+              transferState={transferMap[item.itemId]}
               showLastWeekWinnerMedal={lastWeekWinnerKeys.has(
                 getLatestUpdateIdentityKey({
                   item,
                   status: statusMap[item.itemId],
                   readyState: readyMap[item.itemId],
+                  transferState: transferMap[item.itemId],
                 })
               )}
               sharedPlateMarkers={sharedPlateMarkers}
               onSharedPlateTap={onSharedPlateTap}
               onToggleDone={onToggleDone}
               onToggleReady={onToggleReady}
+              onToggleTransferred={onToggleTransferred}
               onSaveTimeOverride={onSaveTimeOverride}
               onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
               onOpenReservation={onOpenReservation}

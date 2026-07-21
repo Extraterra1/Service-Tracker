@@ -222,7 +222,7 @@ function getScoredPoints(entry, countedStatusCompletions) {
     return 1;
   }
 
-  if (entry.actionType === 'ready_toggle' || entry.actionType === 'time_change') {
+  if (entry.actionType === 'ready_toggle' || entry.actionType === 'transfer_toggle' || entry.actionType === 'time_change') {
     return 1;
   }
 

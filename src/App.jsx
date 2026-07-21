@@ -50,6 +50,7 @@ const DIAGNOSTICS_STATUS_HIDE_AFTER_MS = 6 * 1000;
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
+let transferStoreModulePromise;
 let staffProfileStoreModulePromise;
 
 function loadStatusStoreModule() {
@@ -65,6 +66,11 @@ function loadTimeOverrideStoreModule() {
 function loadReadyStoreModule() {
   readyStoreModulePromise ??= import('./lib/readyStore');
   return readyStoreModulePromise;
+}
+
+function loadTransferStoreModule() {
+  transferStoreModulePromise ??= import('./lib/transferStore');
+  return transferStoreModulePromise;
 }
 
 function loadStaffProfileStoreModule() {
@@ -252,6 +258,7 @@ function App() {
     statusMap,
     timeOverrideMap,
     readyMap,
+    transferMap,
     error: dateCollectionsErrorMessage
   } = useDateCollections({
     canReadServiceData,
@@ -757,6 +764,34 @@ function App() {
     [accessState, canMutateSelectedDate, readyMap, selectedDate, updatingItemId, user]
   );
 
+  const handleToggleTransferred = useCallback(
+    async (item) => {
+      if (accessState !== 'allowed' || item?.serviceType !== 'return' || statusMap[item?.itemId]?.done !== true) return;
+      if (!canMutateSelectedDate) {
+        setErrorMessage(CURRENT_DAY_ONLY_MUTATION_ERROR);
+        return;
+      }
+      if (updatingItemId || !String(item?.plate ?? '').trim()) return;
+
+      setUpdatingItemId(item.itemId);
+      setErrorMessage('');
+      try {
+        const { setItemTransferredState } = await loadTransferStoreModule();
+        await setItemTransferredState({
+          date: selectedDate,
+          item,
+          transferred: transferMap[item.itemId]?.transferred !== true,
+          user
+        });
+      } catch (error) {
+        setErrorMessage(error.message);
+      } finally {
+        setUpdatingItemId('');
+      }
+    },
+    [accessState, canMutateSelectedDate, selectedDate, statusMap, transferMap, updatingItemId, user]
+  );
+
   const handleAddToCompleted = useCallback(async () => {
     if (accessState !== 'allowed') {
       return;
@@ -1151,9 +1186,11 @@ function App() {
             serviceData={serviceDataWithOverrides}
             statusMap={statusMap}
             readyMap={readyMap}
+            transferMap={transferMap}
             lastWeekWinnerKeys={lastWeekWinnerKeys}
             onToggleDone={handleToggleDone}
             onToggleReady={handleToggleReady}
+            onToggleTransferred={handleToggleTransferred}
             onSaveTimeOverride={handleSaveItemTimeOverride}
             onOpenCarHistoryFromModel={handleOpenCarHistoryFromModel}
             canManageAccess={canManageAccess}

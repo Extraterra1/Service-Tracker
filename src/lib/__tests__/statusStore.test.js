@@ -107,4 +107,24 @@ describe('statusStore', () => {
 
     expect(writeBatchMock).not.toHaveBeenCalled()
   })
+
+  it('resets transfer state in the same batch when a recolha is undone', async () => {
+    const set = vi.fn()
+    const commit = vi.fn().mockResolvedValue(undefined)
+    writeBatchMock.mockReturnValue({ set, commit })
+
+    await setItemDoneState({
+      date: '2026-03-07',
+      item: { itemId: 'return-1', serviceType: 'return', plate: 'AA-00-AA', name: 'Cliente', time: '10:00' },
+      done: false,
+      user: { uid: 'user-1', displayName: 'Maria Silva', email: 'maria@example.com' },
+    })
+
+    expect(docMock).toHaveBeenCalledWith({ __name: 'mock-db' }, 'service_transfer', '2026-03-07_return-1')
+    expect(set).toHaveBeenCalledTimes(3)
+    expect(set.mock.calls[1][1]).toMatchObject({
+      date: '2026-03-07', itemId: 'return-1', serviceType: 'return', plate: 'AA-00-AA', transferred: false,
+    })
+    expect(set.mock.calls[2][1]).toMatchObject({ actionType: 'status_toggle', done: false })
+  })
 })

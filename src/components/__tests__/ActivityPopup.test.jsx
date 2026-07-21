@@ -59,11 +59,17 @@ describe('ActivityPopup', () => {
         createdAt: '2026-03-06T11:22:00.000Z',
         updatedByName: 'Ana',
       },
+      {
+        id: 'entry-transfer', actionType: 'transfer_toggle', transferred: true, serviceType: 'return',
+        itemName: 'Servico 4', plate: 'DD-33-DD', createdAt: '2026-03-06T11:22:00.000Z', updatedByName: 'Luis',
+      },
     ]);
 
     expect(screen.getByText('Servico 1 · AA-00-AA · 09:00 · 06/03 11:22')).toBeInTheDocument();
     expect(screen.getByText('Servico 2 · BB-11-BB · 06/03 11:22')).toBeInTheDocument();
     expect(screen.getByText('Servico 3 · CC-22-CC · 11:00 → 11:30 · 06/03 11:22')).toBeInTheDocument();
+    expect(screen.getByText('viatura transferida')).toBeInTheDocument();
+    expect(screen.getByText('Servico 4 · DD-33-DD · 06/03 11:22')).toBeInTheDocument();
     expect(screen.queryByText(/RES-001|RES-002|RES-003/)).not.toBeInTheDocument();
   });
 });

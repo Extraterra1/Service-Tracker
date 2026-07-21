@@ -106,6 +106,25 @@ export async function setItemDoneState({ date, item, done, user, forceCompletedN
     { merge: true },
   )
 
+  if (item.serviceType === 'return' && done !== true && String(item.plate ?? '').trim()) {
+    const transferRef = doc(db, 'service_transfer', docId)
+    batch.set(
+      transferRef,
+      {
+        date,
+        itemId: item.itemId,
+        serviceType: item.serviceType,
+        plate: String(item.plate).trim(),
+        transferred: false,
+        updatedAt,
+        updatedByUid: updaterUid,
+        updatedByName: updaterName,
+        updatedByEmail: updaterEmail,
+      },
+      { merge: true },
+    )
+  }
+
   batch.set(activityRef, {
     actionType: 'status_toggle',
     date,

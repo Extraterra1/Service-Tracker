@@ -102,6 +102,24 @@ Critical invariants:
 - ready state can affect the audit footer if its timestamp is newer than status
 - ready toggles also score on the leaderboard via activity entries
 
+## If you need to change recolha transfer-state behavior
+
+Start here:
+
+- `src/components/ServiceItemCard.jsx`
+- `src/lib/transferStore.js`
+- `src/lib/statusStore.js`
+- `src/lib/dateCollectionsMaps.js`
+- `firestore.rules`
+
+Critical invariants:
+
+- only completed `return` items have an interactive transfer plate
+- awaiting transfer is red; transferred is green
+- undoing a recolha resets transfer state to false in the status batch
+- transfer taps create `transfer_toggle` activity entries and score on the leaderboard
+- plate is required and writes are current-day-only
+
 ## If you need to change activity or leaderboard behavior
 
 Start here:

@@ -5877,6 +5877,18 @@ h1 {
   background: rgba(102, 199, 134, 0.18);
 }
 
+.item-plate-button.is-awaiting-transfer {
+  color: #a51d2d;
+  border-color: rgba(190, 45, 65, 0.4);
+  background: rgba(224, 73, 91, 0.17);
+}
+
+.item-plate-button.is-transferred {
+  color: #0e6a2d;
+  border-color: rgba(55, 148, 86, 0.38);
+  background: rgba(102, 199, 134, 0.18);
+}
+
 .item-plate-button.is-ready:not(:disabled):focus-visible {
   border-color: rgba(55, 148, 86, 0.38);
   background: rgba(102, 199, 134, 0.18);
@@ -5892,6 +5904,16 @@ h1 {
   .item-plate-button.is-ready:not(:disabled):hover {
     border-color: rgba(55, 148, 86, 0.38);
     background: rgba(102, 199, 134, 0.18);
+  }
+
+  .item-plate-button.is-awaiting-transfer:not(:disabled):hover {
+    border-color: rgba(190, 45, 65, 0.5);
+    background: rgba(224, 73, 91, 0.22);
+  }
+
+  .item-plate-button.is-transferred:not(:disabled):hover {
+    border-color: rgba(55, 148, 86, 0.45);
+    background: rgba(102, 199, 134, 0.22);
   }
 }
 

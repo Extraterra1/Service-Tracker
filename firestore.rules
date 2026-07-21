@@ -131,6 +131,25 @@ service cloud.firestore {
         && request.resource.data.updatedByEmail is string;
     }
 
+    function isValidTransferPayload() {
+      return request.resource.data.keys().hasOnly([
+          'date', 'itemId', 'serviceType', 'plate', 'transferred', 'updatedAt',
+          'updatedByUid', 'updatedByName', 'updatedByEmail'
+        ])
+        && isValidDateString(request.resource.data.date)
+        && isCurrentServiceDate(request.resource.data.date)
+        && request.resource.data.itemId is string
+        && request.resource.data.itemId.size() > 0
+        && request.resource.data.serviceType == 'return'
+        && request.resource.data.plate is string
+        && request.resource.data.plate.size() > 0
+        && request.resource.data.transferred is bool
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.updatedByName is string
+        && request.resource.data.updatedByEmail is string;
+    }
+
     function isValidStaffProfilePayload(uid) {
       return request.resource.data.keys().hasOnly([
           'uid',
@@ -159,6 +178,10 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['plate']) || request.resource.data.plate is string);
     }
 
+    function hasValidOptionalTransferFields() {
+      return !request.resource.data.keys().hasAny(['transferred']) || request.resource.data.transferred is bool;
+    }
+
     function isValidActivityPayload(date) {
       return request.resource.data.keys().hasOnly([
           'actionType',
@@ -176,9 +199,10 @@ service cloud.firestore {
           'oldTime',
           'newTime',
           'ready',
+          'transferred',
           'plate'
         ])
-        && (request.resource.data.actionType == 'status_toggle' || request.resource.data.actionType == 'time_change' || request.resource.data.actionType == 'ready_toggle')
+        && (request.resource.data.actionType == 'status_toggle' || request.resource.data.actionType == 'time_change' || request.resource.data.actionType == 'ready_toggle' || request.resource.data.actionType == 'transfer_toggle')
         && request.resource.data.date == date
         && isValidDateString(request.resource.data.date)
         && isCurrentServiceDate(request.resource.data.date)
@@ -195,6 +219,7 @@ service cloud.firestore {
         && request.resource.data.reservationId is string
         && hasValidOptionalTimeFields()
         && hasValidOptionalReadyFields()
+        && hasValidOptionalTransferFields()
         && (
           request.resource.data.actionType != 'time_change'
           || (
@@ -211,6 +236,16 @@ service cloud.firestore {
             && request.resource.data.serviceType == 'pickup'
             && request.resource.data.plate is string
             && request.resource.data.plate.size() > 0
+          )
+        )
+        && (
+          request.resource.data.actionType != 'transfer_toggle'
+          || (
+            request.resource.data.keys().hasAll(['transferred', 'plate'])
+            && request.resource.data.serviceType == 'return'
+            && request.resource.data.plate is string
+            && request.resource.data.plate.size() > 0
+            && request.resource.data.done == false
           )
         );
     }
@@ -461,6 +496,23 @@ service cloud.firestore {
 
       allow update: if isActiveStaff()
         && isValidReadyPayload()
+        && docId == resource.data.date + "_" + resource.data.itemId
+        && request.resource.data.date == resource.data.date
+        && request.resource.data.itemId == resource.data.itemId
+        && request.resource.data.serviceType == resource.data.serviceType;
+
+      allow delete: if false;
+    }
+
+    match /service_transfer/{docId} {
+      allow read: if isActiveStaff();
+
+      allow create: if isActiveStaff()
+        && isValidTransferPayload()
+        && docId == request.resource.data.date + "_" + request.resource.data.itemId;
+
+      allow update: if isActiveStaff()
+        && isValidTransferPayload()
         && docId == resource.data.date + "_" + resource.data.itemId
         && request.resource.data.date == resource.data.date
         && request.resource.data.itemId == resource.data.itemId

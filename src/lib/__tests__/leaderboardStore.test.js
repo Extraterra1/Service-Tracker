@@ -119,6 +119,16 @@ describe('leaderboardStore', () => {
         createdAt: new Date('2026-03-02T09:00:00.000Z'),
       },
       {
+        __entryId: 'transfer-1',
+        actionType: 'transfer_toggle',
+        date: '2026-03-07',
+        itemId: 'return-1',
+        transferred: true,
+        updatedByUid: 'uid-1',
+        updatedByName: 'Carlos',
+        createdAt: new Date('2026-03-07T10:03:00Z'),
+      },
+      {
         actionType: 'time_change',
         updatedByUid: 'uid-1',
         updatedByName: 'Carlos',
@@ -141,9 +151,9 @@ describe('leaderboardStore', () => {
       },
     ]);
 
-    expect(result.totalActions).toBe(2);
+    expect(result.totalActions).toBe(3);
     expect(result.rows).toHaveLength(1);
-    expect(result.rows[0].score).toBe(2);
+    expect(result.rows[0].score).toBe(3);
   });
 
   it('uses __entryId to break ties for same-timestamp status completions', () => {

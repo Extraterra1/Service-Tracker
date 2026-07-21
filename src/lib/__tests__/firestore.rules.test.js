@@ -76,6 +76,14 @@ function buildReadyPayload(date) {
   };
 }
 
+function buildTransferPayload(date) {
+  return {
+    date, itemId: 'item-1', serviceType: 'return', plate: 'AA-00-AA', transferred: true,
+    updatedAt: Timestamp.fromDate(new Date()), updatedByUid: STAFF_UID,
+    updatedByName: 'Staff', updatedByEmail: 'staff@example.com',
+  };
+}
+
 function buildActivityPayload(date, actionType = 'status_toggle') {
   const basePayload = {
     actionType,
@@ -108,6 +116,10 @@ function buildActivityPayload(date, actionType = 'status_toggle') {
       done: false,
       ready: true,
     };
+  }
+
+  if (actionType === 'transfer_toggle') {
+    return { ...basePayload, serviceType: 'return', done: false, transferred: true };
   }
 
   return basePayload;
@@ -327,6 +339,19 @@ describeRules('firestore current-day write rules', () => {
     await expect(assertSucceeds(setDoc(doc(db, 'service_ready', `${today}_item-1`), buildReadyPayload(today)))).resolves.toBeUndefined();
     await expect(assertFails(setDoc(doc(db, 'service_ready', `${past}_item-1`), buildReadyPayload(past)))).resolves.toBeDefined();
     await expect(assertFails(setDoc(doc(db, 'service_ready', `${future}_item-1`), buildReadyPayload(future)))).resolves.toBeDefined();
+  });
+
+  it('allows valid current-day return transfer writes and rejects invalid variants', async () => {
+    const db = getAuthedDb();
+    const today = getTodayServiceDate();
+    const past = addDays(today, -1);
+
+    await expect(assertSucceeds(setDoc(doc(db, 'service_transfer', `${today}_item-1`), buildTransferPayload(today)))).resolves.toBeUndefined();
+    await expect(assertFails(setDoc(doc(db, 'service_transfer', `${past}_item-1`), buildTransferPayload(past)))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'service_transfer', `${today}_bad-id`), buildTransferPayload(today)))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'service_transfer', `${today}_item-2`), { ...buildTransferPayload(today), itemId: 'item-2', serviceType: 'pickup' }))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'service_transfer', `${today}_item-3`), { ...buildTransferPayload(today), itemId: 'item-3', plate: '' }))).resolves.toBeDefined();
+    await expect(assertSucceeds(setDoc(doc(db, 'service_activity', today, 'entries', 'transfer-entry'), buildActivityPayload(today, 'transfer_toggle')))).resolves.toBeUndefined();
   });
 
   it('allows current-day activity writes and blocks past/future ones', async () => {

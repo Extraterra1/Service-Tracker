@@ -19,6 +19,7 @@ function normalizeActivityEntry(value, id) {
     oldTime: value?.oldTime ?? '',
     newTime: value?.newTime ?? '',
     ready: value?.ready === true,
+    transferred: value?.transferred === true,
     plate: value?.plate ?? '',
   }
 }

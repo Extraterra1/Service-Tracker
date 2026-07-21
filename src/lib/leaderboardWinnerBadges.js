@@ -46,9 +46,10 @@ export function getTopRankIdentityKeys(rows) {
   return keys;
 }
 
-export function getLatestUpdateIdentityKey({ item, status, readyState }) {
+export function getLatestUpdateIdentityKey({ item, status, readyState, transferState }) {
   const statusUpdatedAtMs = toTimestampMs(status?.updatedAt);
   const readyUpdatedAtMs = toTimestampMs(readyState?.updatedAt);
+  const transferUpdatedAtMs = toTimestampMs(transferState?.updatedAt);
   const overrideUpdatedAtMs = toTimestampMs(item?.updatedAt);
   let latestUpdatedAtMs = statusUpdatedAtMs;
   let latestSource = 'status';
@@ -56,6 +57,11 @@ export function getLatestUpdateIdentityKey({ item, status, readyState }) {
   if (readyUpdatedAtMs > latestUpdatedAtMs) {
     latestUpdatedAtMs = readyUpdatedAtMs;
     latestSource = 'ready';
+  }
+
+  if (transferUpdatedAtMs > latestUpdatedAtMs) {
+    latestUpdatedAtMs = transferUpdatedAtMs;
+    latestSource = 'transfer';
   }
 
   if (overrideUpdatedAtMs > latestUpdatedAtMs) {
@@ -69,6 +75,10 @@ export function getLatestUpdateIdentityKey({ item, status, readyState }) {
 
   if (latestSource === 'ready') {
     return getIdentityKey(readyState?.updatedByUid, readyState?.updatedByEmail, readyState?.updatedByName);
+  }
+
+  if (latestSource === 'transfer') {
+    return getIdentityKey(transferState?.updatedByUid, transferState?.updatedByEmail, transferState?.updatedByName);
   }
 
   if (latestSource === 'override') {

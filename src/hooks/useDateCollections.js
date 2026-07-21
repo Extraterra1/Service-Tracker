@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { applyReadyChanges, applyStatusChanges, applyTimeOverrideChanges } from '../lib/dateCollectionsMaps';
+import { applyReadyChanges, applyStatusChanges, applyTimeOverrideChanges, applyTransferChanges } from '../lib/dateCollectionsMaps';
 
 let statusStoreModulePromise;
 let timeOverrideStoreModulePromise;
 let readyStoreModulePromise;
+let transferStoreModulePromise;
 
 function loadStatusStoreModule() {
   statusStoreModulePromise ??= import('../lib/statusStore');
@@ -20,14 +21,21 @@ function loadReadyStoreModule() {
   return readyStoreModulePromise;
 }
 
+function loadTransferStoreModule() {
+  transferStoreModulePromise ??= import('../lib/transferStore');
+  return transferStoreModulePromise;
+}
+
 export function useDateCollections({ canReadServiceData, selectedDate }) {
   const [statusMap, setStatusMap] = useState({});
   const [timeOverrideMap, setTimeOverrideMap] = useState({});
   const [readyMap, setReadyMap] = useState({});
+  const [transferMap, setTransferMap] = useState({});
   const [errors, setErrors] = useState({
     status: '',
     timeOverride: '',
-    ready: ''
+    ready: '',
+    transfer: ''
   });
 
   const setStreamError = (key, message) => {
@@ -203,10 +211,51 @@ export function useDateCollections({ canReadServiceData, selectedDate }) {
     };
   }, [canReadServiceData, selectedDate]);
 
+  useEffect(() => {
+    if (!canReadServiceData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTransferMap({});
+      setStreamError('transfer', '');
+      return () => {};
+    }
+
+    let isActive = true;
+    let unsubscribe = () => {};
+    setTransferMap({});
+    setStreamError('transfer', '');
+
+    void loadTransferStoreModule()
+      .then(({ subscribeToDateTransfers }) => {
+        if (!isActive) return;
+        unsubscribe = subscribeToDateTransfers(
+          selectedDate,
+          (changes) => {
+            if (!isActive) return;
+            setStreamError('transfer', '');
+            setTransferMap((previousMap) => applyTransferChanges(previousMap, changes));
+          },
+          (nextError) => {
+            if (!isActive) return;
+            setStreamError('transfer', nextError.message);
+          }
+        );
+      })
+      .catch((nextError) => {
+        if (!isActive) return;
+        setStreamError('transfer', nextError.message);
+      });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [canReadServiceData, selectedDate]);
+
   return {
     statusMap,
     timeOverrideMap,
     readyMap,
-    error: errors.status || errors.timeOverride || errors.ready
+    transferMap,
+    error: errors.status || errors.timeOverride || errors.ready || errors.transfer
   };
 }

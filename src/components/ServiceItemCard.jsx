@@ -137,11 +137,13 @@ function ServiceItemCard({
   item,
   status,
   readyState,
+  transferState,
   showLastWeekWinnerMedal = false,
   sharedPlateMarkers = {},
   onSharedPlateTap,
   onToggleDone,
   onToggleReady,
+  onToggleTransferred,
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   onOpenReservation,
@@ -151,9 +153,11 @@ function ServiceItemCard({
   const done = status?.done === true;
   const statusUpdatedAtMs = toTimestampMs(status?.updatedAt);
   const readyUpdatedAtMs = toTimestampMs(readyState?.updatedAt);
+  const transferUpdatedAtMs = toTimestampMs(transferState?.updatedAt);
   const overrideUpdatedAtMs = toTimestampMs(item?.updatedAt);
   const statusUpdatedBy = status?.updatedByName || status?.updatedByEmail || '';
   const readyUpdatedBy = readyState?.updatedByName || readyState?.updatedByEmail || '';
+  const transferUpdatedBy = transferState?.updatedByName || transferState?.updatedByEmail || '';
   const overrideUpdatedBy = item?.updatedByName || item?.updatedByEmail || '';
   let updateSource = 'status';
   let latestUpdatedAtMs = statusUpdatedAtMs;
@@ -163,19 +167,28 @@ function ServiceItemCard({
     updateSource = 'ready';
   }
 
+  if (transferUpdatedAtMs > latestUpdatedAtMs) {
+    latestUpdatedAtMs = transferUpdatedAtMs;
+    updateSource = 'transfer';
+  }
+
   if (overrideUpdatedAtMs > latestUpdatedAtMs) {
     latestUpdatedAtMs = overrideUpdatedAtMs;
     updateSource = 'override';
   }
 
   const updatedAt =
-    updateSource === 'ready' && readyUpdatedAtMs > 0
+    updateSource === 'transfer' && transferUpdatedAtMs > 0
+      ? formatAuditTimestamp(transferState?.updatedAt)
+      : updateSource === 'ready' && readyUpdatedAtMs > 0
       ? formatAuditTimestamp(readyState?.updatedAt)
       : updateSource === 'override' && overrideUpdatedAtMs > 0
         ? formatAuditTimestamp(item?.updatedAt)
         : formatAuditTimestamp(status?.updatedAt);
   const updatedBy =
-    updateSource === 'ready' && readyUpdatedAtMs > 0
+    updateSource === 'transfer' && transferUpdatedAtMs > 0
+      ? transferUpdatedBy
+      : updateSource === 'ready' && readyUpdatedAtMs > 0
       ? readyUpdatedBy
       : updateSource === 'override' && overrideUpdatedAtMs > 0
         ? overrideUpdatedBy
@@ -197,6 +210,7 @@ function ServiceItemCard({
     ? 'Viatura com entrega e recolha nesta data; recolha concluída'
     : 'Viatura com entrega e recolha nesta data';
   const isReady = readyState?.ready === true;
+  const isTransferred = transferState?.transferred === true;
   const clientDisplayName = getClampedClientName(item.name);
   const locationLabel = normalizeLocationLabel(item.location) || 'Localização não indicada';
   const accessibleClientName = clientDisplayName || item.id || item.itemId || 'Sem nome';
@@ -225,6 +239,7 @@ function ServiceItemCard({
     </span>
   );
   const canToggleReady = isDelivery && Boolean(String(item.plate ?? '').trim()) && typeof onToggleReady === 'function';
+  const canToggleTransferred = !isDelivery && done && Boolean(String(item.plate ?? '').trim()) && typeof onToggleTransferred === 'function';
   const [timeMenuOpen, setTimeMenuOpen] = useState(false);
   const timeMenuWrapRef = useRef(null);
   const initialEditorTime = useMemo(() => (String(item.overrideTime ?? item.time ?? '').trim() || '').slice(0, 5), [item.overrideTime, item.time]);
@@ -499,6 +514,19 @@ function ServiceItemCard({
                   <span>- {item.plate}</span>
                   {isReady ? <span className="item-ready-dot" aria-hidden="true" /> : null}
                 </button>
+              ) : canToggleTransferred ? (
+                <button
+                  type="button"
+                  className={`item-plate-button ${isTransferred ? 'is-transferred' : 'is-awaiting-transfer'}`}
+                  onClick={() => onToggleTransferred(item)}
+                  disabled={controlsDisabled}
+                  aria-pressed={isTransferred ? 'true' : 'false'}
+                  aria-label={isTransferred ? `Marcar viatura ${item.plate} como aguardando transferência` : `Marcar viatura ${item.plate} como transferida`}
+                  title={isTransferred ? 'Transferida - toque para reverter' : 'Aguarda transferência - toque para confirmar'}
+                >
+                  <span>- {item.plate}</span>
+                  <span className="item-ready-dot" aria-hidden="true" />
+                </button>
               ) : (
                 <span className="item-plate-text">- {item.plate}</span>
               )}
@@ -583,6 +611,7 @@ function areSameItemProps(prevProps, nextProps) {
     prevProps.onToggleDone !== nextProps.onToggleDone ||
     prevProps.onSharedPlateTap !== nextProps.onSharedPlateTap ||
     prevProps.onToggleReady !== nextProps.onToggleReady ||
+    prevProps.onToggleTransferred !== nextProps.onToggleTransferred ||
     prevProps.onSaveTimeOverride !== nextProps.onSaveTimeOverride ||
     prevProps.onOpenCarHistoryFromModel !== nextProps.onOpenCarHistoryFromModel
   ) {
@@ -603,6 +632,17 @@ function areSameItemProps(prevProps, nextProps) {
     prevItem.plate !== nextItem.plate ||
     prevItem.location !== nextItem.location ||
     prevItem.notes !== nextItem.notes
+  ) {
+    return false;
+  }
+
+  if (
+    (prevProps.transferState?.transferred ?? false) !== (nextProps.transferState?.transferred ?? false) ||
+    (prevProps.transferState?.plate ?? '') !== (nextProps.transferState?.plate ?? '') ||
+    (prevProps.transferState?.updatedByUid ?? '') !== (nextProps.transferState?.updatedByUid ?? '') ||
+    (prevProps.transferState?.updatedByName ?? '') !== (nextProps.transferState?.updatedByName ?? '') ||
+    (prevProps.transferState?.updatedByEmail ?? '') !== (nextProps.transferState?.updatedByEmail ?? '') ||
+    toTimestampMs(prevProps.transferState?.updatedAt) !== toTimestampMs(nextProps.transferState?.updatedAt)
   ) {
     return false;
   }

@@ -172,6 +172,7 @@ Visible behavior:
 - done checkbox with haptics
 - inline time edit menu
 - ready toggle on plate button
+- completed recolha transfer toggle on the plate: red while awaiting transfer, green once transferred
 - car model click opens history
 - location sometimes opens Google Maps
 - audit footer showing last updater
@@ -182,12 +183,14 @@ Main files:
 - `src/lib/statusStore.js`
 - `src/lib/timeOverrideStore.js`
 - `src/lib/readyStore.js`
+- `src/lib/transferStore.js`
 - `src/lib/phone.js`
 - `src/lib/plates.js`
 
 Behavior notes:
 
 - ready toggle only exists for `pickup` items that have a plate
+- transfer toggle only exists for completed `return` items with a plate; undo resets it
 - car model button opens history by plate, independent of ready state
 - location becomes a Google Maps link for normal addresses
 - airport/escritorio-style locations remain plain text

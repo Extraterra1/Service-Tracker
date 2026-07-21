@@ -48,4 +48,11 @@ describe('leaderboardWinnerBadges', () => {
 
     expect(key).toBe('uid:uid-marta');
   });
+
+  it('uses transfer identity when it is the latest update', () => {
+    expect(getLatestUpdateIdentityKey({
+      item: {}, status: {}, readyState: {},
+      transferState: { updatedAt: new Date('2026-03-20T10:00:00Z'), updatedByUid: 'uid-luis' },
+    })).toBe('uid:uid-luis');
+  });
 });
