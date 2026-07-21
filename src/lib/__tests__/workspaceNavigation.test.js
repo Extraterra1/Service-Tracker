@@ -33,6 +33,12 @@ describe('workspaceNavigation', () => {
     expect(resolveWorkspace('#unknown', false)).toBe('services')
   })
 
+  it('resolves the hidden tv hash without mapping it to navigation', () => {
+    expect(resolveWorkspace('#tv', true)).toBe('tv')
+    expect(resolveWorkspace('#tv', false)).toBe('tv')
+    expect(getPrimaryTabId('tv')).toBe('')
+  })
+
   it('starts future flights on the day after the service date', () => {
     expect(getFutureFlightsStartDate('2026-07-12')).toBe('2026-07-13')
   })

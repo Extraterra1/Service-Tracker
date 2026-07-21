@@ -5,6 +5,10 @@ export function getFutureFlightsStartDate(serviceDate) {
 }
 
 export function resolveWorkspace(hash, canManageAccess = true) {
+  if (hash === '#tv') {
+    return 'tv'
+  }
+
   if (hash === '#porta-chaves') {
     return 'keyrings'
   }
