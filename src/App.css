@@ -41,18 +41,7 @@
 }
 
 .tv-board-delivery {
-  position: relative;
-  background:
-    linear-gradient(90deg, rgba(201, 59, 75, 0.08), transparent 38%),
-    #f4efe5;
-}
-
-.tv-board-delivery::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: clamp(0.45rem, 0.65vw, 0.8rem);
-  background: #c93b4b;
+  background: #f4efe5;
 }
 
 .tv-board-return {
@@ -67,8 +56,7 @@
   padding-top: 0.25rem;
 }
 
-.tv-board-heading p,
-.tv-board-index {
+.tv-board-heading p {
   margin: 0;
   color: var(--tv-muted);
   font-size: clamp(0.85rem, 1.25vw, 1.55rem);
@@ -77,8 +65,6 @@
   line-height: 1.1;
   text-transform: uppercase;
 }
-
-.tv-board-index { color: #c93b4b; }
 
 .tv-board-service {
   min-width: 0;
@@ -103,12 +89,14 @@
 .tv-board-time-source {
   display: block;
   margin-top: clamp(1.25rem, 2.7vh, 2.5rem);
-  color: #b52f40;
+  color: var(--tv-muted);
   font-size: clamp(0.85rem, 1.15vw, 1.4rem);
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
+
+.tv-board-time-source.is-flight { color: #b52f40; }
 
 .tv-board-details { min-width: 0; }
 
@@ -168,9 +156,9 @@
   align-self: center;
   margin: 0;
   color: var(--tv-muted);
-  font-size: clamp(2.2rem, 4.5vw, 5.5rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
+  font-size: clamp(1.5rem, 2.5vw, 3rem);
+  font-weight: 550;
+  letter-spacing: -0.025em;
 }
 
 .tv-board-loading {
@@ -187,8 +175,7 @@
 
   .tv-board-heading { gap: 0.45rem; }
 
-  .tv-board-heading p,
-  .tv-board-index {
+  .tv-board-heading p {
     font-size: 0.68rem;
     letter-spacing: 0.09em;
   }
@@ -211,7 +198,7 @@
   .tv-board-return .tv-board-location { font-size: 0.86rem; }
   .tv-board-return .tv-board-meta { margin-top: 0.45rem; }
   .tv-board-empty,
-  .tv-board-loading p { font-size: 2.65rem; }
+  .tv-board-loading p { font-size: 1.35rem; }
 }
 
 @media (max-aspect-ratio: 4 / 3) {

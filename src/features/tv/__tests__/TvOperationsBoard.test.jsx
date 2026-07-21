@@ -24,7 +24,7 @@ describe('TvOperationsBoard', () => {
     const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
     const recolhaPanel = screen.getByRole('region', { name: 'Próxima recolha' })
     expect(within(deliveryPanel).getByText('10:42')).toBeInTheDocument()
-    expect(within(deliveryPanel).getByText('Hora do voo')).toBeInTheDocument()
+    expect(within(deliveryPanel).getByText('Hora do voo')).toHaveClass('is-flight')
     expect(within(deliveryPanel).getByText('Maria Silva')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('TP1685')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('AA-00-AA')).toBeInTheDocument()
@@ -36,13 +36,17 @@ describe('TvOperationsBoard', () => {
     render(<TvOperationsBoard serviceData={{ pickups: [{ ...delivery, overrideTime: '12:20' }], returns: [] }} statusMap={{}} />)
     const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
     expect(within(deliveryPanel).getByText('12:20')).toBeInTheDocument()
-    expect(within(deliveryPanel).getByText('Hora da reserva')).toBeInTheDocument()
+    expect(within(deliveryPanel).getByText('Hora da reserva')).not.toHaveClass('is-flight')
   })
 
   it('shows stable section-specific empty states', () => {
     render(<TvOperationsBoard serviceData={{ pickups: [], returns: [] }} statusMap={{}} />)
     expect(screen.getByText('Sem entregas pendentes')).toBeInTheDocument()
     expect(screen.getByText('Sem recolhas pendentes')).toBeInTheDocument()
+    expect(screen.getByText('Próxima entrega')).toBeInTheDocument()
+    expect(screen.getByText('Próxima recolha')).toBeInTheDocument()
+    expect(screen.queryByText('01')).not.toBeInTheDocument()
+    expect(screen.queryByText('02')).not.toBeInTheDocument()
   })
 
   it('shows a board loading state', () => {
