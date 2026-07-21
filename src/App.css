@@ -17,16 +17,16 @@
 }
 
 .tv-board {
-  --tv-ink: #f6f3ec;
-  --tv-muted: #aaaeb8;
-  --tv-line: rgba(246, 243, 236, 0.18);
+  --tv-ink: #211f1b;
+  --tv-muted: #756f65;
+  --tv-line: rgba(33, 31, 27, 0.16);
   width: 100%;
   min-height: 100dvh;
   display: grid;
   grid-template-rows: minmax(0, 7fr) minmax(0, 3fr);
   overflow: hidden;
   color: var(--tv-ink);
-  background: #11141a;
+  background: #f4efe5;
   font-family: 'Sora', 'Urbanist', sans-serif;
 }
 
@@ -43,8 +43,8 @@
 .tv-board-delivery {
   position: relative;
   background:
-    linear-gradient(90deg, rgba(230, 51, 70, 0.09), transparent 38%),
-    #11141a;
+    linear-gradient(90deg, rgba(201, 59, 75, 0.08), transparent 38%),
+    #f4efe5;
 }
 
 .tv-board-delivery::before {
@@ -52,12 +52,12 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: clamp(0.45rem, 0.65vw, 0.8rem);
-  background: #e63346;
+  background: #c93b4b;
 }
 
 .tv-board-return {
   border-top: 1px solid var(--tv-line);
-  background: #191d25;
+  background: #e9e2d7;
 }
 
 .tv-board-heading {
@@ -78,7 +78,7 @@
   text-transform: uppercase;
 }
 
-.tv-board-index { color: #e95a69; }
+.tv-board-index { color: #c93b4b; }
 
 .tv-board-service {
   min-width: 0;
@@ -103,7 +103,7 @@
 .tv-board-time-source {
   display: block;
   margin-top: clamp(1.25rem, 2.7vh, 2.5rem);
-  color: #e95a69;
+  color: #b52f40;
   font-size: clamp(0.85rem, 1.15vw, 1.4rem);
   font-weight: 700;
   letter-spacing: 0.13em;
@@ -125,7 +125,7 @@
 
 .tv-board-location {
   margin: clamp(0.8rem, 1.8vh, 1.6rem) 0 0;
-  color: #d3d5da;
+  color: #4f4a42;
   font-size: clamp(1.35rem, 2.15vw, 2.7rem);
   font-weight: 500;
   line-height: 1.1;
@@ -176,6 +176,42 @@
 .tv-board-loading {
   display: grid;
   place-items: center;
+}
+
+@media (max-width: 1100px) and (max-height: 650px) and (min-aspect-ratio: 4 / 3) {
+  .tv-board-section {
+    grid-template-columns: 7.6rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.05rem 1.7rem;
+  }
+
+  .tv-board-heading { gap: 0.45rem; }
+
+  .tv-board-heading p,
+  .tv-board-index {
+    font-size: 0.68rem;
+    letter-spacing: 0.09em;
+  }
+
+  .tv-board-service {
+    grid-template-columns: minmax(12.5rem, 0.72fr) minmax(0, 1.28fr);
+    gap: 1.5rem;
+  }
+
+  .tv-board-time { font-size: 5.9rem; }
+  .tv-board-time-source { margin-top: 0.8rem; font-size: 0.68rem; }
+  .tv-board-details h2 { font-size: 2.5rem; }
+  .tv-board-location { margin-top: 0.55rem; font-size: 1.05rem; }
+  .tv-board-meta { gap: 0.55rem 1.15rem; margin-top: 0.8rem; }
+  .tv-board-meta-item { gap: 0.15rem; }
+  .tv-board-meta-item small { font-size: 0.52rem; }
+  .tv-board-meta-item strong { font-size: 0.78rem; }
+  .tv-board-return .tv-board-time { font-size: 3.75rem; }
+  .tv-board-return .tv-board-details h2 { font-size: 1.65rem; }
+  .tv-board-return .tv-board-location { font-size: 0.86rem; }
+  .tv-board-return .tv-board-meta { margin-top: 0.45rem; }
+  .tv-board-empty,
+  .tv-board-loading p { font-size: 2.65rem; }
 }
 
 @media (max-aspect-ratio: 4 / 3) {
