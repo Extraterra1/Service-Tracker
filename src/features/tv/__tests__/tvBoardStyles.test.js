@@ -4,9 +4,18 @@ import { describe, expect, it } from 'vitest'
 const appCss = readFileSync('src/App.css', 'utf8')
 
 describe('TV board styles', () => {
-  it('uses a fixed warm-light palette', () => {
-    expect(appCss).toMatch(/\.tv-board\s*{[^}]*--tv-ink:\s*#211f1b;[^}]*--tv-muted:\s*#756f65;[^}]*background:\s*#f4efe5;/s)
-    expect(appCss).toMatch(/\.tv-board-return\s*{[^}]*background:\s*#e9e2d7;/s)
+  it('uses the branded JustDrive light palette', () => {
+    expect(appCss).toMatch(/\.tv-board\s*{[^}]*--tv-brand:\s*#fe3a4f;/s)
+    expect(appCss).toMatch(/\.tv-board\s*{[^}]*--tv-ink:\s*#3f3b3a;/s)
+    expect(appCss).toMatch(/\.tv-board-delivery\s*{[^}]*background:\s*#fff0f2;/s)
+    expect(appCss).toMatch(/\.tv-board-return\s*{[^}]*border-top:\s*2px solid var\(--tv-brand\);/s)
+    expect(appCss).toMatch(/\.tv-board-return\s*{[^}]*background:\s*#f3eeea;/s)
+    expect(appCss).toMatch(/\.tv-board-heading p\s*{[^}]*color:\s*var\(--tv-brand\);/s)
+  })
+
+  it('positions the JustDrive logo in the top-right without a container', () => {
+    expect(appCss).toMatch(/\.tv-board-brand\s*{[^}]*position:\s*absolute;[^}]*top:[^}]*right:[^}]*width:\s*clamp\(/s)
+    expect(appCss).not.toMatch(/\.tv-board-brand\s*{[^}]*(?:background|box-shadow|border):/s)
   })
 
   it('uses the squared Barlow family only within the TV board', () => {
@@ -22,7 +31,7 @@ describe('TV board styles', () => {
   it('uses no decorative side stripe or ornamental index styling', () => {
     expect(appCss).not.toMatch(/\.tv-board-delivery::before/)
     expect(appCss).not.toMatch(/\.tv-board-index/)
-    expect(appCss).toMatch(/\.tv-board-time-source\.is-flight\s*{[^}]*color:\s*#b52f40;/s)
+    expect(appCss).toMatch(/\.tv-board-time-source\.is-flight\s*{[^}]*color:\s*var\(--tv-brand\);/s)
   })
 
   it('keeps compact empty states subordinate to service times', () => {
