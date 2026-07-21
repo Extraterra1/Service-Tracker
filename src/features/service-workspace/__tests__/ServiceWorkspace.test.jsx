@@ -1,14 +1,24 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fetchAndCacheReservation } from '../../../lib/reservationDetailsCache';
 import ServiceWorkspace from '../ServiceWorkspace';
 
-const { fetchReservationDetails } = vi.hoisted(() => ({ fetchReservationDetails: vi.fn() }));
+const { fetchReservationDetails, prefetchReservationDetails } = vi.hoisted(() => ({
+  fetchReservationDetails: vi.fn(),
+  prefetchReservationDetails: vi.fn()
+}));
 vi.mock('../../../lib/reservationsApi', () => ({ fetchReservationDetails }));
+vi.mock('../../../lib/reservationDetailsCache', async (importOriginal) => ({
+  ...await importOriginal(),
+  prefetchReservationDetails
+}));
 
 describe('ServiceWorkspace', () => {
   beforeEach(() => {
     fetchReservationDetails.mockReset();
+    prefetchReservationDetails.mockReset();
+    prefetchReservationDetails.mockResolvedValue();
   });
 
   afterEach(() => {
@@ -35,6 +45,38 @@ describe('ServiceWorkspace', () => {
     );
 
     expect(setIntervalSpy).not.toHaveBeenCalled();
+  });
+
+  it('prefetches unique reservation details when service items become available', async () => {
+    render(
+      <ServiceWorkspace
+        serviceData={{
+          pickups: [
+            { itemId: 'pickup-prefetch-1', id: '00123', serviceType: 'pickup' },
+            { itemId: 'pickup-prefetch-2', id: '123', serviceType: 'pickup' }
+          ],
+          returns: [
+            { itemId: 'return-prefetch-1', id: '00200', serviceType: 'return' },
+            { itemId: 'return-prefetch-empty', id: '  ', serviceType: 'return' }
+          ]
+        }}
+        statusMap={{}}
+        readyMap={{}}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        updatingItemId=""
+        disabled={false}
+        loading={false}
+        canShowEmptyState
+        lockedMessage=""
+      />
+    );
+
+    await waitFor(() => {
+      expect(prefetchReservationDetails).toHaveBeenCalledTimes(1);
+    });
+    expect(prefetchReservationDetails).toHaveBeenCalledWith(['00123', '00200']);
   });
 
   it('loads full reservation details when a service reservation number is clicked', async () => {
@@ -111,7 +153,85 @@ describe('ServiceWorkspace', () => {
     expect(fetchReservationDetails).toHaveBeenCalledTimes(2);
   });
 
-  it('reuses reservation details after the popup is closed and reopened', async () => {
+  it('shows cached details immediately and refreshes them in the background', async () => {
+    const user = userEvent.setup();
+    fetchReservationDetails.mockResolvedValueOnce({ id: '41190', reference: '040787', customer: 'Cached Maria' });
+    await fetchAndCacheReservation('40787');
+    let resolveRefresh;
+    fetchReservationDetails.mockReturnValue(new Promise((resolve) => { resolveRefresh = resolve; }));
+
+    render(
+      <ServiceWorkspace
+        serviceData={{
+          pickups: [{
+            itemId: 'pickup-stale-cache', serviceType: 'pickup', time: '09:00', name: 'Maria', id: '40787',
+            phone: '', car: 'Fiat Panda', plate: 'AA-00-AA', location: 'AEROPORTO DA MADEIRA', extras: [], notes: ''
+          }],
+          returns: []
+        }}
+        statusMap={{}}
+        readyMap={{}}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        updatingItemId=""
+        disabled={false}
+        loading={false}
+        canShowEmptyState
+        lockedMessage=""
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes da reserva 40787' }));
+
+    expect(screen.getByRole('dialog', { name: 'Reserva 040787' })).toBeInTheDocument();
+    expect(screen.getByText('Cached Maria')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('A atualizar…');
+
+    resolveRefresh({ id: '41190', reference: '040787', customer: 'Fresh Maria' });
+
+    expect(await screen.findByText('Fresh Maria')).toBeInTheDocument();
+    expect(screen.queryByText('Cached Maria')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('keeps cached details visible when a background refresh fails', async () => {
+    const user = userEvent.setup();
+    fetchReservationDetails.mockResolvedValueOnce({ id: '51190', reference: '050787', customer: 'Cached Ana' });
+    await fetchAndCacheReservation('50787');
+    fetchReservationDetails.mockRejectedValueOnce(new Error('offline'));
+
+    render(
+      <ServiceWorkspace
+        serviceData={{
+          pickups: [{
+            itemId: 'pickup-refresh-failure', serviceType: 'pickup', time: '09:00', name: 'Ana', id: '50787',
+            phone: '', car: 'Fiat Panda', plate: 'AA-00-AA', location: 'AEROPORTO DA MADEIRA', extras: [], notes: ''
+          }],
+          returns: []
+        }}
+        statusMap={{}}
+        readyMap={{}}
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        updatingItemId=""
+        disabled={false}
+        loading={false}
+        canShowEmptyState
+        lockedMessage=""
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes da reserva 50787' }));
+
+    expect(screen.getByRole('dialog', { name: 'Reserva 050787' })).toBeInTheDocument();
+    expect(screen.getByText('Cached Ana')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    expect(screen.queryByText('Não foi possível carregar a reserva.')).not.toBeInTheDocument();
+  });
+
+  it('refreshes reservation details after the popup is closed and reopened', async () => {
     const user = userEvent.setup();
     fetchReservationDetails.mockResolvedValue({ id: '31190', reference: '030787', customer: 'Maria' });
 
@@ -145,7 +265,7 @@ describe('ServiceWorkspace', () => {
     await user.click(reservationButton);
 
     expect(screen.getByRole('dialog', { name: 'Reserva 030787' })).toBeInTheDocument();
-    expect(fetchReservationDetails).toHaveBeenCalledTimes(1);
+    expect(fetchReservationDetails).toHaveBeenCalledTimes(2);
   });
 
   it('shows a completed shared-plate marker on entrega cards when the paired recolha is done', () => {

@@ -1,4 +1,4 @@
-import { Building2, CalendarArrowDown, CalendarArrowUp, CarFront, Clock3, ExternalLink, MapPinned, Plane, RectangleHorizontal, X } from 'lucide-react';
+import { Building2, CalendarArrowDown, CalendarArrowUp, CarFront, Clock3, ExternalLink, LoaderCircle, MapPinned, Plane, RectangleHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -440,7 +440,7 @@ function ExtrasGroup({ extras }) {
   );
 }
 
-export default function ReservationDetailsPopup({ reservation, onClose, canManageAccess = false }) {
+export default function ReservationDetailsPopup({ reservation, onClose, canManageAccess = false, isRefreshing = false }) {
   const closeButtonRef = useRef(null);
   const reservationDetails = useMemo(() => buildReservationDetails(reservation), [reservation]);
   const hasImtExtra = reservationDetails.extras.some((extra) => /imt/i.test(extra));
@@ -497,6 +497,12 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
             <span className="reservation-details-kicker">Ficha</span>
             <div className="reservation-details-title-row">
               <h2 id="reservation-details-title">Reserva {reservation.reference || reservation.id || ''}</h2>
+              {isRefreshing ? (
+                <span className="reservation-refresh-status" role="status" aria-live="polite">
+                  <LoaderCircle aria-hidden="true" />
+                  A atualizar…
+                </span>
+              ) : null}
               {status ? (
                 <span className={`reservation-status is-${status}`}>{formatReservationField('status', reservation.status)}</span>
               ) : null}
