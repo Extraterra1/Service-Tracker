@@ -8,6 +8,14 @@
   gap: 0.45rem;
 }
 
+.app-shell-tv {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+  padding: 0;
+  gap: 0;
+}
+
 .tv-board {
   --tv-ink: #f6f3ec;
   --tv-muted: #aaaeb8;

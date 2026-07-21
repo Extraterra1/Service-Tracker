@@ -41,6 +41,7 @@ const ReservationsWorkspace = lazy(() => import('./features/reservations/Reserva
 const FlightsAccessWorkspace = lazy(() => import('./features/flights/FlightsAccessWorkspace'));
 const FlightsWorkspace = lazy(() => import('./features/flights/FlightsWorkspace'));
 const KeyringsWorkspace = lazy(() => import('./features/keyrings/KeyringsWorkspace'));
+const TvWorkspace = lazy(() => import('./features/tv/TvWorkspace'))
 
 const PIN_STORAGE_KEY = 'service_tracker_api_pin';
 const THEME_STORAGE_KEY = 'service_tracker_theme';
@@ -173,7 +174,9 @@ function App() {
   const { user, authHint, accessState, accessProfile, checkingAccess, accessGateMessage, accessPollInFlight, error: accessErrorMessage, retryAccessCheck } = useAccessGate();
   const canManageAccess = accessState === 'allowed' && accessProfile?.role === 'admin';
   const requestedWorkspaceHash =
-    requestedWorkspace === 'reservations'
+    requestedWorkspace === 'tv'
+      ? '#tv'
+      : requestedWorkspace === 'reservations'
       ? '#reservas'
       : requestedWorkspace === 'flights'
         ? '#voos'
@@ -1055,6 +1058,25 @@ function App() {
         onRetry={retryAccessCheck}
         onSignOut={handleSignOut}
       />
+    );
+  }
+
+  if (activeWorkspace === 'tv') {
+    return (
+      <div className="app-shell app-shell-tv">
+        <Suspense fallback={<main className="tv-board tv-board-loading" aria-busy="true"><p>A preparar o próximo serviço</p></main>}>
+          <TvWorkspace
+            selectedDate={selectedDate}
+            serviceData={serviceDataWithOverrides}
+            statusMap={statusMap}
+            loading={paneLoading}
+            serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
+            userUid={user?.uid ?? ''}
+          />
+        </Suspense>
+        <Analytics />
+        <SpeedInsights />
+      </div>
     );
   }
 
