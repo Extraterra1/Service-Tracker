@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
 import { formatPhoneForDisplay, getWhatsAppHref } from '../../lib/phone';
+import { scheduleWhatsAppHrefFallback } from '../../lib/whatsappLinks';
 import { formatReservationCarMake, formatReservationCarModel, formatReservationField, getReservationCountryCode } from './reservationDisplay';
 
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
@@ -210,10 +211,11 @@ function buildImtMessage({ reservation, countryCode }) {
 }
 
 function getImtWhatsAppHref({ reservation, countryCode }) {
-  const message = encodeURIComponent(buildImtMessage({ reservation, countryCode }));
+  const message = buildImtMessage({ reservation, countryCode });
   const whatsappHref = getWhatsAppHref(reservation.clientPhone);
-  if (whatsappHref) return `${whatsappHref}?text=${message}`;
-  return `https://wa.me/?text=${message}`;
+  const url = new URL(whatsappHref || 'whatsapp://send');
+  url.searchParams.set('text', message);
+  return url.toString();
 }
 
 function copyImtPriceToClipboard(reservation) {
@@ -309,8 +311,7 @@ function DetailValue({ fieldKey, value, countryCode, countryName }) {
       <a
         className="reservation-details-whatsapp-link"
         href={whatsappHref}
-        target="_blank"
-        rel="noreferrer"
+        onClick={() => scheduleWhatsAppHrefFallback(whatsappHref)}
         aria-label={`Abrir conversa no WhatsApp para ${value}`}
       >
         <span>{formatPhoneForDisplay(value)}</span>
@@ -511,12 +512,13 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
                   <a
                     className="reservation-status reservation-imt-warning reservation-imt-warning-link"
                     href={imtWhatsAppHref}
-                    target="_blank"
-                    rel="noreferrer"
                     aria-label="Enviar mensagem IMT por WhatsApp"
                     data-clipboard-price={imtClipboardPrice}
                     onMouseDown={() => copyImtPriceToClipboard(reservation)}
-                    onClick={() => copyImtPriceToClipboard(reservation)}
+                    onClick={() => {
+                      copyImtPriceToClipboard(reservation);
+                      scheduleWhatsAppHrefFallback(imtWhatsAppHref);
+                    }}
                     onTouchStart={() => copyImtPriceToClipboard(reservation)}
                   >
                     Não tem taxa IMT

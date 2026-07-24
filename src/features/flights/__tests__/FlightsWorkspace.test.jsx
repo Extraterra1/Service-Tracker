@@ -292,7 +292,9 @@ describe('FlightsWorkspace', () => {
 
     const flight = await screen.findByRole('article', { name: 'Voo TP1685' });
     expect(within(flight).getByTitle('GB')).toBeInTheDocument();
-    expect(within(flight).getByRole('link', { name: 'WhatsApp +44 7700 900123' })).toHaveAttribute('href', 'https://wa.me/447700900123');
+    const whatsappLink = within(flight).getByRole('link', { name: 'WhatsApp +44 7700 900123' });
+    expect(whatsappLink).toHaveAttribute('href', 'whatsapp://send?phone=447700900123');
+    expect(whatsappLink).not.toHaveAttribute('target');
     const reservation = within(flight).getByRole('link', { name: 'Reservations 1002' });
     expect(reservation).toHaveAttribute('href', 'https://reservations.example.com/1002');
     expect(reservation).toHaveAttribute('target', '_blank');

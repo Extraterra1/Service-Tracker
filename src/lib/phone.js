@@ -409,7 +409,7 @@ export function detectPhoneCountryCode(phoneRaw) {
 
 export function getWhatsAppHref(phoneRaw) {
   const digits = normalizePhoneForWhatsApp(phoneRaw);
-  return digits ? `https://wa.me/${digits}` : '';
+  return digits ? `whatsapp://send?phone=${digits}` : '';
 }
 
 export function formatPhoneForDisplay(phoneRaw) {

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getServiceWhatsAppHref, getWhatsAppWebFallbackHref, scheduleWhatsAppWebFallback } from '../whatsappConfirmation';
+import { getServiceWhatsAppHref } from '../whatsappConfirmation';
+import { getWhatsAppWebFallbackHref, scheduleWhatsAppWebFallback } from '../whatsappLinks';
 
-const baseWhatsAppHref = 'https://wa.me/351912345678';
+const baseWhatsAppHref = 'whatsapp://send?phone=351912345678';
 
 function buildHref(overrides = {}) {
   return getServiceWhatsAppHref({

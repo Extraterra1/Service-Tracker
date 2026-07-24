@@ -163,8 +163,8 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText('Maria Silva')).toBeInTheDocument()
     const whatsappLink = details.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 900 000 000' })
     expect(whatsappLink).toHaveTextContent('+351 900 000 000')
-    expect(whatsappLink).toHaveAttribute('href', 'https://wa.me/351900000000')
-    expect(whatsappLink).toHaveAttribute('target', '_blank')
+    expect(whatsappLink).toHaveAttribute('href', 'whatsapp://send?phone=351900000000')
+    expect(whatsappLink).not.toHaveAttribute('target')
     expect(details.getByText('maria@example.com')).toBeInTheDocument()
     expect(details.getByText('P-1234567')).toBeInTheDocument()
     expect(details.getByText('Hotel Madeira, Funchal')).toBeInTheDocument()
@@ -315,7 +315,8 @@ describe('ReservationsWorkspace', () => {
     const url = new URL(imtLink.href)
     const message = url.searchParams.get('text')
 
-    expect(url.origin + url.pathname).toBe('https://wa.me/351900000000')
+    expect(url.protocol).toBe('whatsapp:')
+    expect(url.searchParams.get('phone')).toBe('351900000000')
     expect(message).toContain('No seu caso, como são 3 dias de aluguer')
     expect(message).toContain('125,50€')
     expect(message).toContain('131,50€')
@@ -367,8 +368,8 @@ describe('ReservationsWorkspace', () => {
     const message = new URL(imtLink.href).searchParams.get('text')
 
     expect(phoneLink).toHaveTextContent('+44 770 090 012 3')
-    expect(phoneLink).toHaveAttribute('href', 'https://wa.me/447700900123')
-    expect(imtLink.href).toContain('https://wa.me/447700900123')
+    expect(phoneLink).toHaveAttribute('href', 'whatsapp://send?phone=447700900123')
+    expect(imtLink.href).toContain('whatsapp://send?phone=447700900123')
     expect(message).toContain('as the rental period is 12 days')
     expect(message).toContain('initially quoted amount of 100.00€')
     expect(message).toContain('bringing the total amount to 120.00€')
@@ -394,7 +395,8 @@ describe('ReservationsWorkspace', () => {
     const imtLink = within(popupHeader).getByRole('link', { name: /Enviar mensagem IMT por WhatsApp/i })
     const url = new URL(imtLink.href)
 
-    expect(url.origin + url.pathname).toBe('https://wa.me/')
+    expect(url.protocol).toBe('whatsapp:')
+    expect(url.hostname).toBe('send')
     expect(url.searchParams.get('text')).toContain('No seu caso, como são 3 dias de aluguer')
   })
 

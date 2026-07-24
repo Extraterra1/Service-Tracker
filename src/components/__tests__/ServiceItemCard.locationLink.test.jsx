@@ -46,7 +46,8 @@ describe('ServiceItemCard location links', () => {
     renderCard(createItem({ phone: '+351 912 345 678' }));
 
     const link = screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' });
-    expect(link).toHaveAttribute('href', 'https://wa.me/351912345678');
+    expect(link).toHaveAttribute('href', 'whatsapp://send?phone=351912345678');
+    expect(link).not.toHaveAttribute('target');
   });
 
   it('prefills an eligible confirmation when confirmation mode is enabled', () => {
@@ -67,7 +68,7 @@ describe('ServiceItemCard location links', () => {
 
     expect(screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' })).toHaveAttribute(
       'href',
-      'https://wa.me/351912345678'
+      'whatsapp://send?phone=351912345678'
     );
   });
 

@@ -4,6 +4,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
 
 import { detectPhoneCountryCode, getWhatsAppHref } from '../../lib/phone';
+import { scheduleWhatsAppHrefFallback } from '../../lib/whatsappLinks';
 import { fetchFlightArrivals } from './flightsApi';
 import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers';
 import { sortFlightsByArrivalTime } from './flightSorting';
@@ -99,7 +100,7 @@ function FlightClient({ client }) {
       </span>
       <div className="flight-client-actions">
         {whatsappUrl ? (
-          <a className="flight-client-phone" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${phone}`}>
+          <a className="flight-client-phone" href={whatsappUrl} onClick={() => scheduleWhatsAppHrefFallback(whatsappUrl)} aria-label={`WhatsApp ${phone}`}>
             <FaWhatsapp aria-hidden="true" />
             <span>{phone}</span>
           </a>

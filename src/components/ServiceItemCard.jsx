@@ -5,7 +5,8 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { getServiceLocationKind, isTransferServiceLocation, normalizeServiceLocation } from '../lib/serviceLocations';
-import { getServiceWhatsAppHref, getWhatsAppWebFallbackHref, scheduleWhatsAppWebFallback } from '../lib/whatsappConfirmation';
+import { getServiceWhatsAppHref } from '../lib/whatsappConfirmation';
+import { scheduleWhatsAppHrefFallback } from '../lib/whatsappLinks';
 import { toTimestampMs } from '../lib/timestamp';
 import { Check, Clock3, ExternalLink, Eye, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -190,7 +191,7 @@ function ServiceItemCard({
   );
   const handleWhatsAppClick = () => {
     if (!finalPhoneHref.startsWith('whatsapp:')) return;
-    scheduleWhatsAppWebFallback({ fallbackHref: getWhatsAppWebFallbackHref(finalPhoneHref) });
+    scheduleWhatsAppHrefFallback(finalPhoneHref);
   };
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
