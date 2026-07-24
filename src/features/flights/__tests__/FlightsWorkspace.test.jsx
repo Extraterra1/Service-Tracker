@@ -57,6 +57,14 @@ describe('FlightsWorkspace', () => {
     expect(appCss).toMatch(/\.flight-client-reservation\s*{[^}]*cursor:\s*pointer;/);
   });
 
+  it('aligns future reservation time to the inherited flight-time column', () => {
+    expect(appCss).toMatch(/\.flight-clients--time-aligned\s*{[^}]*grid-template-columns:\s*subgrid;/);
+    expect(appCss).toMatch(/\.flight-client--time-aligned\s*{[^}]*grid-template-columns:\s*subgrid;/);
+    expect(appCss).toMatch(/\.flight-client-time\s*{[^}]*grid-column:\s*2;/);
+    expect(appCss).toMatch(/\.flight-client-rest\s*{[^}]*grid-column:\s*3\s*\/\s*5;/);
+    expect(appCss).toMatch(/@media\s*\(max-width:\s*700px\)[\s\S]*\.flight-client--time-aligned\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+max-content;/);
+  });
+
   beforeEach(() => fetchFlightArrivals.mockReset());
   afterEach(cleanup);
 
@@ -267,8 +275,11 @@ describe('FlightsWorkspace', () => {
     );
 
     const flight = await screen.findByRole('article', { name: 'Voo TP1685' });
+    expect(within(flight).getByLabelText('Clientes do voo TP1685')).toHaveClass('flight-clients--time-aligned');
     const clients = within(flight).getAllByTestId('flight-client');
     expect(clients).toHaveLength(2);
+    expect(clients[0]).toHaveClass('flight-client--time-aligned');
+    expect(within(clients[0]).getByText('Hora').closest('.flight-client-detail')).toHaveClass('flight-client-time');
     expect(clients[0]).toHaveTextContent('Maria Silva');
     expect(clients[0]).toHaveTextContent('Hora09:15');
     expect(clients[0]).toHaveTextContent('Fiat Panda');

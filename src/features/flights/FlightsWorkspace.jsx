@@ -73,19 +73,8 @@ function FlightClient({ client, onOpenReservation, showReservationTime = false }
   const countryCode = detectPhoneCountryCode(phone);
   const whatsappUrl = getWhatsAppHref(phone);
   const reservationId = String(client?.id ?? '').trim();
-
-  return (
-    <div className={`flight-client ${showReservationTime ? 'flight-client--with-time' : ''}`} data-testid="flight-client">
-      <div className="flight-client-identity">
-        <span className="flight-client-flag">{countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryCode} /> : '—'}</span>
-        <strong className="flight-client-name">{name}</strong>
-      </div>
-      {showReservationTime ? (
-        <span className="flight-client-detail">
-          <small>Hora</small>
-          {formatTime(client?.time)}
-        </span>
-      ) : null}
+  const clientRest = (
+    <>
       <span className="flight-client-detail">
         <small>Carro</small>
         {car}
@@ -117,6 +106,22 @@ function FlightClient({ client, onOpenReservation, showReservationTime = false }
           <span className="flight-client-reservation flight-client-reservation--disabled">—</span>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <div className={`flight-client ${showReservationTime ? 'flight-client--time-aligned' : ''}`} data-testid="flight-client">
+      <div className="flight-client-identity">
+        <span className="flight-client-flag">{countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryCode} /> : '—'}</span>
+        <strong className="flight-client-name">{name}</strong>
+      </div>
+      {showReservationTime ? (
+        <span className="flight-client-detail flight-client-time">
+          <small>Hora</small>
+          {formatTime(client?.time)}
+        </span>
+      ) : null}
+      {showReservationTime ? <div className="flight-client-rest">{clientRest}</div> : clientRest}
     </div>
   );
 }
@@ -203,7 +208,7 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
       ) : null}
 
       {clients.length > 0 ? (
-        <div className="flight-clients" aria-label={`Clientes do voo ${flightNumber}`}>
+        <div className={`flight-clients ${singleTime ? '' : 'flight-clients--time-aligned'}`} aria-label={`Clientes do voo ${flightNumber}`}>
           <span className="flight-clients-label">Clientes</span>
           {clients.map((client, clientIndex) => (
             <FlightClient

@@ -1064,8 +1064,35 @@
   gap: 0.55rem;
 }
 
-.flight-client--with-time {
-  grid-template-columns: minmax(8rem, 1.25fr) max-content minmax(7rem, 1fr) max-content minmax(9rem, 1.15fr);
+.flight-clients--time-aligned {
+  margin-left: 0;
+  padding-inline: 0;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.flight-clients--time-aligned .flight-clients-label {
+  grid-column: 1 / -1;
+  padding-inline: 0.55rem;
+}
+
+.flight-client--time-aligned {
+  grid-column: 1 / -1;
+  padding-inline: 0;
+  grid-template-columns: subgrid;
+}
+
+.flight-client-time {
+  grid-column: 2;
+}
+
+.flight-client-rest {
+  min-width: 0;
+  grid-column: 3 / 5;
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) max-content minmax(9rem, 1.15fr);
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .flight-client + .flight-client {
@@ -1383,6 +1410,26 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .flight-clients--time-aligned {
+    display: block;
+    padding-inline: 0.55rem;
+  }
+
+  .flight-client--time-aligned {
+    padding: 0.45rem 0;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 0.55rem;
+  }
+
+  .flight-client--time-aligned .flight-client-time {
+    grid-column: 1;
+  }
+
+  .flight-client-rest {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) max-content;
   }
 
   .flights-workspace--current .flights-board-header {

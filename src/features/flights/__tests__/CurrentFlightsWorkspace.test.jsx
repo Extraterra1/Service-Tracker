@@ -114,6 +114,8 @@ describe('CurrentFlightsWorkspace', () => {
     const reservationButton = within(client).getByRole('button', { name: 'Reservations 10787' })
 
     expect(identity).toContainElement(within(client).getByText('Maria'))
+    expect(client).not.toHaveClass('flight-client--time-aligned')
+    expect(within(flight).getByLabelText('Clientes do voo TP1685')).not.toHaveClass('flight-clients--time-aligned')
     expect(identity?.querySelector('.flight-client-flag')).toBeInTheDocument()
     expect(within(client).getByText('AA-00-AA')).toBeInTheDocument()
     expect(reservationButton).toHaveTextContent('#10787')
