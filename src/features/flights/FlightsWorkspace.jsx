@@ -16,7 +16,7 @@ import { toTimestampMs } from '../../lib/timestamp';
 import { scheduleWhatsAppHrefFallback } from '../../lib/whatsappLinks';
 import { fetchFlightArrivals } from './flightsApi';
 import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers';
-import { sortFlightsByArrivalTime } from './flightSorting';
+import { sortFutureFlightsByScheduledArrival } from './flightSorting';
 import FlightsWorkspaceSkeleton from './FlightsWorkspaceSkeleton';
 import { getAirlineBrand } from './airlineBrands';
 
@@ -353,7 +353,7 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
   }, []);
 
   const visibleResults = useMemo(() => state.flightListKey === flightListKey ? state.results : [], [flightListKey, state.flightListKey, state.results]);
-  const sortedResults = useMemo(() => sortFlightsByArrivalTime(visibleResults), [visibleResults]);
+  const sortedResults = useMemo(() => sortFutureFlightsByScheduledArrival(visibleResults), [visibleResults]);
 
   const isLoading = serviceDataReady && Boolean(flightListKey) && (!cacheReady || (visibleResults.length === 0 && state.refreshing));
   const isPreparingDay = serviceDataLoading && !serviceDataReady;

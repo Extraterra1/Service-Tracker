@@ -24,3 +24,15 @@ export function sortFlightsByArrivalTime(flights = []) {
     return getFlightNumber(left).localeCompare(getFlightNumber(right))
   })
 }
+
+export function sortFutureFlightsByScheduledArrival(flights = []) {
+  return [...flights].sort((left, right) => {
+    const leftTime = Date.parse(String(left?.scheduledArrivalLocal ?? ''))
+    const rightTime = Date.parse(String(right?.scheduledArrivalLocal ?? ''))
+    const normalizedLeftTime = Number.isFinite(leftTime) ? leftTime : Number.POSITIVE_INFINITY
+    const normalizedRightTime = Number.isFinite(rightTime) ? rightTime : Number.POSITIVE_INFINITY
+    const timeDifference = normalizedLeftTime - normalizedRightTime
+    if (Number.isFinite(timeDifference) && timeDifference !== 0) return timeDifference
+    return getFlightNumber(left).localeCompare(getFlightNumber(right))
+  })
+}

@@ -158,13 +158,26 @@ describe('FlightsWorkspace', () => {
     expect(screen.queryByText('Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.')).not.toBeInTheDocument();
   });
 
-  it('renders future flights by effective arrival time, earliest first', async () => {
-    fetchFlightArrivals.mockResolvedValue({ results: [...response.results].reverse() });
+  it('renders future flights by scheduled arrival time, earliest first', async () => {
+    fetchFlightArrivals.mockResolvedValue({ results: [
+      {
+        ...response.results[0],
+        flightNumber: 'TP1685',
+        scheduledArrivalLocal: '2026-07-10T14:20:00',
+        estimatedArrivalLocal: '2026-07-10T13:00:00',
+      },
+      {
+        ...response.results[1],
+        flightNumber: 'U27654',
+        scheduledArrivalLocal: '2026-07-10T12:10:00',
+        estimatedArrivalLocal: '2026-07-10T15:00:00',
+      },
+    ] });
     render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
 
     expect((await screen.findAllByRole('article')).map((flight) => flight.getAttribute('aria-label'))).toEqual([
-      'Voo TP1685',
       'Voo U27654',
+      'Voo TP1685',
     ]);
   });
 

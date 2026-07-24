@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getEffectiveArrivalTime, sortFlightsByArrivalTime } from '../flightSorting'
+import { getEffectiveArrivalTime, sortFlightsByArrivalTime, sortFutureFlightsByScheduledArrival } from '../flightSorting'
 
 describe('flight time ordering', () => {
   it('uses the displayed-time priority and orders earliest effective arrival first', () => {
@@ -37,5 +37,23 @@ describe('flight time ordering', () => {
       'U2200',
     ])
     expect(input).toEqual(originalOrder)
+  })
+
+  it('orders future flights only by scheduled arrival, earliest first', () => {
+    const scheduledLater = {
+      flightNumber: 'TP100',
+      estimatedArrivalLocal: '2026-07-15T08:00:00',
+      scheduledArrivalLocal: '2026-07-15T12:00:00',
+    }
+    const scheduledEarlier = {
+      flightNumber: 'U2100',
+      actualArrivalLocal: '2026-07-15T14:00:00',
+      scheduledArrivalLocal: '2026-07-15T10:00:00',
+    }
+
+    expect(sortFutureFlightsByScheduledArrival([scheduledLater, scheduledEarlier])).toEqual([
+      scheduledEarlier,
+      scheduledLater,
+    ])
   })
 })
