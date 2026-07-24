@@ -3,8 +3,19 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { fetchFlightArrivals } = vi.hoisted(() => ({ fetchFlightArrivals: vi.fn() }));
+const { fetchFlightArrivals, futureCacheMocks } = vi.hoisted(() => ({
+  fetchFlightArrivals: vi.fn(),
+  futureCacheMocks: {
+    doesFutureFlightCacheMatch: vi.fn(),
+    getFutureFlightMemoryCache: vi.fn(),
+    isFutureFlightCacheFresh: vi.fn(),
+    saveFutureFlightCache: vi.fn(),
+    subscribeToFutureFlightDay: vi.fn(),
+    tryAcquireFutureFlightRefreshLease: vi.fn(),
+  }
+}));
 vi.mock('../flightsApi', () => ({ fetchFlightArrivals }));
+vi.mock('../../../lib/futureFlightCacheStore', () => futureCacheMocks);
 
 import FlightsWorkspace from '../FlightsWorkspace';
 
@@ -67,7 +78,19 @@ describe('FlightsWorkspace', () => {
     expect(appCss).toMatch(/@media\s*\(max-width:\s*700px\)[\s\S]*\.flight-client--time-aligned \.flight-client-identity\s*{[^}]*padding-left:\s*0;/);
   });
 
-  beforeEach(() => fetchFlightArrivals.mockReset());
+  beforeEach(() => {
+    fetchFlightArrivals.mockReset();
+    Object.values(futureCacheMocks).forEach((mock) => mock.mockReset());
+    futureCacheMocks.getFutureFlightMemoryCache.mockReturnValue(null);
+    futureCacheMocks.doesFutureFlightCacheMatch.mockReturnValue(false);
+    futureCacheMocks.isFutureFlightCacheFresh.mockReturnValue(false);
+    futureCacheMocks.saveFutureFlightCache.mockResolvedValue(true);
+    futureCacheMocks.subscribeToFutureFlightDay.mockImplementation((_date, _onData, onMissing) => {
+      onMissing?.();
+      return vi.fn();
+    });
+    futureCacheMocks.tryAcquireFutureFlightRefreshLease.mockResolvedValue({ acquired: true, reason: 'lease_acquired' });
+  });
   afterEach(cleanup);
 
   it('shows a Portuguese empty state without calling the API when pickups have no flights', () => {
@@ -88,6 +111,51 @@ describe('FlightsWorkspace', () => {
         flightNumbers: ['TP1685', 'U27654']
       })
     );
+  });
+
+  it('renders a matching fresh shared cache without calling the external API', async () => {
+    const cache = { date: '2026-07-10', cachedAt: new Date(), flightNumbers: ['TP1685', 'U27654'], results: response.results };
+    futureCacheMocks.subscribeToFutureFlightDay.mockImplementation((_date, onData) => {
+      onData(cache);
+      return vi.fn();
+    });
+    futureCacheMocks.doesFutureFlightCacheMatch.mockReturnValue(true);
+    futureCacheMocks.isFutureFlightCacheFresh.mockReturnValue(true);
+
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} userUid="uid-1" />);
+
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument();
+    await waitFor(() => expect(futureCacheMocks.isFutureFlightCacheFresh).toHaveBeenCalled());
+    expect(fetchFlightArrivals).not.toHaveBeenCalled();
+  });
+
+  it('lets a manual refresh bypass a fresh matching cache', async () => {
+    const user = userEvent.setup();
+    const cache = { date: '2026-07-10', cachedAt: new Date(), flightNumbers: ['TP1685', 'U27654'], results: response.results };
+    futureCacheMocks.subscribeToFutureFlightDay.mockImplementation((_date, onData) => {
+      onData(cache);
+      return vi.fn();
+    });
+    futureCacheMocks.doesFutureFlightCacheMatch.mockReturnValue(true);
+    futureCacheMocks.isFutureFlightCacheFresh.mockReturnValue(true);
+    fetchFlightArrivals.mockResolvedValue(response);
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} userUid="uid-1" />);
+    await screen.findByRole('article', { name: 'Voo TP1685' });
+
+    await user.click(screen.getByRole('button', { name: 'Atualizar voos futuros' }));
+
+    await waitFor(() => expect(fetchFlightArrivals).toHaveBeenCalledTimes(1));
+    expect(futureCacheMocks.tryAcquireFutureFlightRefreshLease).not.toHaveBeenCalled();
+    expect(futureCacheMocks.saveFutureFlightCache).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-10', userUid: 'uid-1' }));
+  });
+
+  it('keeps fetched results visible when shared cache persistence fails', async () => {
+    fetchFlightArrivals.mockResolvedValue(response);
+    futureCacheMocks.saveFutureFlightCache.mockRejectedValue(new Error('permission denied'));
+    render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} userUid="uid-1" />);
+
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument();
+    expect(screen.queryByText('Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.')).not.toBeInTheDocument();
   });
 
   it('renders future flights by effective arrival time, earliest first', async () => {
@@ -197,6 +265,8 @@ describe('FlightsWorkspace', () => {
       results: [{ ...response.results[0], flightNumber: 'NEW200' }]
     });
     const { rerender } = render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services.slice(0, 1)} serviceDataReady />);
+
+    await waitFor(() => expect(fetchFlightArrivals).toHaveBeenCalledTimes(1));
 
     rerender(<FlightsWorkspace selectedDate="2026-07-11" allServiceItems={services.slice(0, 1)} serviceDataLoading serviceDataReady={false} />);
     expect(fetchFlightArrivals).toHaveBeenCalledTimes(1);
@@ -421,7 +491,7 @@ describe('FlightsWorkspace', () => {
     await waitFor(() => expect(screen.queryByText('OLD100')).not.toBeInTheDocument());
   });
 
-  it('starts a fresh loading request when returning from an empty list to identical inputs', async () => {
+  it('keeps cached results visible while refreshing after returning from an empty list', async () => {
     fetchFlightArrivals.mockResolvedValueOnce(response);
     const secondRequest = deferred();
     fetchFlightArrivals.mockReturnValueOnce(secondRequest.promise);
@@ -432,10 +502,9 @@ describe('FlightsWorkspace', () => {
     expect(screen.getByText('Não há voos de recolha para este dia.')).toBeInTheDocument();
     rerender(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
 
-    expect(screen.getByRole('main')).toHaveAttribute('aria-busy', 'true');
-    expect(screen.getByRole('status')).toHaveTextContent('A carregar voos');
-    expect(screen.queryByRole('article', { name: 'Voo TP1685' })).not.toBeInTheDocument();
-    expect(fetchFlightArrivals).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText('A atualizar…')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument();
+    await waitFor(() => expect(fetchFlightArrivals).toHaveBeenCalledTimes(2));
     secondRequest.resolve(response);
     expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toBeInTheDocument();
   });

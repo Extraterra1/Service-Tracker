@@ -103,6 +103,40 @@ Important fields:
 - `pickups`
 - `returns`
 
+### `future_flight_cache/{date}`
+
+Purpose:
+
+- shared future-flight lookup results with a 24-hour client freshness window
+
+Read/write model:
+
+- active staff can read
+- active staff can create/update a valid payload attributed to their own UID
+- deletes are denied
+
+Fields:
+
+- `date`
+- normalized, sorted `flightNumbers`
+- `results`
+- `source` (`flightview-future`)
+- server `cachedAt`
+- `updatedByUid`
+
+### `future_flight_refresh_locks/{date}`
+
+Purpose:
+
+- 45-second lease that deduplicates automatic external future-flight refreshes across users
+
+Rules:
+
+- active staff can read
+- active staff can create/update a valid lease owned by their own UID
+- future dates are valid; this collection is intentionally not restricted to the current service day
+- deletes are denied
+
 ### `service_status/{date}_{itemId}`
 
 Purpose:
@@ -390,6 +424,8 @@ Manual refresh:
 - always forces refresh
 - does not use the shared lock
 
+The same lease semantics apply to future flights. Their shared cache is fresh only when it is no more than 24 hours old and its normalized flight-number set exactly matches the requested set.
+
 Failure mode:
 
 - lock transaction failures fail open, meaning refresh can continue rather than leave the UI stale forever
@@ -423,3 +459,5 @@ Treat these as authoritative per concern:
 - `service_time_overrides/*` - manual time
 - `service_ready/*` - vehicle readiness
 - `service_refresh_locks/*` - auto-refresh coordination
+- `future_flight_cache/*` - shared future-flight results
+- `future_flight_refresh_locks/*` - future-flight auto-refresh coordination

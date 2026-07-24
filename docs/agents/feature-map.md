@@ -161,9 +161,11 @@ Notes:
 - the future arrival board is available to every approved user and remains separate from the bottom-bar `Voos` workspace
 - future-flight rows show only the scheduled arrival as `Programado`, keep the displayed status fixed as `Programado`, and include each pickup reservation's `Hora` in its client box aligned beneath the flight-time column on wide layouts
 - the client posts directly to the public Aviability API sequentially in batches of at most 20
-- Service Tracker fixes the destination to FNC in the request; Firebase is not part of the flight lookup
+- Service Tracker fixes the destination to FNC in the request
 - FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date
-- flight responses are live and are not persisted in Firestore
+- future-flight responses are shared in Firestore for 24 hours and reused only when the normalized flight-number set exactly matches
+- automatic refreshes use a 45-second shared lease; the manual refresh button always bypasses freshness and the lease
+- cached rows remain visible during refresh and when a refresh fails
 - stale API responses are ignored after the date or normalized flight list changes
 
 ## Service item card

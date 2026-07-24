@@ -146,6 +146,17 @@ function buildFlightRefreshLockPayload(date) {
   };
 }
 
+function buildFutureFlightCachePayload(date) {
+  return {
+    date,
+    flightNumbers: ['TP1685'],
+    results: [{ flightNumber: 'TP1685', status: 'scheduled' }],
+    source: 'flightview-future',
+    cachedAt: Timestamp.fromDate(new Date()),
+    updatedByUid: STAFF_UID,
+  };
+}
+
 function buildPendingAccessRequestPayload(uid = PENDING_UID) {
   const now = Timestamp.fromDate(new Date());
 
@@ -383,6 +394,23 @@ describeRules('firestore current-day write rules', () => {
     await expect(assertSucceeds(setDoc(doc(db, 'flight_status_refresh_locks', today), buildFlightRefreshLockPayload(today)))).resolves.toBeUndefined();
     await expect(assertFails(setDoc(doc(db, 'flight_status_refresh_locks', past), buildFlightRefreshLockPayload(past)))).resolves.toBeDefined();
     await expect(assertFails(setDoc(doc(db, 'flight_status_refresh_locks', today), { ...buildFlightRefreshLockPayload(today), ownerUid: 'another-user' }))).resolves.toBeDefined();
+  });
+
+  it('allows validated future-flight cache writes for any valid date', async () => {
+    const db = getAuthedDb();
+    const future = addDays(getTodayServiceDate(), 30);
+
+    await expect(assertSucceeds(setDoc(doc(db, 'future_flight_cache', future), buildFutureFlightCachePayload(future)))).resolves.toBeUndefined();
+    await expect(assertFails(setDoc(doc(db, 'future_flight_cache', future), { ...buildFutureFlightCachePayload(future), source: 'fr24-unofficial' }))).resolves.toBeDefined();
+    await expect(assertFails(setDoc(doc(db, 'future_flight_cache', future), { ...buildFutureFlightCachePayload(future), updatedByUid: 'another-user' }))).resolves.toBeDefined();
+  });
+
+  it('allows only the current staff user to acquire a future-flight refresh lease', async () => {
+    const db = getAuthedDb();
+    const future = addDays(getTodayServiceDate(), 30);
+
+    await expect(assertSucceeds(setDoc(doc(db, 'future_flight_refresh_locks', future), buildFlightRefreshLockPayload(future)))).resolves.toBeUndefined();
+    await expect(assertFails(setDoc(doc(db, 'future_flight_refresh_locks', future), { ...buildFlightRefreshLockPayload(future), ownerUid: 'another-user' }))).resolves.toBeDefined();
   });
 });
 

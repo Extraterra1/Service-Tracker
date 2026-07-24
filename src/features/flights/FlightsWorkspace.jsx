@@ -1,9 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, CircleAlert, Clock3, ExternalLink, Eye, Plane, PlaneLanding } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Check, CircleAlert, Clock3, ExternalLink, Eye, Plane, PlaneLanding, RefreshCw } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
 
 import { detectPhoneCountryCode, getWhatsAppHref } from '../../lib/phone';
+import {
+  doesFutureFlightCacheMatch,
+  getFutureFlightMemoryCache,
+  isFutureFlightCacheFresh,
+  saveFutureFlightCache,
+  subscribeToFutureFlightDay,
+  tryAcquireFutureFlightRefreshLease,
+} from '../../lib/futureFlightCacheStore';
+import { toTimestampMs } from '../../lib/timestamp';
 import { scheduleWhatsAppHrefFallback } from '../../lib/whatsappLinks';
 import { fetchFlightArrivals } from './flightsApi';
 import { getPickupFlightNumbers, normalizeFlightNumber } from './flightNumbers';
@@ -224,7 +233,9 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
   );
 }
 
-function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoading = false, serviceDataReady = true, onRetryServiceData, onWorkspaceChange, onOpenReservation }) {
+const FUTURE_CACHE_CHECK_MS = 5 * 60 * 1000;
+
+function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoading = false, serviceDataReady = true, onRetryServiceData, onWorkspaceChange, onOpenReservation, userUid = '' }) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems]);
   const clientsByFlight = useMemo(() => {
     const groupedClients = new Map();
@@ -239,40 +250,112 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
     return groupedClients;
   }, [allServiceItems]);
   const flightListKey = flightNumbers.join('|');
+  const initialCache = getFutureFlightMemoryCache(selectedDate);
+  const initialCacheMatches = Boolean(initialCache && doesFutureFlightCacheMatch(initialCache, flightNumbers));
+  const cacheRef = useRef(initialCache);
   const requestIdRef = useRef(0);
-  const [retryVersion, setRetryVersion] = useState(0);
-  const [state, setState] = useState({ requestToken: null, status: 'idle', results: [], error: '' });
-  const sortedResults = useMemo(() => sortFlightsByArrivalTime(state.results), [state.results]);
-  const currentRequestKey = `${selectedDate}:${flightListKey}:${retryVersion}:${serviceDataReady ? 'ready' : 'waiting'}`;
-  const requestToken = useMemo(() => ({ key: currentRequestKey }), [currentRequestKey]);
+  const inFlightRef = useRef(false);
+  const initialScope = initialCache ? `${selectedDate}:${flightListKey}` : '';
+  const [cacheScope, setCacheScope] = useState(initialScope);
+  const [state, setState] = useState({
+    flightListKey: initialCacheMatches ? flightListKey : '',
+    results: initialCacheMatches ? initialCache.results : [],
+    refreshing: false,
+    error: '',
+  });
 
   useEffect(() => {
-    const requestId = ++requestIdRef.current;
-
-    if (!serviceDataReady || !flightListKey) {
-      return () => {
-        requestIdRef.current += 1;
-      };
+    if (!serviceDataReady || !selectedDate) return undefined;
+    const scope = `${selectedDate}:${flightListKey}`;
+    const memoryCache = getFutureFlightMemoryCache(selectedDate);
+    cacheRef.current = memoryCache;
+    if (memoryCache && doesFutureFlightCacheMatch(memoryCache, flightNumbers)) {
+      setState({ flightListKey, results: memoryCache.results, refreshing: false, error: '' });
     }
-
-    const currentFlights = flightListKey.split('|');
-
-    fetchFlightArrivals({ arrivalDate: selectedDate, flightNumbers: currentFlights })
-      .then((payload) => {
-        if (requestId !== requestIdRef.current) return;
-        setState({ requestToken, status: 'success', results: payload?.results ?? [], error: '' });
-      })
-      .catch(() => {
-        if (requestId !== requestIdRef.current) return;
-        setState({ requestToken, status: 'error', results: [], error: 'Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.' });
-      });
-
+    const unsubscribe = subscribeToFutureFlightDay(
+      selectedDate,
+      (cache) => {
+        cacheRef.current = cache;
+        if (doesFutureFlightCacheMatch(cache, flightNumbers)) {
+          setState({ flightListKey, results: cache.results, refreshing: false, error: '' });
+        } else {
+          setState({ flightListKey: '', results: [], refreshing: false, error: '' });
+        }
+        setCacheScope(scope);
+      },
+      () => {
+        cacheRef.current = null;
+        setState((current) => ({ ...current, refreshing: false }));
+        setCacheScope(scope);
+      },
+      (error) => {
+        console.warn('Shared future flight cache could not be read. Continuing with local data.', error);
+        setCacheScope(scope);
+      },
+    );
     return () => {
       requestIdRef.current += 1;
+      inFlightRef.current = false;
+      unsubscribe();
     };
-  }, [selectedDate, flightListKey, requestToken, serviceDataReady]);
+  }, [flightListKey, flightNumbers, selectedDate, serviceDataReady]);
 
-  const isLoading = serviceDataReady && Boolean(flightListKey) && state.requestToken !== requestToken;
+  const cacheReady = cacheScope === `${selectedDate}:${flightListKey}`;
+
+  const refreshFlights = useCallback(async ({ force = false } = {}) => {
+    if (!serviceDataReady || !flightListKey || inFlightRef.current) return false;
+    if (!force) {
+      if (isFutureFlightCacheFresh(cacheRef.current, flightNumbers, new Date())) return false;
+      setState((current) => ({ ...current, refreshing: true, error: '' }));
+      const cacheVersion = String(toTimestampMs(cacheRef.current?.cachedAt, 0) || 'missing');
+      const lease = await tryAcquireFutureFlightRefreshLease({ date: selectedDate, userUid, cacheVersion });
+      if (!lease.acquired) return false;
+    }
+
+    const requestId = ++requestIdRef.current;
+    inFlightRef.current = true;
+    setState((current) => ({ ...current, refreshing: true, error: '' }));
+    try {
+      const payload = await fetchFlightArrivals({ arrivalDate: selectedDate, flightNumbers });
+      if (requestId !== requestIdRef.current) return false;
+      const results = payload?.results ?? [];
+      cacheRef.current = { date: selectedDate, cachedAt: new Date(), flightNumbers, results };
+      setState({ flightListKey, results, refreshing: false, error: '' });
+      try {
+        await saveFutureFlightCache({ date: selectedDate, flightNumbers, results, userUid });
+      } catch (error) {
+        console.warn('Future flights updated, but the shared cache could not be saved.', error);
+      }
+      return true;
+    } catch {
+      if (requestId !== requestIdRef.current) return false;
+      setState((current) => ({
+        ...current,
+        refreshing: false,
+        error: 'Não foi possível carregar as chegadas. Verifica a ligação e tenta novamente.',
+      }));
+      return false;
+    } finally {
+      if (requestId === requestIdRef.current) inFlightRef.current = false;
+    }
+  }, [flightListKey, flightNumbers, selectedDate, serviceDataReady, userUid]);
+
+  useEffect(() => {
+    if (!cacheReady || !serviceDataReady || !flightListKey) return undefined;
+    void refreshFlights();
+    const timer = window.setInterval(() => void refreshFlights(), FUTURE_CACHE_CHECK_MS);
+    return () => window.clearInterval(timer);
+  }, [cacheReady, flightListKey, refreshFlights, serviceDataReady]);
+
+  useEffect(() => () => {
+    requestIdRef.current += 1;
+    inFlightRef.current = false;
+  }, []);
+
+  const visibleResults = useMemo(() => state.flightListKey === flightListKey ? state.results : [], [flightListKey, state.flightListKey, state.results]);
+  const sortedResults = useMemo(() => sortFlightsByArrivalTime(visibleResults), [visibleResults]);
+
+  const isLoading = serviceDataReady && Boolean(flightListKey) && (!cacheReady || (visibleResults.length === 0 && state.refreshing));
   const isPreparingDay = serviceDataLoading && !serviceDataReady;
   const isServiceDataUnavailable = !serviceDataLoading && !serviceDataReady;
 
@@ -290,6 +373,17 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
         <div className="flights-header-controls">
           <span className="flights-total">{serviceDataReady ? `${flightNumbers.length} ${flightNumbers.length === 1 ? 'voo' : 'voos'}` : '— voos'}</span>
           <time dateTime={selectedDate}>{selectedDate}</time>
+          {state.refreshing && visibleResults.length > 0 ? <span className="flights-refresh-note">A atualizar…</span> : null}
+          <button
+            type="button"
+            className={`ghost-btn compact-btn flights-refresh-btn ${state.refreshing ? 'is-refreshing' : ''}`}
+            onClick={() => void refreshFlights({ force: true })}
+            disabled={!serviceDataReady || !flightListKey || state.refreshing}
+            aria-label="Atualizar voos futuros"
+            title="Atualizar voos futuros"
+          >
+            <RefreshCw aria-hidden="true" />
+          </button>
           <button
             type="button"
             className="ghost-btn compact-btn flights-back-btn"
@@ -319,27 +413,30 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
         </div>
       ) : isLoading ? (
         <FlightsWorkspaceSkeleton label="A carregar voos" />
-      ) : state.status === 'error' ? (
+      ) : state.error && visibleResults.length === 0 ? (
         <div className="flights-request-error" role="alert">
           <CircleAlert aria-hidden="true" />
           <p>{state.error}</p>
-          <button type="button" className="primary-btn compact-btn" onClick={() => setRetryVersion((version) => version + 1)}>
+          <button type="button" className="primary-btn compact-btn" onClick={() => void refreshFlights({ force: true })}>
             Tentar novamente
           </button>
         </div>
       ) : (
-        <section className="flights-board" aria-label="Lista de chegadas">
-          <div className="flights-board-rule" aria-hidden="true">
-            <span>ARR</span>
-            <span>RWY 05</span>
-          </div>
-          <div className="flights-list">
-            {sortedResults.map((result, index) => {
-              const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? [];
-              return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} onOpenReservation={onOpenReservation} />;
-            })}
-          </div>
-        </section>
+        <>
+          {state.error ? <p className="flights-inline-refresh-error" role="alert">{state.error}</p> : null}
+          <section className="flights-board" aria-label="Lista de chegadas">
+            <div className="flights-board-rule" aria-hidden="true">
+              <span>ARR</span>
+              <span>RWY 05</span>
+            </div>
+            <div className="flights-list">
+              {sortedResults.map((result, index) => {
+                const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? [];
+                return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} onOpenReservation={onOpenReservation} />;
+              })}
+            </div>
+          </section>
+        </>
       )}
     </main>
   );

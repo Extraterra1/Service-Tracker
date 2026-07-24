@@ -1204,6 +1204,7 @@ function App() {
             onRetryServiceData={manualRefresh}
             onWorkspaceChange={handleWorkspaceChange}
             onOpenReservation={handleOpenCarHistoryReservation}
+            userUid={user?.uid ?? ''}
           />
         </Suspense>
       ) : paneLoading ? (
