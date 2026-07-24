@@ -62,7 +62,9 @@ describe('FlightsWorkspace', () => {
     expect(appCss).toMatch(/\.flight-client--time-aligned\s*{[^}]*grid-template-columns:\s*subgrid;/);
     expect(appCss).toMatch(/\.flight-client-time\s*{[^}]*grid-column:\s*2;/);
     expect(appCss).toMatch(/\.flight-client-rest\s*{[^}]*grid-column:\s*3\s*\/\s*5;/);
+    expect(appCss).toMatch(/\.flight-client--time-aligned \.flight-client-identity\s*{[^}]*padding-left:\s*0\.55rem;/);
     expect(appCss).toMatch(/@media\s*\(max-width:\s*700px\)[\s\S]*\.flight-client--time-aligned\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+max-content;/);
+    expect(appCss).toMatch(/@media\s*\(max-width:\s*700px\)[\s\S]*\.flight-client--time-aligned \.flight-client-identity\s*{[^}]*padding-left:\s*0;/);
   });
 
   beforeEach(() => fetchFlightArrivals.mockReset());

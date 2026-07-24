@@ -1082,6 +1082,10 @@
   grid-template-columns: subgrid;
 }
 
+.flight-client--time-aligned .flight-client-identity {
+  padding-left: 0.55rem;
+}
+
 .flight-client-time {
   grid-column: 2;
 }
@@ -1425,6 +1429,10 @@
 
   .flight-client--time-aligned .flight-client-time {
     grid-column: 1;
+  }
+
+  .flight-client--time-aligned .flight-client-identity {
+    padding-left: 0;
   }
 
   .flight-client-rest {
