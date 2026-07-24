@@ -163,14 +163,14 @@ describe('FlightsWorkspace', () => {
       {
         ...response.results[0],
         flightNumber: 'TP1685',
-        scheduledArrivalLocal: '2026-07-10T14:20:00',
-        estimatedArrivalLocal: '2026-07-10T13:00:00',
+        scheduledArrivalLocal: '14:20',
+        estimatedArrivalLocal: '13:00',
       },
       {
         ...response.results[1],
         flightNumber: 'U27654',
-        scheduledArrivalLocal: '2026-07-10T12:10:00',
-        estimatedArrivalLocal: '2026-07-10T15:00:00',
+        scheduledArrivalLocal: '12:10',
+        estimatedArrivalLocal: '15:00',
       },
     ] });
     render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);

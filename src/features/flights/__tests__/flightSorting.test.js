@@ -42,13 +42,13 @@ describe('flight time ordering', () => {
   it('orders future flights only by scheduled arrival, earliest first', () => {
     const scheduledLater = {
       flightNumber: 'TP100',
-      estimatedArrivalLocal: '2026-07-15T08:00:00',
-      scheduledArrivalLocal: '2026-07-15T12:00:00',
+      estimatedArrivalLocal: '08:00',
+      scheduledArrivalLocal: '12:00',
     }
     const scheduledEarlier = {
       flightNumber: 'U2100',
-      actualArrivalLocal: '2026-07-15T14:00:00',
-      scheduledArrivalLocal: '2026-07-15T10:00:00',
+      actualArrivalLocal: '14:00',
+      scheduledArrivalLocal: '10:00',
     }
 
     expect(sortFutureFlightsByScheduledArrival([scheduledLater, scheduledEarlier])).toEqual([
