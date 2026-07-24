@@ -205,6 +205,8 @@ describe('AppHeaderMenu accordion animations', () => {
 
     const toggle = screen.getByRole('switch', { name: 'Confirmação WhatsApp' });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(toggle).toHaveClass('menu-section-summary');
+    expect(toggle).not.toHaveClass('menu-whatsapp-confirmation-pill');
 
     await user.click(toggle);
     expect(onWhatsAppConfirmationChange).toHaveBeenCalledWith(true);

@@ -241,17 +241,17 @@ function AppHeaderMenu({
                 </div>
               ) : null}
               {canManageAccess ? (
-                <div className="menu-section menu-whatsapp-confirmation-section">
+                <div className="menu-section">
                   <button
                     type="button"
                     role="switch"
                     aria-label="Confirmação WhatsApp"
                     aria-checked={whatsappConfirmationEnabled}
-                    className={`menu-whatsapp-confirmation-pill ${whatsappConfirmationEnabled ? 'is-active' : ''}`}
+                    className={`menu-section-summary menu-section-summary--action menu-whatsapp-confirmation-row ${whatsappConfirmationEnabled ? 'is-active' : ''}`}
                     onClick={() => onWhatsAppConfirmationChange?.(!whatsappConfirmationEnabled)}
                   >
                     <span>Confirmação WhatsApp</span>
-                    <span className="menu-whatsapp-confirmation-state" aria-hidden="true">
+                    <span className="menu-whatsapp-confirmation-pill" aria-hidden="true">
                       {whatsappConfirmationEnabled ? 'ON' : 'OFF'}
                     </span>
                   </button>
