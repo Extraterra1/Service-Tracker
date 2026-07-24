@@ -153,6 +153,7 @@ export function scheduleWhatsAppWebFallback({
     if (timerId !== undefined) clearTimeout(timerId);
     documentObject.removeEventListener('visibilitychange', handleVisibilityChange);
     windowObject.removeEventListener('pagehide', cleanup);
+    windowObject.removeEventListener('blur', cleanup);
   };
   const handleVisibilityChange = () => {
     if (documentObject.visibilityState === 'hidden') cleanup();
@@ -160,6 +161,7 @@ export function scheduleWhatsAppWebFallback({
 
   documentObject.addEventListener('visibilitychange', handleVisibilityChange);
   windowObject.addEventListener('pagehide', cleanup);
+  windowObject.addEventListener('blur', cleanup);
   timerId = setTimeout(() => {
     cleanup();
     if (documentObject.visibilityState !== 'hidden') navigate(fallbackHref);

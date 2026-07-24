@@ -226,6 +226,21 @@ describe('service WhatsApp confirmation links', () => {
     vi.useRealTimers();
   });
 
+  it('cancels the web fallback when the desktop app blurs the browser window', () => {
+    vi.useFakeTimers();
+    const navigate = vi.fn();
+    const documentObject = new EventTarget();
+    Object.defineProperty(documentObject, 'visibilityState', { value: 'visible', configurable: true });
+    const windowObject = new EventTarget();
+
+    scheduleWhatsAppWebFallback({ fallbackHref: 'https://api.whatsapp.com/send', navigate, documentObject, windowObject, delayMs: 1200 });
+    windowObject.dispatchEvent(new Event('blur'));
+    vi.advanceTimersByTime(1200);
+
+    expect(navigate).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
   it('falls back past empty override fields to the original service time', () => {
     expect(readMessage(buildHref({ time: '09:00', displayTime: '', overrideTime: '' }))).toContain('09:00');
   });
