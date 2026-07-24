@@ -89,7 +89,7 @@ Main files:
 Notes:
 
 - `#voos` and `#reservas` are not client-side admin-only destinations
-- admin-only `Voos futuros` remains a separate header-menu workspace at `#voos-futuros`
+- `Voos futuros` remains a separate header-menu workspace at `#voos-futuros` and is available to every approved user
 - `#porta-chaves` remains outside the bottom navigation and is available from the header menu
 - signed-out and access-gate screens do not render the bottom navigation
 
@@ -158,7 +158,7 @@ Notes:
 - the board does not look up flights until the current selected day's service snapshot is ready
 - all approved users can open `#voos`
 - the company logo returns to the service list
-- the arrival board remains admin-only and separate from the bottom-bar `Voos` placeholder
+- the future arrival board is available to every approved user and remains separate from the bottom-bar `Voos` workspace
 - the client posts directly to the public Aviability API sequentially in batches of at most 20
 - Service Tracker fixes the destination to FNC in the request; Firebase is not part of the flight lookup
 - FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date

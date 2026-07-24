@@ -98,7 +98,7 @@ The flights workspace is the exception to the last point: it derives lookup inpu
 
 ### Flight arrivals
 
-`#voos` is an admin-only, in-app, same-tab workspace for the selected day's FNC arrivals. Non-admin users are redirected to services if they enter the hash directly. `App.jsx` keeps the date navigator visible and passes the same service-day readiness state and items used by the service list to `FlightsWorkspace`.
+`#voos` is the in-app, same-tab workspace for current FNC arrivals. The separate `#voos-futuros` workspace uses `FlightsWorkspace` for dates starting tomorrow. Both destinations are available to every approved user; authentication and the active allowlist gate remain unchanged. `App.jsx` keeps the date navigator visible and passes the same service-day readiness state and items used by the service list to the flight workspaces.
 
 The frontend:
 

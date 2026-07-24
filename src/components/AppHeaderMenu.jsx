@@ -228,7 +228,7 @@ function AppHeaderMenu({
                   </button>
                 </div>
               ) : null}
-              {canManageAccess && activeWorkspace !== 'futureFlights' ? (
+              {activeWorkspace !== 'futureFlights' ? (
                 <div className="menu-section">
                   <button
                     type="button"

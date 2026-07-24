@@ -187,7 +187,7 @@ function App() {
         : requestedWorkspace === 'keyrings'
           ? '#porta-chaves'
           : '';
-  const activeWorkspace = resolveWorkspace(requestedWorkspaceHash, canManageAccess);
+  const activeWorkspace = resolveWorkspace(requestedWorkspaceHash);
   useEffect(() => {
     const handleHashChange = () => {
       const nextWorkspace = resolveWorkspace(window.location.hash);
@@ -203,9 +203,9 @@ function App() {
   }, []);
 
   const handleWorkspaceChange = useCallback((workspace) => {
-    const nextWorkspace = workspace === 'futureFlights'
-      ? (canManageAccess ? 'futureFlights' : 'services')
-      : ['keyrings', 'flights', 'reservations'].includes(workspace) ? workspace : 'services';
+    const nextWorkspace = ['keyrings', 'flights', 'futureFlights', 'reservations'].includes(workspace)
+      ? workspace
+      : 'services';
     menuPanelRef.current?.removeAttribute('open');
     if (nextWorkspace === 'flights') {
       setSelectedDate(getTodayDate());
@@ -218,7 +218,7 @@ function App() {
     } else {
       window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
     }
-  }, [canManageAccess]);
+  }, []);
   const {
     pendingAccessRequests,
     managedAccessUsers,

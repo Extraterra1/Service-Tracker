@@ -15,9 +15,9 @@ describe('workspaceNavigation', () => {
     expect(resolveWorkspace('#voos', false)).toBe('flights')
   })
 
-  it('keeps future flights as a separate admin-only workspace', () => {
+  it('allows every approved user to resolve the separate future flights workspace', () => {
     expect(resolveWorkspace('#voos-futuros', true)).toBe('futureFlights')
-    expect(resolveWorkspace('#voos-futuros', false)).toBe('services')
+    expect(resolveWorkspace('#voos-futuros', false)).toBe('futureFlights')
   })
 
   it('allows every approved user to resolve the reservations hash', () => {

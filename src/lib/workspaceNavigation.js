@@ -4,7 +4,7 @@ export function getFutureFlightsStartDate(serviceDate) {
   return addDays(serviceDate, 1)
 }
 
-export function resolveWorkspace(hash, canManageAccess = true) {
+export function resolveWorkspace(hash) {
   if (hash === '#tv') {
     return 'tv'
   }
@@ -17,7 +17,7 @@ export function resolveWorkspace(hash, canManageAccess = true) {
     return 'flights'
   }
 
-  if (hash === '#voos-futuros' && canManageAccess) {
+  if (hash === '#voos-futuros') {
     return 'futureFlights'
   }
 

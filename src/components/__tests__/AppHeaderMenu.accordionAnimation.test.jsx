@@ -195,10 +195,13 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.queryByRole('button', { name: 'Lista de Serviço' })).not.toBeInTheDocument();
   });
 
-  it('hides future flights from non-admin users', () => {
-    render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
+  it('lets non-admin approved users open future flights', async () => {
+    const user = userEvent.setup();
+    const onWorkspaceChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ canManageAccess: false, onWorkspaceChange })} />);
 
-    expect(screen.queryByRole('button', { name: 'Voos futuros' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Voos futuros' }));
+    expect(onWorkspaceChange).toHaveBeenCalledWith('futureFlights');
   });
 
   it('shows an off WhatsApp confirmation pill to admins and toggles it', async () => {
