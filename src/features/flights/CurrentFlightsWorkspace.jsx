@@ -38,6 +38,7 @@ export default function CurrentFlightsWorkspace({
   serviceDataLoading = false,
   serviceDataReady = true,
   onRetryServiceData,
+  onOpenReservation,
   userUid = '',
 }) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems])
@@ -176,6 +177,7 @@ export default function CurrentFlightsWorkspace({
       result={result}
       index={index}
       clients={clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? []}
+      onOpenReservation={onOpenReservation}
       singleTime
       prominentStatus
     />

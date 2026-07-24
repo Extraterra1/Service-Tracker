@@ -53,15 +53,6 @@ function getSafeSourceUrl(value) {
   }
 }
 
-function getSafeReservationUrl(value) {
-  try {
-    const url = new URL(String(value ?? ''));
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
-  } catch {
-    return '';
-  }
-}
-
 function FlightTime({ label, value }) {
   return (
     <div className="flight-time">
@@ -71,7 +62,7 @@ function FlightTime({ label, value }) {
   );
 }
 
-function FlightClient({ client }) {
+function FlightClient({ client, onOpenReservation }) {
   const name = String(client?.name ?? '').trim() || '—';
   const car = String(client?.car ?? '').trim() || '—';
   const plate =
@@ -82,7 +73,6 @@ function FlightClient({ client }) {
   const countryCode = detectPhoneCountryCode(phone);
   const whatsappUrl = getWhatsAppHref(phone);
   const reservationId = String(client?.id ?? '').trim();
-  const reservationUrl = getSafeReservationUrl(client?.reservationUrl);
 
   return (
     <div className="flight-client" data-testid="flight-client">
@@ -107,17 +97,16 @@ function FlightClient({ client }) {
         ) : (
           <span className="flight-client-phone flight-client-phone--disabled">{phone || '—'}</span>
         )}
-        {reservationUrl ? (
-          <a
+        {reservationId ? (
+          <button
+            type="button"
             className="flight-client-reservation"
-            href={reservationUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={reservationId ? `Reservations ${reservationId}` : 'Reservations'}
+            onClick={() => onOpenReservation?.(reservationId)}
+            aria-label={`Reservations ${reservationId}`}
           >
-            <span>#{reservationId || 'Reserva'}</span>
+            <span>#{reservationId}</span>
             <Eye aria-hidden="true" />
-          </a>
+          </button>
         ) : (
           <span className="flight-client-reservation flight-client-reservation--disabled">—</span>
         )}
@@ -133,7 +122,7 @@ function FlightStatusIcon({ status }) {
   return <Clock3 aria-hidden="true" />;
 }
 
-export function FlightResult({ result, index, clients = [], singleTime = false, prominentStatus = false }) {
+export function FlightResult({ result, index, clients = [], singleTime = false, prominentStatus = false, onOpenReservation }) {
   const flightNumber = String(result?.flightNumber ?? '').trim() || '—';
   const hasError = Boolean(result?.error);
   const status = hasError ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo') : localizeStatus(result?.status);
@@ -211,7 +200,7 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
         <div className="flight-clients" aria-label={`Clientes do voo ${flightNumber}`}>
           <span className="flight-clients-label">Clientes</span>
           {clients.map((client, clientIndex) => (
-            <FlightClient client={client} key={client?.itemId ?? client?.id ?? clientIndex} />
+            <FlightClient client={client} onOpenReservation={onOpenReservation} key={client?.itemId ?? client?.id ?? clientIndex} />
           ))}
         </div>
       ) : null}
@@ -219,7 +208,7 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
   );
 }
 
-function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoading = false, serviceDataReady = true, onRetryServiceData, onWorkspaceChange }) {
+function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoading = false, serviceDataReady = true, onRetryServiceData, onWorkspaceChange, onOpenReservation }) {
   const flightNumbers = useMemo(() => getPickupFlightNumbers(allServiceItems), [allServiceItems]);
   const clientsByFlight = useMemo(() => {
     const groupedClients = new Map();
@@ -331,7 +320,7 @@ function FlightsWorkspace({ selectedDate, allServiceItems = [], serviceDataLoadi
           <div className="flights-list">
             {sortedResults.map((result, index) => {
               const clients = clientsByFlight.get(normalizeFlightNumber(result?.flightNumber)) ?? [];
-              return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} />;
+              return <FlightResult key={`${result.flightNumber}-${index}`} result={result} index={index} clients={clients} onOpenReservation={onOpenReservation} />;
             })}
           </div>
         </section>

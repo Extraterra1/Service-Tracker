@@ -53,6 +53,10 @@ describe('FlightsWorkspace', () => {
     expect(appCss).toMatch(/\.flight-number-link\s*{[^}]*cursor:\s*pointer;/);
   });
 
+  it('uses a pointer cursor for reservation showcase buttons', () => {
+    expect(appCss).toMatch(/\.flight-client-reservation\s*{[^}]*cursor:\s*pointer;/);
+  });
+
   beforeEach(() => fetchFlightArrivals.mockReset());
   afterEach(cleanup);
 
@@ -270,11 +274,14 @@ describe('FlightsWorkspace', () => {
     expect(clients[1]).toHaveTextContent('BB-11-BB');
   });
 
-  it('links client phones to WhatsApp and reservations in a new tab', async () => {
+  it('links client phones to WhatsApp and opens reservations in the showcase', async () => {
+    const user = userEvent.setup();
+    const onOpenReservation = vi.fn();
     fetchFlightArrivals.mockResolvedValue({ results: [response.results[0]] });
     render(
       <FlightsWorkspace
         selectedDate="2026-07-10"
+        onOpenReservation={onOpenReservation}
         allServiceItems={[
           {
             serviceType: 'pickup',
@@ -295,13 +302,13 @@ describe('FlightsWorkspace', () => {
     const whatsappLink = within(flight).getByRole('link', { name: 'WhatsApp +44 7700 900123' });
     expect(whatsappLink).toHaveAttribute('href', 'whatsapp://send?phone=447700900123');
     expect(whatsappLink).not.toHaveAttribute('target');
-    const reservation = within(flight).getByRole('link', { name: 'Reservations 1002' });
-    expect(reservation).toHaveAttribute('href', 'https://reservations.example.com/1002');
-    expect(reservation).toHaveAttribute('target', '_blank');
-    expect(reservation.getAttribute('rel')).toMatch(/noopener/);
+    const reservation = within(flight).getByRole('button', { name: 'Reservations 1002' });
+    await user.click(reservation);
+    expect(onOpenReservation).toHaveBeenCalledWith('1002');
+    expect(onOpenReservation).toHaveBeenCalledTimes(1);
   });
 
-  it('shows missing client details without creating unsafe links', async () => {
+  it('shows missing client details without using an unsafe backend URL', async () => {
     fetchFlightArrivals.mockResolvedValue({ results: [response.results[0]] });
     render(
       <FlightsWorkspace
@@ -323,6 +330,7 @@ describe('FlightsWorkspace', () => {
 
     const client = within(await screen.findByRole('article', { name: 'Voo TP1685' })).getByTestId('flight-client');
     expect(client.textContent.match(/—/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(within(client).getByRole('button', { name: 'Reservations 1003' })).toBeInTheDocument();
     expect(within(client).queryByRole('link', { name: 'Reservations 1003' })).not.toBeInTheDocument();
     expect(within(client).queryByRole('link', { name: /WhatsApp/ })).not.toBeInTheDocument();
   });

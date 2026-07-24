@@ -1146,6 +1146,7 @@
   border-radius: 3px;
   background: transparent;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .flight-client-reservation:hover { color: var(--accent); }

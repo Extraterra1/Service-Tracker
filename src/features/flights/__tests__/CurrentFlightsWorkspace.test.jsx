@@ -103,22 +103,27 @@ describe('CurrentFlightsWorkspace', () => {
   })
 
   it('groups mobile client identity and presents a quiet reservation id action', async () => {
-    render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" />)
+    const onOpenReservation = vi.fn()
+    render(<CurrentFlightsWorkspace selectedDate="2026-07-13" allServiceItems={services} userUid="uid-1" onOpenReservation={onOpenReservation} />)
     await act(async () => {})
 
     const flight = screen.getByRole('article', { name: 'Voo TP1685' })
     const client = within(flight).getAllByTestId('flight-client')[0]
     const identity = client.querySelector('.flight-client-identity')
     const actions = client.querySelector('.flight-client-actions')
-    const reservationLink = within(client).getByRole('link', { name: 'Reservations 10787' })
+    const reservationButton = within(client).getByRole('button', { name: 'Reservations 10787' })
 
     expect(identity).toContainElement(within(client).getByText('Maria'))
     expect(identity?.querySelector('.flight-client-flag')).toBeInTheDocument()
     expect(within(client).getByText('AA-00-AA')).toBeInTheDocument()
-    expect(reservationLink).toHaveTextContent('#10787')
-    expect(reservationLink.querySelector('.lucide-eye')).toHaveAttribute('aria-hidden', 'true')
+    expect(reservationButton).toHaveTextContent('#10787')
+    expect(reservationButton.querySelector('.lucide-eye')).toHaveAttribute('aria-hidden', 'true')
     expect(actions?.children[0]).toHaveClass('flight-client-phone')
-    expect(actions?.children[1]).toBe(reservationLink)
+    expect(actions?.children[1]).toBe(reservationButton)
+
+    fireEvent.click(reservationButton)
+    expect(onOpenReservation).toHaveBeenCalledWith('10787')
+    expect(onOpenReservation).toHaveBeenCalledTimes(1)
   })
 
   it('shows compact client actions in the current-flight mobile layout', () => {

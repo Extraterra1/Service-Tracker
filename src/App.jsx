@@ -1190,6 +1190,7 @@ function App() {
             serviceDataLoading={loadingDateData}
             serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
             onRetryServiceData={manualRefresh}
+            onOpenReservation={handleOpenCarHistoryReservation}
             userUid={user?.uid ?? ''}
           />
         </Suspense>
@@ -1202,6 +1203,7 @@ function App() {
             serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
             onRetryServiceData={manualRefresh}
             onWorkspaceChange={handleWorkspaceChange}
+            onOpenReservation={handleOpenCarHistoryReservation}
           />
         </Suspense>
       ) : paneLoading ? (
