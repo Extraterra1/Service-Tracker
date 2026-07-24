@@ -156,6 +156,7 @@ function App() {
   const [requestedWorkspace, setRequestedWorkspace] = useState(() => resolveWorkspace(window.location.hash));
   const [pin, setPin] = useState(getStoredPin);
   const [theme, setTheme] = useState(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'));
+  const [whatsappConfirmationEnabled, setWhatsappConfirmationEnabled] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState('');
   const [manualCompletedItemId, setManualCompletedItemId] = useState('');
   const [timeOverrideItemId, setTimeOverrideItemId] = useState('');
@@ -1121,6 +1122,8 @@ function App() {
         onCopySessionDiagnostics={handleCopySessionDiagnostics}
         diagnosticsStatusMessage={diagnosticsStatusMessage}
         canManageAccess={canManageAccess}
+        whatsappConfirmationEnabled={whatsappConfirmationEnabled}
+        onWhatsAppConfirmationChange={setWhatsappConfirmationEnabled}
         activeWorkspace={activeWorkspace}
         onWorkspaceChange={handleWorkspaceChange}
         pendingAccessRequests={pendingAccessRequests}
@@ -1217,6 +1220,7 @@ function App() {
             onSaveTimeOverride={handleSaveItemTimeOverride}
             onOpenCarHistoryFromModel={handleOpenCarHistoryFromModel}
             canManageAccess={canManageAccess}
+            whatsappConfirmationEnabled={canManageAccess && whatsappConfirmationEnabled}
             updatingItemId={updatingItemId}
             disabled={serviceWorkspaceReadOnly}
             loading={paneLoading}

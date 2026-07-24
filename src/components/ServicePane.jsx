@@ -43,6 +43,7 @@ function ServicePane({
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   onOpenReservation,
+  whatsappConfirmationEnabled = false,
   updatingItemId = '',
   disabled,
   loading = false,
@@ -233,6 +234,7 @@ function ServicePane({
                   onSaveTimeOverride={onSaveTimeOverride}
                   onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
                   onOpenReservation={onOpenReservation}
+                  whatsappConfirmationEnabled={whatsappConfirmationEnabled}
                   isUpdating={updatingItemId === item.itemId}
                   disabled={disabled}
                 />
@@ -272,6 +274,7 @@ function ServicePane({
               onSaveTimeOverride={onSaveTimeOverride}
               onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
               onOpenReservation={onOpenReservation}
+              whatsappConfirmationEnabled={whatsappConfirmationEnabled}
               isUpdating={updatingItemId === item.itemId}
               disabled={disabled}
             />

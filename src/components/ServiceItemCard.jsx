@@ -5,6 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { getServiceLocationKind, isTransferServiceLocation, normalizeServiceLocation } from '../lib/serviceLocations';
+import { getServiceWhatsAppHref } from '../lib/whatsappConfirmation';
 import { toTimestampMs } from '../lib/timestamp';
 import { Check, Clock3, ExternalLink, Eye, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -123,6 +124,7 @@ function ServiceItemCard({
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   onOpenReservation,
+  whatsappConfirmationEnabled = false,
   isUpdating = false,
   disabled
 }) {
@@ -177,6 +179,15 @@ function ServiceItemCard({
   const reservationUrl = String(item.reservationUrl ?? '').trim();
   const phoneCountryCode = useMemo(() => detectPhoneCountryCode(phoneValue), [phoneValue]);
   const phoneHref = useMemo(() => getWhatsAppHref(phoneValue), [phoneValue]);
+  const finalPhoneHref = useMemo(
+    () => getServiceWhatsAppHref({
+      enabled: whatsappConfirmationEnabled,
+      baseWhatsAppHref: phoneHref,
+      phoneCountryCode,
+      item
+    }),
+    [item, phoneCountryCode, phoneHref, whatsappConfirmationEnabled]
+  );
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
@@ -421,10 +432,10 @@ function ServiceItemCard({
                   <ReactCountryFlag countryCode={phoneCountryCode} svg title={phoneCountryCode} style={{ width: '1rem', height: '0.74rem' }} />
                 </span>
               ) : null}
-              {phoneHref ? (
+              {finalPhoneHref ? (
                 <a
                   className="item-phone-link"
-                  href={phoneHref}
+                  href={finalPhoneHref}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Abrir conversa no WhatsApp para ${phoneValue}`}

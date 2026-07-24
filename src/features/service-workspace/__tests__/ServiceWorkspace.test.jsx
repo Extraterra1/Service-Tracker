@@ -397,4 +397,28 @@ describe('ServiceWorkspace', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Marcar viatura AA-00-AA como aguardando transferência' }));
     expect(onToggleTransferred).toHaveBeenCalledWith(expect.objectContaining({ itemId: 'return-1' }));
   });
+
+  it('passes WhatsApp confirmation mode to service cards', () => {
+    render(
+      <ServiceWorkspace
+        serviceData={{
+          pickups: [{
+            itemId: 'pickup-whatsapp', serviceType: 'pickup', time: '13:00', name: 'Carlos', id: '0003',
+            phone: '+351 912 345 678', car: 'Fiat', plate: 'BB-00-BB', location: 'AEROPORTO DA MADEIRA', extras: [], notes: ''
+          }],
+          returns: []
+        }}
+        statusMap={{}}
+        readyMap={{}}
+        whatsappConfirmationEnabled
+        onToggleDone={vi.fn()}
+        onToggleReady={vi.fn()}
+        onSaveTimeOverride={vi.fn()}
+        disabled={false}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' });
+    expect(new URL(link.href).searchParams.get('text')).toContain('amanhã às 13:00');
+  });
 });

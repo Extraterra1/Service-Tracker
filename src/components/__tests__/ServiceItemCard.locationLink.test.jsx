@@ -49,6 +49,27 @@ describe('ServiceItemCard location links', () => {
     expect(link).toHaveAttribute('href', 'https://wa.me/351912345678');
   });
 
+  it('prefills an eligible confirmation when confirmation mode is enabled', () => {
+    renderCard(createItem({ phone: '+351 912 345 678', location: 'AEROPORTO DA MADEIRA', time: '13:00' }), {
+      whatsappConfirmationEnabled: true
+    });
+
+    const link = screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' });
+    const message = new URL(link.href).searchParams.get('text');
+    expect(message).toContain('Gostaríamos de confirmar a entrega da sua viatura para amanhã às 13:00.');
+  });
+
+  it('keeps unsupported-location WhatsApp links plain while confirmation mode is enabled', () => {
+    renderCard(createItem({ phone: '+351 912 345 678', location: 'Hotel no Funchal' }), {
+      whatsappConfirmationEnabled: true
+    });
+
+    expect(screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' })).toHaveAttribute(
+      'href',
+      'https://wa.me/351912345678'
+    );
+  });
+
   it('opens reservation details instead of navigating directly to the legacy website', async () => {
     const user = userEvent.setup();
     const reservationUrl = 'https://example.com/reservations/0001';

@@ -198,6 +198,24 @@ describe('AppHeaderMenu accordion animations', () => {
     expect(screen.queryByRole('button', { name: 'Voos futuros' })).not.toBeInTheDocument();
   });
 
+  it('shows an off WhatsApp confirmation pill to admins and toggles it', async () => {
+    const user = userEvent.setup();
+    const onWhatsAppConfirmationChange = vi.fn();
+    render(<AppHeaderMenu {...createProps({ canManageAccess: true, whatsappConfirmationEnabled: false, onWhatsAppConfirmationChange })} />);
+
+    const toggle = screen.getByRole('switch', { name: 'Confirmação WhatsApp' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+
+    await user.click(toggle);
+    expect(onWhatsAppConfirmationChange).toHaveBeenCalledWith(true);
+  });
+
+  it('hides the WhatsApp confirmation pill from non-admin users', () => {
+    render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
+
+    expect(screen.queryByRole('switch', { name: 'Confirmação WhatsApp' })).not.toBeInTheDocument();
+  });
+
   it('opens Porta-chaves for non-admin users', async () => {
     const user = userEvent.setup();
     const onWorkspaceChange = vi.fn();

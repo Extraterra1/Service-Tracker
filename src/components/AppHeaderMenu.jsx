@@ -102,6 +102,8 @@ function AppHeaderMenu({
   onCopySessionDiagnostics,
   diagnosticsStatusMessage = '',
   canManageAccess = false,
+  whatsappConfirmationEnabled = false,
+  onWhatsAppConfirmationChange,
   activeWorkspace = 'services',
   onWorkspaceChange,
   pendingAccessRequests = [],
@@ -235,6 +237,23 @@ function AppHeaderMenu({
                   >
                     <Plane aria-hidden="true" />
                     Voos futuros
+                  </button>
+                </div>
+              ) : null}
+              {canManageAccess ? (
+                <div className="menu-section menu-whatsapp-confirmation-section">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-label="Confirmação WhatsApp"
+                    aria-checked={whatsappConfirmationEnabled}
+                    className={`menu-whatsapp-confirmation-pill ${whatsappConfirmationEnabled ? 'is-active' : ''}`}
+                    onClick={() => onWhatsAppConfirmationChange?.(!whatsappConfirmationEnabled)}
+                  >
+                    <span>Confirmação WhatsApp</span>
+                    <span className="menu-whatsapp-confirmation-state" aria-hidden="true">
+                      {whatsappConfirmationEnabled ? 'ON' : 'OFF'}
+                    </span>
                   </button>
                 </div>
               ) : null}

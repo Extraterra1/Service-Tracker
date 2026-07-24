@@ -42,6 +42,7 @@ function ServiceWorkspace({
   onSaveTimeOverride,
   onOpenCarHistoryFromModel,
   canManageAccess = false,
+  whatsappConfirmationEnabled = false,
   updatingItemId = '',
   disabled,
   loading = false,
@@ -174,6 +175,7 @@ function ServiceWorkspace({
           onSaveTimeOverride={onSaveTimeOverride}
           onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
           onOpenReservation={handleOpenReservation}
+          whatsappConfirmationEnabled={whatsappConfirmationEnabled}
           updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
@@ -196,6 +198,7 @@ function ServiceWorkspace({
           onSaveTimeOverride={onSaveTimeOverride}
           onOpenCarHistoryFromModel={onOpenCarHistoryFromModel}
           onOpenReservation={handleOpenReservation}
+          whatsappConfirmationEnabled={whatsappConfirmationEnabled}
           updatingItemId={updatingItemId}
           disabled={disabled}
           loading={loading}
