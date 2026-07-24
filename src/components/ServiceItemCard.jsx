@@ -5,7 +5,7 @@ import { formatAuditTimestamp } from '../lib/date';
 import { detectPhoneCountryCode, getWhatsAppHref } from '../lib/phone';
 import { normalizePlate } from '../lib/plates';
 import { getServiceLocationKind, isTransferServiceLocation, normalizeServiceLocation } from '../lib/serviceLocations';
-import { getServiceWhatsAppHref } from '../lib/whatsappConfirmation';
+import { getServiceWhatsAppHref, getWhatsAppWebFallbackHref, scheduleWhatsAppWebFallback } from '../lib/whatsappConfirmation';
 import { toTimestampMs } from '../lib/timestamp';
 import { Check, Clock3, ExternalLink, Eye, House, MapPin, Plane, Repeat2, TowerControl, Trophy } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -188,6 +188,10 @@ function ServiceItemCard({
     }),
     [item, phoneCountryCode, phoneHref, whatsappConfirmationEnabled]
   );
+  const handleWhatsAppClick = () => {
+    if (!finalPhoneHref.startsWith('whatsapp:')) return;
+    scheduleWhatsAppWebFallback({ fallbackHref: getWhatsAppWebFallbackHref(finalPhoneHref) });
+  };
   const hasManualOverride = Boolean(item.overrideTime) && item.overrideTime !== item.time;
   const plateKey = normalizePlate(item.plate);
   const sharedPlateMarker = plateKey ? sharedPlateMarkers[plateKey] : null;
@@ -436,6 +440,7 @@ function ServiceItemCard({
                 <a
                   className="item-phone-link"
                   href={finalPhoneHref}
+                  onClick={handleWhatsAppClick}
                   target={finalPhoneHref.startsWith('whatsapp:') ? undefined : '_blank'}
                   rel={finalPhoneHref.startsWith('whatsapp:') ? undefined : 'noreferrer'}
                   aria-label={`Abrir conversa no WhatsApp para ${phoneValue}`}

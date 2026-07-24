@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { getServiceWhatsAppHref } from '../whatsappConfirmation';
+import { describe, expect, it, vi } from 'vitest';
+import { getServiceWhatsAppHref, getWhatsAppWebFallbackHref, scheduleWhatsAppWebFallback } from '../whatsappConfirmation';
 
 const baseWhatsAppHref = 'https://wa.me/351912345678';
 
@@ -181,6 +181,49 @@ describe('service WhatsApp confirmation links', () => {
     expect(url.searchParams.get('phone')).toBe('351912345678');
     expect(url.searchParams.get('text')).toContain('😃');
     expect(url.searchParams.get('text')).not.toContain('�');
+  });
+
+  it('builds an HTTPS fallback with the same phone and message', () => {
+    const fallback = new URL(getWhatsAppWebFallbackHref(buildHref()));
+
+    expect(fallback.origin + fallback.pathname).toBe('https://api.whatsapp.com/send');
+    expect(fallback.searchParams.get('phone')).toBe('351912345678');
+    expect(fallback.searchParams.get('text')).toContain('😃');
+  });
+
+  it('uses the web fallback when the native app does not hide the page', () => {
+    vi.useFakeTimers();
+    const navigate = vi.fn();
+    const documentObject = new EventTarget();
+    Object.defineProperty(documentObject, 'visibilityState', { value: 'visible', configurable: true });
+    const windowObject = new EventTarget();
+
+    scheduleWhatsAppWebFallback({
+      fallbackHref: 'https://api.whatsapp.com/send?phone=351912345678',
+      navigate,
+      documentObject,
+      windowObject,
+      delayMs: 1200
+    });
+    vi.advanceTimersByTime(1200);
+
+    expect(navigate).toHaveBeenCalledWith('https://api.whatsapp.com/send?phone=351912345678');
+    vi.useRealTimers();
+  });
+
+  it('cancels the web fallback when the native app hides the page', () => {
+    vi.useFakeTimers();
+    const navigate = vi.fn();
+    const documentObject = new EventTarget();
+    Object.defineProperty(documentObject, 'visibilityState', { value: 'hidden', configurable: true });
+    const windowObject = new EventTarget();
+
+    scheduleWhatsAppWebFallback({ fallbackHref: 'https://api.whatsapp.com/send', navigate, documentObject, windowObject, delayMs: 1200 });
+    documentObject.dispatchEvent(new Event('visibilitychange'));
+    vi.advanceTimersByTime(1200);
+
+    expect(navigate).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('falls back past empty override fields to the original service time', () => {
