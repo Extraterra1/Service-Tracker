@@ -159,6 +159,7 @@ Notes:
 - all approved users can open `#voos`
 - the company logo returns to the service list
 - the future arrival board is available to every approved user and remains separate from the bottom-bar `Voos` workspace
+- future-flight rows show only the scheduled arrival as `Programado`, keep the displayed status fixed as `Programado`, and include each pickup reservation's `Hora` in its client row
 - the client posts directly to the public Aviability API sequentially in batches of at most 20
 - Service Tracker fixes the destination to FNC in the request; Firebase is not part of the flight lookup
 - FlightView matching checks both the requested date and previous departure date, then requires arrival on the requested date

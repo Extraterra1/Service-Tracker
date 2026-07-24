@@ -14,10 +14,12 @@ describe('FlightsWorkspaceSkeleton', () => {
 
     rows.forEach((row) => {
       expect(within(row).getByTestId('flight-skeleton-identity')).toBeInTheDocument()
-      expect(within(row).getAllByTestId('flight-skeleton-time')).toHaveLength(3)
+      expect(within(row).getAllByTestId('flight-skeleton-time')).toHaveLength(1)
+      expect(within(row).getByText('Programado')).toBeInTheDocument()
       expect(within(row).getByTestId('flight-skeleton-status')).toBeInTheDocument()
       expect(within(row).getByTestId('flight-skeleton-source')).toBeInTheDocument()
       expect(within(row).getByTestId('flight-skeleton-client')).toBeInTheDocument()
+      expect(within(row).getAllByTestId('flight-skeleton-client-detail')).toHaveLength(3)
     })
   })
 

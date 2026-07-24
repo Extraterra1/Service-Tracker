@@ -212,25 +212,26 @@ describe('FlightsWorkspace', () => {
     await screen.findByRole('article', { name: 'Voo TP1685' });
   });
 
-  it('renders localized operational fields, safe missing times, and a secure source link', async () => {
+  it('renders future flights with only their scheduled time and a fixed scheduled status', async () => {
     fetchFlightArrivals.mockResolvedValue(response);
     render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
 
     const firstRow = await screen.findByRole('article', { name: 'Voo TP1685' });
     expect(firstRow).toHaveTextContent('TP1685');
-    expect(firstRow).toHaveTextContent('Chegou');
     expect(firstRow).toHaveTextContent('Programado14:20');
-    expect(firstRow).toHaveTextContent('Estimado14:35');
-    expect(firstRow).toHaveTextContent('Real14:31');
-    expect(firstRow).toHaveTextContent('Estado');
+    expect(firstRow).toHaveTextContent('EstadoProgramado');
+    expect(firstRow).not.toHaveTextContent('Chegou');
+    expect(firstRow).not.toHaveTextContent('Estimado');
+    expect(firstRow).not.toHaveTextContent('Real');
     const source = within(firstRow).getByRole('link', { name: 'Ver TP1685 no FlightView' });
     expect(source).toHaveAttribute('target', '_blank');
     expect(source.getAttribute('rel')).toMatch(/noreferrer/);
     expect(source.getAttribute('rel')).toMatch(/noopener/);
 
     const secondRow = screen.getByRole('article', { name: 'Voo U27654' });
-    expect(secondRow).toHaveTextContent('Atrasado');
-    expect(secondRow.textContent.match(/--:--/g)).toHaveLength(3);
+    expect(secondRow).toHaveTextContent('EstadoProgramado');
+    expect(secondRow).not.toHaveTextContent('Atrasado');
+    expect(secondRow.querySelector('.flight-times')).toHaveTextContent('Programado--:--');
   });
 
   it('stacks every pickup client beneath the matching normalized flight', async () => {
@@ -243,6 +244,7 @@ describe('FlightsWorkspace', () => {
             serviceType: 'pickup',
             flightNumber: ' TP 1685 ',
             name: 'Maria Silva',
+            time: '09:15',
             car: 'Fiat Panda',
             plate: 'AA-00-AA',
             phone: '+351 912 345 678',
@@ -253,6 +255,7 @@ describe('FlightsWorkspace', () => {
             serviceType: 'pickup',
             flightNumber: 'tp1685',
             name: 'John Smith',
+            time: '10:30',
             car: 'Renault Clio',
             plate: 'BB-11-BB',
             phone: '+44 7700 900123',
@@ -267,9 +270,11 @@ describe('FlightsWorkspace', () => {
     const clients = within(flight).getAllByTestId('flight-client');
     expect(clients).toHaveLength(2);
     expect(clients[0]).toHaveTextContent('Maria Silva');
+    expect(clients[0]).toHaveTextContent('Hora09:15');
     expect(clients[0]).toHaveTextContent('Fiat Panda');
     expect(clients[0]).toHaveTextContent('AA-00-AA');
     expect(clients[1]).toHaveTextContent('John Smith');
+    expect(clients[1]).toHaveTextContent('Hora10:30');
     expect(clients[1]).toHaveTextContent('Renault Clio');
     expect(clients[1]).toHaveTextContent('BB-11-BB');
   });
@@ -362,7 +367,7 @@ describe('FlightsWorkspace', () => {
     });
     render(<FlightsWorkspace selectedDate="2026-07-10" allServiceItems={services} />);
 
-    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toHaveTextContent('Chegou');
+    expect(await screen.findByRole('article', { name: 'Voo TP1685' })).toHaveTextContent('EstadoProgramado');
     expect(screen.getByRole('article', { name: 'Voo U27654' })).toHaveTextContent('Voo não encontrado');
     expect(screen.queryByText('raw detail')).not.toBeInTheDocument();
   });

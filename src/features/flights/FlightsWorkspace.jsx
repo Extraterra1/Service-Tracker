@@ -62,7 +62,7 @@ function FlightTime({ label, value }) {
   );
 }
 
-function FlightClient({ client, onOpenReservation }) {
+function FlightClient({ client, onOpenReservation, showReservationTime = false }) {
   const name = String(client?.name ?? '').trim() || '—';
   const car = String(client?.car ?? '').trim() || '—';
   const plate =
@@ -75,11 +75,17 @@ function FlightClient({ client, onOpenReservation }) {
   const reservationId = String(client?.id ?? '').trim();
 
   return (
-    <div className="flight-client" data-testid="flight-client">
+    <div className={`flight-client ${showReservationTime ? 'flight-client--with-time' : ''}`} data-testid="flight-client">
       <div className="flight-client-identity">
         <span className="flight-client-flag">{countryCode ? <ReactCountryFlag countryCode={countryCode} svg title={countryCode} /> : '—'}</span>
         <strong className="flight-client-name">{name}</strong>
       </div>
+      {showReservationTime ? (
+        <span className="flight-client-detail">
+          <small>Hora</small>
+          {formatTime(client?.time)}
+        </span>
+      ) : null}
       <span className="flight-client-detail">
         <small>Carro</small>
         {car}
@@ -125,8 +131,12 @@ function FlightStatusIcon({ status }) {
 export function FlightResult({ result, index, clients = [], singleTime = false, prominentStatus = false, onOpenReservation }) {
   const flightNumber = String(result?.flightNumber ?? '').trim() || '—';
   const hasError = Boolean(result?.error);
-  const status = hasError ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo') : localizeStatus(result?.status);
-  const statusKey = hasError ? 'error' : String(result?.status ?? 'unknown').toLowerCase();
+  const status = hasError
+    ? (ERROR_LABELS[result.error.code] ?? 'Não foi possível consultar este voo')
+    : singleTime ? localizeStatus(result?.status) : STATUS_LABELS.scheduled;
+  const statusKey = hasError
+    ? 'error'
+    : singleTime ? String(result?.status ?? 'unknown').toLowerCase() : 'scheduled';
   const flightradarUrl = flightNumber === '—' ? '' : `https://www.flightradar24.com/${encodeURIComponent(flightNumber)}`;
   const airlineBrand = getAirlineBrand(flightNumber);
   const sourceUrl = getSafeSourceUrl(result?.sourceUrl);
@@ -169,13 +179,9 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
         </p>
       ) : (
         <dl className={`flight-times ${singleTime ? 'flight-times--single' : ''}`}>
-          {singleTime ? <FlightTime label={singleTimeLabel} value={singleTimeValue} /> : (
-            <>
-              <FlightTime label="Programado" value={result.scheduledArrivalLocal} />
-              <FlightTime label="Estimado" value={result.estimatedArrivalLocal} />
-              <FlightTime label="Real" value={result.actualArrivalLocal} />
-            </>
-          )}
+          {singleTime
+            ? <FlightTime label={singleTimeLabel} value={singleTimeValue} />
+            : <FlightTime label="Programado" value={result.scheduledArrivalLocal} />}
         </dl>
       )}
 
@@ -200,7 +206,12 @@ export function FlightResult({ result, index, clients = [], singleTime = false, 
         <div className="flight-clients" aria-label={`Clientes do voo ${flightNumber}`}>
           <span className="flight-clients-label">Clientes</span>
           {clients.map((client, clientIndex) => (
-            <FlightClient client={client} onOpenReservation={onOpenReservation} key={client?.itemId ?? client?.id ?? clientIndex} />
+            <FlightClient
+              client={client}
+              onOpenReservation={onOpenReservation}
+              showReservationTime={!singleTime}
+              key={client?.itemId ?? client?.id ?? clientIndex}
+            />
           ))}
         </div>
       ) : null}

@@ -1064,6 +1064,10 @@
   gap: 0.55rem;
 }
 
+.flight-client--with-time {
+  grid-template-columns: minmax(8rem, 1.25fr) max-content minmax(7rem, 1fr) max-content minmax(9rem, 1.15fr);
+}
+
 .flight-client + .flight-client {
   border-top: 1px solid color-mix(in oklab, var(--stroke), transparent 48%);
 }

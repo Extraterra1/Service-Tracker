@@ -1,5 +1,5 @@
 const SKELETON_ROWS = 4
-const TIME_LABELS = ['Programado', 'Estimado', 'Real']
+const TIME_LABELS = ['Programado']
 
 function FlightsWorkspaceSkeleton({ label = 'A carregar voos' }) {
   return (
@@ -36,8 +36,9 @@ function FlightsWorkspaceSkeleton({ label = 'A carregar voos' }) {
               <span className="flights-skeleton-block flight-skeleton-client-label" />
               <span className="flights-skeleton-block flight-skeleton-client-flag" />
               <span className="flights-skeleton-block flight-skeleton-client-name" />
-              <span className="flights-skeleton-block flight-skeleton-client-detail" />
-              <span className="flights-skeleton-block flight-skeleton-client-detail" />
+              <span className="flights-skeleton-block flight-skeleton-client-detail" data-testid="flight-skeleton-client-detail" />
+              <span className="flights-skeleton-block flight-skeleton-client-detail" data-testid="flight-skeleton-client-detail" />
+              <span className="flights-skeleton-block flight-skeleton-client-detail" data-testid="flight-skeleton-client-detail" />
               <span className="flights-skeleton-block flight-skeleton-client-phone" />
               <span className="flights-skeleton-block flight-skeleton-client-action" />
             </div>
