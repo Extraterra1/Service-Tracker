@@ -452,7 +452,18 @@ describe('ReservationsWorkspace', () => {
     render(<ReservationsWorkspace />)
 
     expect(screen.getByLabelText('Reservas')).toHaveAttribute('aria-busy', 'true')
-    expect(screen.getAllByTestId('reservation-skeleton')).toHaveLength(10)
+    const skeletons = screen.getAllByTestId('reservation-skeleton')
+    expect(skeletons).toHaveLength(10)
+    expect(skeletons.map((row) => row.style.getPropertyValue('--skeleton-delay'))).toEqual([
+      '0ms', '70ms', '140ms', '210ms', '280ms', '350ms', '420ms', '490ms', '560ms', '630ms',
+    ])
+    skeletons.forEach((row) => {
+      expect(within(row).getByTestId('reservation-skeleton-client')).toBeInTheDocument()
+      expect(within(row).getByTestId('reservation-skeleton-status')).toBeInTheDocument()
+      expect(within(row).getAllByTestId('reservation-skeleton-field')).toHaveLength(4)
+      expect(within(row).getByTestId('reservation-skeleton-chevron')).toBeInTheDocument()
+    })
+    expect(screen.getAllByTestId('reservations-loading-dot')).toHaveLength(3)
   })
 
   it('debounces search and filters by selected status', async () => {
@@ -532,13 +543,17 @@ describe('ReservationsWorkspace', () => {
 
   it('provides responsive, focused, reduced-motion-safe visual feedback', () => {
     expect(appCss).toMatch(/\.reservation-item:focus-visible\s*{[^}]*outline:/s)
-    expect(appCss).toMatch(/\.reservation-item-skeleton\s*{[^}]*animation:/s)
+    expect(appCss).toMatch(/\.reservation-skeleton-block\s*{[^}]*animation:/s)
+    expect(appCss).toMatch(/animation-delay:\s*calc\(var\(--skeleton-delay\)\s*\+\s*var\(--block-delay/s)
+    expect(appCss).toMatch(/@keyframes\s+reservation-skeleton-wave[\s\S]*opacity:\s*1/s)
+    expect(appCss).toMatch(/\.reservations-loading-dot\s*{[^}]*animation:/s)
     expect(appCss).toMatch(/\.reservation-details-backdrop\s*{[^}]*position:\s*fixed/s)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservation-item\s*{/)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*grid-template-rows:\s*2rem\s+2\.35rem\s+2\.35rem/)
     expect(appCss).toMatch(/@media\s*\(max-width:\s*760px\)[\s\S]*\.reservation-item-datetime,[\s\S]*text-overflow:\s*ellipsis/)
     expect(appCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.reservation-item-skeleton/)
+    expect(appCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.reservations-loading-dot/)
     expect(appCss).toMatch(/\.reservations-filter-row\s*{[^}]*grid-column:\s*1/s)
     expect(appCss).toMatch(/\.reservations-status-select\s*{[^}]*min-height:\s*2rem/s)
     expect(appCss).toMatch(/\.reservations-pager\s*{[^}]*grid-column:\s*2/s)

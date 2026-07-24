@@ -86,7 +86,21 @@ export default function ReservationsWorkspace({ canManageAccess = false }) {
       <section className="reservations-summary" aria-label="Resumo das reservas">
         <div className="reservations-total">
           <span>{debouncedQuery || pickupFrom || pickupTo ? 'Resultados' : 'Reservas'}</span>
-          <strong>{loading && !payload ? '...' : totalRows.toLocaleString('pt-PT')}</strong>
+          <strong>
+            {loading && !payload ? (
+              <span className="reservations-loading-dots" aria-label="A carregar">
+                {[0, 1, 2].map((index) => (
+                  <span
+                    key={index}
+                    className="reservations-loading-dot"
+                    data-testid="reservations-loading-dot"
+                    aria-hidden="true"
+                    style={{ '--dot-delay': `${index * 150}ms` }}
+                  />
+                ))}
+              </span>
+            ) : totalRows.toLocaleString('pt-PT')}
+          </strong>
         </div>
         <div className="reservations-status-summary" aria-label="Contagens por estado">
           {statusEntries.map(([status, count]) => (
@@ -210,7 +224,32 @@ export default function ReservationsWorkspace({ canManageAccess = false }) {
       <section className={`reservations-table-wrap ${loading ? 'is-loading' : ''}`} aria-label="Reservas" aria-busy={loading}>
         <ul className="reservations-list">
           {loading ? Array.from({ length: 10 }, (_, index) => (
-            <li key={`skeleton-${index}`} className="reservation-item-skeleton" data-testid="reservation-skeleton" aria-hidden="true" />
+            <li
+              key={`skeleton-${index}`}
+              className="reservation-item-skeleton"
+              data-testid="reservation-skeleton"
+              aria-hidden="true"
+              style={{ '--skeleton-delay': `${index * 70}ms` }}
+            >
+              <span className="reservation-skeleton-client" data-testid="reservation-skeleton-client">
+                <span className="reservation-skeleton-block is-reference" />
+                <span className="reservation-skeleton-block is-flag" />
+                <span className="reservation-skeleton-block is-client" />
+              </span>
+              <span className="reservation-skeleton-block reservation-skeleton-status" data-testid="reservation-skeleton-status" />
+              {['pickup', 'return', 'group', 'vehicle'].map((field, fieldIndex) => (
+                <span
+                  key={field}
+                  className={`reservation-skeleton-field is-${field}`}
+                  data-testid="reservation-skeleton-field"
+                  style={{ '--block-delay': `${(fieldIndex + 2) * 85}ms` }}
+                >
+                  <span className="reservation-skeleton-block is-label" />
+                  <span className="reservation-skeleton-block is-value" />
+                </span>
+              ))}
+              <span className="reservation-skeleton-chevron" data-testid="reservation-skeleton-chevron" />
+            </li>
           )) : null}
           {reservations.map((reservation) => {
             const countryCode = getReservationCountryCode(reservation)
