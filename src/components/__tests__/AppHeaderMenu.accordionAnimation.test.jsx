@@ -3,6 +3,9 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import AppHeaderMenu from '../AppHeaderMenu';
+import { readFileSync } from 'node:fs';
+
+const appCss = readFileSync('src/App.css', 'utf8');
 
 function createProps(overrides = {}) {
   return {
@@ -216,6 +219,10 @@ describe('AppHeaderMenu accordion animations', () => {
     render(<AppHeaderMenu {...createProps({ canManageAccess: false })} />);
 
     expect(screen.queryByRole('switch', { name: 'Confirmação WhatsApp' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the WhatsApp row on the shared menu typography', () => {
+    expect(appCss).not.toMatch(/\.menu-whatsapp-confirmation-row\s*{[^}]*font\s*:/);
   });
 
   it('opens Porta-chaves for non-admin users', async () => {
