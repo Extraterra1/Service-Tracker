@@ -117,6 +117,14 @@ function getEffectiveTime(item) {
     .find(Boolean) ?? '';
 }
 
+function getWhatsAppPhoneDigits(baseWhatsAppHref) {
+  try {
+    return new URL(baseWhatsAppHref).pathname.replace(/\D/g, '');
+  } catch {
+    return '';
+  }
+}
+
 export function getServiceWhatsAppHref({ enabled, baseWhatsAppHref, phoneCountryCode, item }) {
   if (!enabled || !baseWhatsAppHref) return baseWhatsAppHref;
 
@@ -127,5 +135,8 @@ export function getServiceWhatsAppHref({ enabled, baseWhatsAppHref, phoneCountry
   const template = templates[serviceType]?.[locationKind]?.[language];
 
   if (!template || !time) return baseWhatsAppHref;
-  return `${baseWhatsAppHref}?text=${encodeURIComponent(template(time))}`;
+  const phoneDigits = getWhatsAppPhoneDigits(baseWhatsAppHref);
+  if (!phoneDigits) return baseWhatsAppHref;
+
+  return `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(template(time))}`;
 }
