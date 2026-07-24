@@ -173,10 +173,11 @@ describe('service WhatsApp confirmation links', () => {
     expect(readMessage(buildHref({ time: '09:00', overrideTime: '18:45' }))).toContain('18:45');
   });
 
-  it('uses the desktop-safe WhatsApp API link for emoji messages', () => {
+  it('uses the native WhatsApp app link for emoji messages', () => {
     const url = new URL(buildHref());
 
-    expect(url.origin + url.pathname).toBe('https://api.whatsapp.com/send');
+    expect(url.protocol).toBe('whatsapp:');
+    expect(url.hostname).toBe('send');
     expect(url.searchParams.get('phone')).toBe('351912345678');
     expect(url.searchParams.get('text')).toContain('😃');
     expect(url.searchParams.get('text')).not.toContain('�');

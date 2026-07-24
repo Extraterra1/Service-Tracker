@@ -138,5 +138,5 @@ export function getServiceWhatsAppHref({ enabled, baseWhatsAppHref, phoneCountry
   const phoneDigits = getWhatsAppPhoneDigits(baseWhatsAppHref);
   if (!phoneDigits) return baseWhatsAppHref;
 
-  return `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(template(time))}`;
+  return `whatsapp://send?phone=${phoneDigits}&text=${encodeURIComponent(template(time))}`;
 }

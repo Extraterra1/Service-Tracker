@@ -436,8 +436,8 @@ function ServiceItemCard({
                 <a
                   className="item-phone-link"
                   href={finalPhoneHref}
-                  target="_blank"
-                  rel="noreferrer"
+                  target={finalPhoneHref.startsWith('whatsapp:') ? undefined : '_blank'}
+                  rel={finalPhoneHref.startsWith('whatsapp:') ? undefined : 'noreferrer'}
                   aria-label={`Abrir conversa no WhatsApp para ${phoneValue}`}
                 >
                   <span className="item-phone-link-label">{phoneValue}</span>
