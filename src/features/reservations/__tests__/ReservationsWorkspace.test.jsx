@@ -37,6 +37,7 @@ const payload = {
       carMake: 'Fiat',
       carModel: 'Panda',
       licensePlate: 'AA-00-AA',
+      createdAt: '2026-06-28 17:04:01',
       pickupAt: '2026-07-01 09:00:00',
       pickupStation: 'aeroporto',
       returnAt: '2026-07-05 10:00:00',
@@ -197,6 +198,8 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText(/119,50/)).toBeInTheDocument()
     expect(details.getByText(/6,00/)).toBeInTheDocument()
     expect(details.getByText('3 dias').closest('dd').querySelector('.lucide-clock-3')).not.toBeNull()
+    expect(details.getByText('Criada em')).toBeInTheDocument()
+    expect(details.getByText('28/06/2026 17:04')).toBeInTheDocument()
     const routeSection = details.getByRole('heading', { name: 'Percurso' }).closest('section')
     expect(Array.from(routeSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
       'Entrega',

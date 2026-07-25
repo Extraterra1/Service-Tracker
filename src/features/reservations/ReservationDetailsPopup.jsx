@@ -79,7 +79,10 @@ const FIELD_GROUPS = [
   },
   {
     title: 'Reserva',
-    fields: [['origin', 'Origem']]
+    fields: [
+      ['createdAt', 'Criada em'],
+      ['origin', 'Origem']
+    ]
   }
 ];
 

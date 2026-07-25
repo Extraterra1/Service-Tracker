@@ -45,7 +45,7 @@ export function formatReservationField(key, value) {
     return toTitleCase(value)
   }
 
-  if (key === 'pickupAt' || key === 'returnAt') {
+  if (key === 'pickupAt' || key === 'returnAt' || key === 'createdAt') {
     return formatReservationDateTime(value)
   }
 
