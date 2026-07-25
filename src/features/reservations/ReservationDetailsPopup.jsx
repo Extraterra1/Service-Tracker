@@ -35,7 +35,8 @@ const FIELD_GROUPS = [
     title: 'Condutor',
     fields: [
       ['driverLicenseNumber', 'Carta de condução'],
-      ['accommodationAddress', 'Morada do alojamento']
+      ['accommodationAddress', 'Morada do alojamento'],
+      ['numberOfPersons', 'Nº de pessoas']
     ]
   },
   {

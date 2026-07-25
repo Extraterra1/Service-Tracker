@@ -32,6 +32,7 @@ const payload = {
       clientEmail: 'maria@example.com',
       driverLicenseNumber: 'P-1234567',
       accommodationAddress: 'Hotel Madeira, Funchal',
+      numberOfPersons: '2',
       status: 'confirmed',
       vehicleGroup: 'c',
       carMake: 'Fiat',
@@ -169,9 +170,11 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText('maria@example.com')).toBeInTheDocument()
     expect(details.getByText('P-1234567')).toBeInTheDocument()
     expect(details.getByText('Hotel Madeira, Funchal')).toBeInTheDocument()
+    expect(details.getByText('2')).toBeInTheDocument()
     expect(details.getByText('Condutor')).toBeInTheDocument()
     expect(details.getByText('Carta de condução')).toBeInTheDocument()
     expect(details.getByText('Morada do alojamento')).toBeInTheDocument()
+    expect(details.getByText('Nº de pessoas')).toBeInTheDocument()
     expect(details.getByText('Aeroporto')).toBeInTheDocument()
     expect(details.getByText('Office')).toBeInTheDocument()
     expect(details.queryByText('Código do país')).not.toBeInTheDocument()
