@@ -200,6 +200,17 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText('3 dias').closest('dd').querySelector('.lucide-clock-3')).not.toBeNull()
     expect(details.getByText('Criada em')).toBeInTheDocument()
     expect(details.getByText('28/06/2026 17:04')).toBeInTheDocument()
+    const clientSection = details.getByRole('heading', { name: 'Cliente' }).closest('section')
+    expect(Array.from(clientSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
+      'Nome',
+      'Telefone',
+      'Email',
+      'Criada em',
+    ])
+    const reservationSection = details.getByRole('heading', { name: 'Reserva' }).closest('section')
+    expect(Array.from(reservationSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
+      'Origem',
+    ])
     const routeSection = details.getByRole('heading', { name: 'Percurso' }).closest('section')
     expect(Array.from(routeSection.querySelectorAll('dt'), (element) => element.textContent)).toEqual([
       'Entrega',

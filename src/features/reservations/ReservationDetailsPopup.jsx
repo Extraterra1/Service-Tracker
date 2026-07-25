@@ -27,7 +27,8 @@ const FIELD_GROUPS = [
     fields: [
       ['customer', 'Nome'],
       ['clientPhone', 'Telefone'],
-      ['clientEmail', 'Email']
+      ['clientEmail', 'Email'],
+      ['createdAt', 'Criada em']
     ]
   },
   {
@@ -80,7 +81,6 @@ const FIELD_GROUPS = [
   {
     title: 'Reserva',
     fields: [
-      ['createdAt', 'Criada em'],
       ['origin', 'Origem']
     ]
   }
