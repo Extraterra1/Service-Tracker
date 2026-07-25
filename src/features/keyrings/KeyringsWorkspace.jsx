@@ -49,7 +49,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
 
   const selectPlate = (option) => {
     setSelectedValues((current) => (current.includes(option.value) ? current : [...current, option.value]));
-    setQuery(option.label);
+    setQuery('');
     setIsPickerOpen(false);
     setHighlightedIndex(0);
   };
