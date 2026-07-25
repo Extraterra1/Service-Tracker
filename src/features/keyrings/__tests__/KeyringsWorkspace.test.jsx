@@ -127,6 +127,21 @@ describe('KeyringsWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeEnabled();
   });
 
+  it('commits a touch selection before mobile blur closes the picker', async () => {
+    const user = userEvent.setup();
+    render(<KeyringsWorkspace plateOptions={plates} />);
+    const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
+    await user.type(combobox, 'BF');
+    const option = screen.getByRole('option', { name: 'BF-07-JZ' });
+
+    fireEvent.pointerDown(option, { pointerType: 'touch' });
+    fireEvent.blur(combobox);
+
+    expect(combobox).toHaveValue('BF-07-JZ');
+    expect(screen.getByText('BF-07-JZ', { selector: '.keyrings-selected-plate strong' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeEnabled();
+  });
+
   it('clears the selected plate from its pill', async () => {
     const user = userEvent.setup();
     render(<KeyringsWorkspace plateOptions={plates} />);

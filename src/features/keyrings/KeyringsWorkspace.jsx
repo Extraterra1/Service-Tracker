@@ -137,7 +137,10 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
                     className={index === activeIndex ? 'is-highlighted' : ''}
                     key={option.value}
                     onMouseEnter={() => setHighlightedIndex(index)}
-                    onPointerDown={(event) => event.preventDefault()}
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      if (event.pointerType === 'touch' || event.pointerType === 'pen') selectPlate(option);
+                    }}
                     onClick={() => selectPlate(option)}
                   >
                     {option.label}
