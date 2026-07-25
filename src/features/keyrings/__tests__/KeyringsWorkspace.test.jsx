@@ -48,6 +48,7 @@ describe('KeyringsWorkspace', () => {
 
     await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
     expect(combobox).toHaveValue('');
+    expect(combobox).not.toHaveFocus();
     expect(screen.getAllByText('BF-07-JZ')).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Gerar PDF' }));
     expect(openKeyringPdf).toHaveBeenCalledWith(['BF-07-JZ']);
@@ -102,6 +103,7 @@ describe('KeyringsWorkspace', () => {
     expect(combobox).toHaveAttribute('aria-expanded', 'true');
     await user.keyboard('{ArrowDown}{Enter}');
     expect(combobox).toHaveValue('');
+    expect(combobox).not.toHaveFocus();
     expect(combobox).toHaveAttribute('aria-expanded', 'false');
 
     await user.clear(combobox);

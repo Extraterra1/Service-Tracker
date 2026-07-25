@@ -38,6 +38,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState('');
   const pickerRef = useRef(null);
+  const inputRef = useRef(null);
   const listboxId = useId();
   const filteredOptions = useMemo(() => rankPlateOptions(plateOptions, query), [plateOptions, query]);
   const selectedPlates = selectedValues
@@ -52,6 +53,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
     setQuery('');
     setIsPickerOpen(false);
     setHighlightedIndex(0);
+    inputRef.current?.blur();
   };
 
   const handlePickerKeyDown = (event) => {
@@ -104,6 +106,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
           <span className="keyrings-input-shell">
             <Search aria-hidden="true" />
             <input
+              ref={inputRef}
               id={`${listboxId}-input`}
               role="combobox"
               aria-autocomplete="list"
