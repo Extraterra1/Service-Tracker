@@ -112,14 +112,14 @@ describe('KeyringsWorkspace', () => {
     expect(combobox).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('survives the real pointer-down and blur ordering when selecting a result', async () => {
+  it('preserves focus through mouse-down before selecting a result', async () => {
     const user = userEvent.setup();
     render(<KeyringsWorkspace plateOptions={plates} />);
     const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
     await user.type(combobox, 'BF');
     const option = screen.getByRole('option', { name: 'BF-07-JZ' });
 
-    expect(fireEvent.pointerDown(option)).toBe(false);
+    expect(fireEvent.mouseDown(option)).toBe(false);
     fireEvent.click(option);
 
     expect(screen.getByText('Selecionada')).toBeInTheDocument();
@@ -127,19 +127,20 @@ describe('KeyringsWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeEnabled();
   });
 
-  it('commits a touch selection before mobile blur closes the picker', async () => {
+  it('allows a touch gesture to pan the result list without selecting an option', async () => {
     const user = userEvent.setup();
     render(<KeyringsWorkspace plateOptions={plates} />);
     const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
     await user.type(combobox, 'BF');
     const option = screen.getByRole('option', { name: 'BF-07-JZ' });
 
-    fireEvent.pointerDown(option, { pointerType: 'touch' });
-    fireEvent.blur(combobox);
+    expect(fireEvent.pointerDown(option, { pointerType: 'touch', clientY: 100 })).toBe(true);
+    fireEvent.pointerMove(option, { pointerType: 'touch', clientY: 40 });
 
-    expect(combobox).toHaveValue('BF-07-JZ');
-    expect(screen.getByText('BF-07-JZ', { selector: '.keyrings-selected-plate strong' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeEnabled();
+    expect(combobox).toHaveValue('BF');
+    expect(screen.getByRole('option', { name: 'BF-07-JZ' })).toBeInTheDocument();
+    expect(screen.queryByText('BF-07-JZ', { selector: '.keyrings-selected-plate strong' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeDisabled();
   });
 
   it('clears the selected plate from its pill', async () => {
