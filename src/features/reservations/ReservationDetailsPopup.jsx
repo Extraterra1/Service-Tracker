@@ -1,4 +1,16 @@
-import { Building2, CalendarArrowDown, CalendarArrowUp, CarFront, Clock3, ExternalLink, LoaderCircle, MapPinned, Plane, RectangleHorizontal, X } from 'lucide-react';
+import {
+  Building2,
+  CalendarArrowDown,
+  CalendarArrowUp,
+  CarFront,
+  Clock3,
+  ExternalLink,
+  LoaderCircle,
+  MapPinned,
+  Plane,
+  RectangleHorizontal,
+  X
+} from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -36,7 +48,7 @@ const FIELD_GROUPS = [
     fields: [
       ['driverLicenseNumber', 'Carta de condução'],
       ['accommodationAddress', 'Morada do alojamento'],
-      ['numberOfPersons', 'Nº de pessoas']
+      ['numberOfPersons', 'Pessoas']
     ]
   },
   {
@@ -81,13 +93,21 @@ const FIELD_GROUPS = [
   },
   {
     title: 'Reserva',
-    fields: [
-      ['origin', 'Origem']
-    ]
+    fields: [['origin', 'Origem']]
   }
 ];
 
-const KNOWN_FIELDS = new Set(['id', 'reference', 'status', 'country', 'countryCode', 'carMake', 'extras', 'deliveryComments', ...FIELD_GROUPS.flatMap((group) => group.fields.map(([key]) => key))]);
+const KNOWN_FIELDS = new Set([
+  'id',
+  'reference',
+  'status',
+  'country',
+  'countryCode',
+  'carMake',
+  'extras',
+  'deliveryComments',
+  ...FIELD_GROUPS.flatMap((group) => group.fields.map(([key]) => key))
+]);
 
 function hasValue(value) {
   return value !== null && value !== undefined && String(value).trim() !== '';
@@ -128,7 +148,9 @@ function getReservationDiscountPercent(reservation) {
     if (discount > 0 && discount < 100) return discount;
   }
 
-  const text = Object.values(reservation).map((value) => String(value ?? '')).join('\n');
+  const text = Object.values(reservation)
+    .map((value) => String(value ?? ''))
+    .join('\n');
   const discountMatch = text.match(/\b(?:desconto|discount)\s+(\d+(?:[.,]\d+)?)\s*%/i);
   if (discountMatch) {
     const discount = parseNumberLike(discountMatch[1]);
@@ -160,7 +182,9 @@ function formatClipboardAmount(value) {
 }
 
 function parseReservationDate(value) {
-  const normalized = String(value ?? '').trim().replace(' ', 'T');
+  const normalized = String(value ?? '')
+    .trim()
+    .replace(' ', 'T');
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -252,7 +276,9 @@ function getDetailIcon(key, value) {
   if (key === 'licensePlate') return <RectangleHorizontal aria-hidden="true" />;
 
   if (key === 'pickupStation' || key === 'returnStation') {
-    const location = String(formatReservationField(key, value) ?? '').trim().toLocaleLowerCase('pt-PT');
+    const location = String(formatReservationField(key, value) ?? '')
+      .trim()
+      .toLocaleLowerCase('pt-PT');
     if (/\b(aeroporto|airport)\b/i.test(location)) return <Plane aria-hidden="true" />;
     if (location === 'office' || location === 'sede') return <Building2 aria-hidden="true" />;
     return <MapPinned aria-hidden="true" />;
@@ -270,20 +296,22 @@ function parseDeliveryComments(value) {
   };
   let activeSection = 'deliveryNote';
 
-  String(value ?? '').split(/\r?\n/).forEach((rawLine) => {
-    const line = rawLine.trim();
-    if (!line) return;
+  String(value ?? '')
+    .split(/\r?\n/)
+    .forEach((rawLine) => {
+      const line = rawLine.trim();
+      if (!line) return;
 
-    const marker = line.match(/^(Extras|Notas Cliente|Notas Serviço):\s*(.*)$/i);
-    if (marker) {
-      const markerName = marker[1].toLocaleLowerCase('pt-PT');
-      activeSection = markerName === 'extras' ? 'extras' : markerName === 'notas cliente' ? 'customerNote' : 'serviceNote';
-      if (marker[2]) sections[activeSection].push(marker[2]);
-      return;
-    }
+      const marker = line.match(/^(Extras|Notas Cliente|Notas Serviço):\s*(.*)$/i);
+      if (marker) {
+        const markerName = marker[1].toLocaleLowerCase('pt-PT');
+        activeSection = markerName === 'extras' ? 'extras' : markerName === 'notas cliente' ? 'customerNote' : 'serviceNote';
+        if (marker[2]) sections[activeSection].push(marker[2]);
+        return;
+      }
 
-    sections[activeSection].push(line);
-  });
+      sections[activeSection].push(line);
+    });
 
   return sections;
 }
@@ -353,7 +381,9 @@ function DetailGroup({ title, fields, countryCode = '', countryName = '', emptyL
   return (
     <section className="reservation-details-group">
       <h3>{title}</h3>
-      {emptyLabel && isEmpty ? <p className="reservation-details-empty-section">{emptyLabel}</p> : (
+      {emptyLabel && isEmpty ? (
+        <p className="reservation-details-empty-section">{emptyLabel}</p>
+      ) : (
         <dl>
           {fields.map(({ key, label, value }) => (
             <div key={key}>
@@ -370,13 +400,14 @@ function DetailGroup({ title, fields, countryCode = '', countryName = '', emptyL
 }
 
 function ExtrasGroup({ extras }) {
-  const normalizeExtra = (extra) => extra
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
+  const normalizeExtra = (extra) =>
+    extra
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
   const normalizedExtras = extras.map((extra) => ({
     extra,
-    normalized: normalizeExtra(extra),
+    normalized: normalizeExtra(extra)
   }));
   const patterns = {
     cdw: /\bcdw\b/,
@@ -384,36 +415,33 @@ function ExtrasGroup({ extras }) {
     additionalDriver: /condutor adicional/,
     babySeat: /(?:baby seat|cadeira (?:de )?bebe|maxi[ -]?cosi|grupo (?:i{1,2}|[12])\b|assento elevatorio)/,
     gps: /\bgps\b/,
-    helmets: /capacetes?/,
+    helmets: /capacetes?/
   };
   const representedPatterns = Object.values(patterns);
   const hasExtra = (pattern) => normalizedExtras.some(({ normalized }) => pattern.test(normalized));
   const babySeatVariants = normalizedExtras.reduce((variants, { normalized }) => {
-    const variant = normalized.includes('maxi-cosi') || normalized.includes('maxi cosi')
-      ? 'Maxi-Cosi'
-      : /grupo (?:ii|2)\b/.test(normalized)
-        ? 'Grupo II'
-        : /grupo (?:i|1)\b/.test(normalized)
-          ? 'Grupo I'
-          : normalized.includes('assento elevatorio')
-            ? 'Assento Elevatório'
-            : null;
+    const variant =
+      normalized.includes('maxi-cosi') || normalized.includes('maxi cosi')
+        ? 'Maxi-Cosi'
+        : /grupo (?:ii|2)\b/.test(normalized)
+          ? 'Grupo II'
+          : /grupo (?:i|1)\b/.test(normalized)
+            ? 'Grupo I'
+            : normalized.includes('assento elevatorio')
+              ? 'Assento Elevatório'
+              : null;
 
     return variant && !variants.includes(variant) ? [...variants, variant] : variants;
   }, []);
-  const babySeatLabel = babySeatVariants.length
-    ? `Baby Seat (${babySeatVariants.join(', ')})`
-    : 'Baby Seat';
+  const babySeatLabel = babySeatVariants.length ? `Baby Seat (${babySeatVariants.join(', ')})` : 'Baby Seat';
   const contractRows = [
     { label: 'C.D.W.', checked: true },
     { label: 'Vidros + Faróis + Rodas', checked: hasExtra(patterns.protection) },
     { label: 'Condutor adicional', checked: hasExtra(patterns.additionalDriver) },
     { label: babySeatLabel, checked: hasExtra(patterns.babySeat) },
-    { label: 'Navegador GPS', checked: hasExtra(patterns.gps) },
+    { label: 'Navegador GPS', checked: hasExtra(patterns.gps) }
   ];
-  const otherExtras = normalizedExtras.filter(({ normalized }) => (
-    !representedPatterns.some((pattern) => pattern.test(normalized))
-  ));
+  const otherExtras = normalizedExtras.filter(({ normalized }) => !representedPatterns.some((pattern) => pattern.test(normalized)));
 
   return (
     <section className="reservation-details-group reservation-details-extras">
@@ -423,12 +451,7 @@ function ExtrasGroup({ extras }) {
           {contractRows.map(({ label, checked }) => (
             <li className="reservation-contract-extra-row" key={label}>
               <span>{label}</span>
-              <span
-                className={`reservation-contract-checkbox${checked ? ' is-checked' : ''}`}
-                role="checkbox"
-                aria-label={label}
-                aria-checked={checked}
-              />
+              <span className={`reservation-contract-checkbox${checked ? ' is-checked' : ''}`} role="checkbox" aria-label={label} aria-checked={checked} />
             </li>
           ))}
         </ul>
@@ -436,7 +459,9 @@ function ExtrasGroup({ extras }) {
           <div className="reservation-details-extra-group">
             <h4>Outros</h4>
             <ul className="reservation-details-other-extras">
-              {otherExtras.map(({ extra }) => <li key={extra}>{extra}</li>)}
+              {otherExtras.map(({ extra }) => (
+                <li key={extra}>{extra}</li>
+              ))}
             </ul>
           </div>
         ) : null}
@@ -452,9 +477,7 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
   const groups = useMemo(
     () =>
       FIELD_GROUPS.map((group) => {
-        const fieldDefinitions = group.title === 'Comercial' && !hasImtExtra
-          ? group.fields.filter(([key]) => key === 'manualValue')
-          : group.fields;
+        const fieldDefinitions = group.title === 'Comercial' && !hasImtExtra ? group.fields.filter(([key]) => key === 'manualValue') : group.fields;
 
         return {
           ...group,
@@ -476,7 +499,9 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
     : '';
   const countryCode = getReservationCountryCode(reservation);
   const countryName = countryCode ? countryNames.of(countryCode) : '';
-  const status = String(reservation.status ?? '').trim().toLowerCase();
+  const status = String(reservation.status ?? '')
+    .trim()
+    .toLowerCase();
   const imtWhatsAppHref = canManageAccess && !hasImtExtra ? getImtWhatsAppHref({ reservation, countryCode }) : '';
   const imtClipboardPrice = formatClipboardAmount(getPostImtPreDiscountFinalPrice(reservation));
 
@@ -504,13 +529,10 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
               <h2 id="reservation-details-title">Reserva {reservation.reference || reservation.id || ''}</h2>
               {isRefreshing ? (
                 <span className="reservation-refresh-status" role="status" aria-live="polite">
-                  <LoaderCircle aria-hidden="true" />
-                  A atualizar…
+                  <LoaderCircle aria-hidden="true" />A atualizar…
                 </span>
               ) : null}
-              {status ? (
-                <span className={`reservation-status is-${status}`}>{formatReservationField('status', reservation.status)}</span>
-              ) : null}
+              {status ? <span className={`reservation-status is-${status}`}>{formatReservationField('status', reservation.status)}</span> : null}
               {!hasImtExtra ? (
                 imtWhatsAppHref ? (
                   <a
@@ -535,12 +557,7 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
           </div>
           <div className="reservation-details-header-actions">
             {legacyReservationUrl ? (
-              <a
-                className="reservation-details-legacy-link reservation-details-header-link"
-                href={legacyReservationUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a className="reservation-details-legacy-link reservation-details-header-link" href={legacyReservationUrl} target="_blank" rel="noreferrer">
                 <span>Ver no Reservations</span>
                 <ExternalLink aria-hidden="true" />
               </a>
@@ -551,17 +568,19 @@ export default function ReservationDetailsPopup({ reservation, onClose, canManag
           </div>
         </header>
         <div className="reservation-details-content">
-          {groups.map((group) => group.title === 'Extras' ? (
-            <ExtrasGroup key={group.title} extras={reservationDetails.extras} />
-          ) : (
-            <DetailGroup
-              key={group.title}
-              {...group}
-              countryCode={countryCode}
-              countryName={countryName}
-              emptyLabel={group.title === 'Notas' ? 'Sem notas' : ''}
-            />
-          ))}
+          {groups.map((group) =>
+            group.title === 'Extras' ? (
+              <ExtrasGroup key={group.title} extras={reservationDetails.extras} />
+            ) : (
+              <DetailGroup
+                key={group.title}
+                {...group}
+                countryCode={countryCode}
+                countryName={countryName}
+                emptyLabel={group.title === 'Notas' ? 'Sem notas' : ''}
+              />
+            )
+          )}
           <DetailGroup title="Informação adicional" fields={extraFields} hideWhenEmpty />
         </div>
       </article>
