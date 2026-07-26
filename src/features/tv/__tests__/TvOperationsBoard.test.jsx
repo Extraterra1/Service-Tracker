@@ -10,12 +10,16 @@ const recolha = {
   itemId: 'return-1', serviceType: 'return', time: '13:30', name: 'João Costa',
   location: 'Hotel Savoy', car: 'Fiat 500', plate: 'BB-11-BB', id: 'R-202',
 }
+const nextRecolha = {
+  itemId: 'return-2', serviceType: 'return', time: '15:10', name: 'Ana Martins',
+  location: 'Câmara de Lobos', car: 'Peugeot 208', plate: 'CC-22-CC', id: 'R-303',
+}
 
 describe('TvOperationsBoard', () => {
   it('features the next delivery with live flight time and the next recolha with reservation time', () => {
     render(
       <TvOperationsBoard
-        serviceData={{ pickups: [delivery], returns: [recolha] }}
+        serviceData={{ pickups: [delivery], returns: [nextRecolha, recolha] }}
         statusMap={{}}
         flightResults={[{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-07-21T10:42', status: 'estimated' }]}
       />,
@@ -23,6 +27,7 @@ describe('TvOperationsBoard', () => {
 
     const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
     const recolhaPanel = screen.getByRole('region', { name: 'Próxima recolha' })
+    const nextRecolhaPanel = screen.getByRole('complementary', { name: 'Recolha a seguir' })
     expect(screen.getByRole('img', { name: 'JustDrive Madeira Rent-A-Car' })).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('10:42')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('Hora do voo')).toHaveClass('is-flight')
@@ -31,6 +36,18 @@ describe('TvOperationsBoard', () => {
     expect(within(deliveryPanel).getByText('AA-00-AA')).toBeInTheDocument()
     expect(within(recolhaPanel).getByText('13:30')).toBeInTheDocument()
     expect(within(recolhaPanel).getByText('JOÃO COSTA')).toBeInTheDocument()
+    expect(within(nextRecolhaPanel).getByText('A seguir')).toBeInTheDocument()
+    expect(within(nextRecolhaPanel).getByText('15:10')).toBeInTheDocument()
+    expect(within(nextRecolhaPanel).getByText('ANA MARTINS')).toBeInTheDocument()
+    expect(within(nextRecolhaPanel).getByText('Câmara de Lobos')).toBeInTheDocument()
+    expect(within(nextRecolhaPanel).getByText('CC-22-CC')).toBeInTheDocument()
+    expect(within(nextRecolhaPanel).queryByText('Peugeot 208')).not.toBeInTheDocument()
+    expect(within(nextRecolhaPanel).queryByText('#R-303')).not.toBeInTheDocument()
+  })
+
+  it('leaves the secondary recolha space blank when only one is pending', () => {
+    render(<TvOperationsBoard serviceData={{ pickups: [], returns: [recolha] }} statusMap={{}} />)
+    expect(screen.queryByRole('complementary', { name: 'Recolha a seguir' })).not.toBeInTheDocument()
   })
 
   it('falls back to the delivery reservation time when there is no flight result', () => {

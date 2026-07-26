@@ -13,11 +13,17 @@ function toSortMinutes(item) {
   return hours * 60 + minutes
 }
 
-export function selectNextUnfinished(items = [], statusMap = {}) {
+export function selectNextUnfinishedItems(items = [], statusMap = {}, limit = 1) {
   return items
     .map((entry, index) => ({ entry, index, minutes: toSortMinutes(entry) }))
     .filter(({ entry }) => statusMap[entry?.itemId]?.done !== true)
-    .sort((a, b) => a.minutes - b.minutes || a.index - b.index)[0]?.entry ?? null
+    .sort((a, b) => a.minutes - b.minutes || a.index - b.index)
+    .slice(0, limit)
+    .map(({ entry }) => entry)
+}
+
+export function selectNextUnfinished(items = [], statusMap = {}) {
+  return selectNextUnfinishedItems(items, statusMap, 1)[0] ?? null
 }
 
 function formatFlightTime(value) {

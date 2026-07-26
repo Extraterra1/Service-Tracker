@@ -1,4 +1,4 @@
-import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinished } from './tvBoard'
+import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinished, selectNextUnfinishedItems } from './tvBoard'
 import justDriveLogo from '../../assets/Logo Base.svg'
 
 const STATUS_LABELS = {
@@ -40,9 +40,23 @@ function ServiceDetails({ item, flight }) {
   )
 }
 
+function NextRecolha({ item }) {
+  const clientName = String(item.name || 'Cliente sem nome').toLocaleUpperCase('pt-PT')
+
+  return (
+    <aside className="tv-board-next-return" aria-label="Recolha a seguir">
+      <span className="tv-board-next-return-label">A seguir</span>
+      <time dateTime={getReservationTime(item)}>{getReservationTime(item)}</time>
+      <h3>{clientName}</h3>
+      <p>{item.location || 'Local por confirmar'}</p>
+      <strong>{item.plate || 'Matrícula por confirmar'}</strong>
+    </aside>
+  )
+}
+
 export default function TvOperationsBoard({ serviceData = { pickups: [], returns: [] }, statusMap = {}, flightResults = [], loading = false }) {
   const delivery = selectNextUnfinished(serviceData.pickups, statusMap)
-  const recolha = selectNextUnfinished(serviceData.returns, statusMap)
+  const [recolha, nextRecolha] = selectNextUnfinishedItems(serviceData.returns, statusMap, 2)
   const deliveryTime = getDeliveryDisplayTime(delivery, flightResults)
   const deliveryFlight = delivery?.flightNumber
     ? flightResults.find((result) => String(result?.flightNumber ?? '').replace(/\s/g, '').toUpperCase() === String(delivery.flightNumber).replace(/\s/g, '').toUpperCase())
@@ -71,12 +85,13 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
       <section className="tv-board-section tv-board-return" role="region" aria-label="Próxima recolha">
         <div className="tv-board-heading"><p>Próxima recolha</p></div>
         {recolha ? (
-          <div className="tv-board-service">
+          <div className={`tv-board-service${nextRecolha ? ' has-secondary' : ''}`}>
             <div className="tv-board-time-wrap">
               <time className="tv-board-time" dateTime={getReservationTime(recolha)}>{getReservationTime(recolha)}</time>
               <span className="tv-board-time-source">Hora da reserva</span>
             </div>
             <ServiceDetails item={recolha} />
+            {nextRecolha ? <NextRecolha item={nextRecolha} /> : null}
           </div>
         ) : <EmptyService type="return" />}
       </section>
