@@ -57,6 +57,36 @@ describe('TvOperationsBoard', () => {
     expect(within(deliveryPanel).getByText('Hora da reserva')).not.toHaveClass('is-flight')
   })
 
+  it('makes a landed flight unmistakable without duplicating its status in metadata', () => {
+    render(
+      <TvOperationsBoard
+        serviceData={{ pickups: [delivery], returns: [] }}
+        statusMap={{}}
+        flightResults={[{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-07-21T10:42', status: 'arrived' }]}
+      />,
+    )
+
+    const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
+    expect(deliveryPanel).toHaveClass('is-landed')
+    expect(within(deliveryPanel).getByRole('status')).toHaveTextContent('✓ ATERROU')
+    expect(within(deliveryPanel).queryByText('Estado')).not.toBeInTheDocument()
+  })
+
+  it('does not show the landed treatment for other flight states', () => {
+    render(
+      <TvOperationsBoard
+        serviceData={{ pickups: [delivery], returns: [] }}
+        statusMap={{}}
+        flightResults={[{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-07-21T10:42', status: 'estimated' }]}
+      />,
+    )
+
+    const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
+    expect(deliveryPanel).not.toHaveClass('is-landed')
+    expect(within(deliveryPanel).queryByText('✓ ATERROU')).not.toBeInTheDocument()
+    expect(within(deliveryPanel).getByText('Estimado')).toBeInTheDocument()
+  })
+
   it('shows stable section-specific empty states', () => {
     render(<TvOperationsBoard serviceData={{ pickups: [], returns: [] }} statusMap={{}} />)
     expect(screen.getByText('Sem entregas pendentes')).toBeInTheDocument()

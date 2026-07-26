@@ -22,7 +22,7 @@ function BrandLogo() {
   return <img className="tv-board-brand" src={justDriveLogo} alt="JustDrive Madeira Rent-A-Car" />
 }
 
-function ServiceDetails({ item, flight }) {
+function ServiceDetails({ item, flight, hideFlightStatus = false }) {
   const clientName = String(item.name || 'Cliente sem nome').toLocaleUpperCase('pt-PT')
 
   return (
@@ -34,7 +34,7 @@ function ServiceDetails({ item, flight }) {
         <MetaItem label="Matrícula">{item.plate}</MetaItem>
         <MetaItem label="Reserva">{item.id ? `#${item.id}` : ''}</MetaItem>
         {item.flightNumber ? <MetaItem label="Voo">{item.flightNumber}</MetaItem> : null}
-        {flight?.status ? <MetaItem label="Estado">{STATUS_LABELS[String(flight.status).toLowerCase()] ?? flight.status}</MetaItem> : null}
+        {flight?.status && !hideFlightStatus ? <MetaItem label="Estado">{STATUS_LABELS[String(flight.status).toLowerCase()] ?? flight.status}</MetaItem> : null}
       </div>
     </div>
   )
@@ -61,6 +61,7 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
   const deliveryFlight = delivery?.flightNumber
     ? flightResults.find((result) => String(result?.flightNumber ?? '').replace(/\s/g, '').toUpperCase() === String(delivery.flightNumber).replace(/\s/g, '').toUpperCase())
     : null
+  const deliveryHasLanded = String(deliveryFlight?.status ?? '').toLowerCase() === 'arrived'
 
   if (loading) {
     return <main className="tv-board tv-board-loading" aria-busy="true"><BrandLogo /><p>A preparar o próximo serviço</p></main>
@@ -69,15 +70,16 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
   return (
     <main className="tv-board" aria-label="Próximos serviços">
       <BrandLogo />
-      <section className="tv-board-section tv-board-delivery" role="region" aria-label="Próxima entrega">
+      <section className={`tv-board-section tv-board-delivery${deliveryHasLanded ? ' is-landed' : ''}`} role="region" aria-label="Próxima entrega">
         <div className="tv-board-heading"><p>Próxima entrega</p></div>
         {delivery ? (
           <div className="tv-board-service">
             <div className="tv-board-time-wrap">
               <time className="tv-board-time" dateTime={deliveryTime.time}>{deliveryTime.time}</time>
+              {deliveryHasLanded ? <strong className="tv-board-landed-status" role="status">✓ ATERROU</strong> : null}
               <span className={`tv-board-time-source${deliveryTime.source === 'flight' ? ' is-flight' : ''}`}>{deliveryTime.source === 'flight' ? 'Hora do voo' : 'Hora da reserva'}</span>
             </div>
-            <ServiceDetails item={delivery} flight={deliveryFlight} />
+            <ServiceDetails item={delivery} flight={deliveryFlight} hideFlightStatus={deliveryHasLanded} />
           </div>
         ) : <EmptyService type="delivery" />}
       </section>

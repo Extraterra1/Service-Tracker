@@ -54,6 +54,10 @@
   background: #fff0f2;
 }
 
+.tv-board-delivery.is-landed {
+  background: #e7f5eb;
+}
+
 .tv-board-return {
   border-top: 2px solid var(--tv-brand);
   background: #f3eeea;
@@ -107,6 +111,24 @@
 }
 
 .tv-board-time-source.is-flight { color: var(--tv-brand); }
+
+.tv-board-landed-status {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: clamp(1rem, 2vh, 1.65rem);
+  padding: clamp(0.45rem, 0.75vh, 0.7rem) clamp(0.85rem, 1.5vw, 1.4rem);
+  border-radius: 0.35rem;
+  background: #137a4a;
+  color: #fff;
+  font-size: clamp(1rem, 1.45vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.tv-board-landed-status + .tv-board-time-source {
+  margin-top: clamp(0.65rem, 1.3vh, 1rem);
+}
 
 .tv-board-details { min-width: 0; }
 
@@ -256,6 +278,12 @@
 
   .tv-board-time { font-size: 5.9rem; }
   .tv-board-time-source { margin-top: 0.8rem; font-size: 0.68rem; }
+  .tv-board-landed-status {
+    margin-top: 0.65rem;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  .tv-board-landed-status + .tv-board-time-source { margin-top: 0.45rem; }
   .tv-board-details h2 { font-size: 2.5rem; }
   .tv-board-location { margin-top: 0.55rem; font-size: 1.05rem; }
   .tv-board-meta { gap: 0.55rem 1.15rem; margin-top: 0.8rem; }
