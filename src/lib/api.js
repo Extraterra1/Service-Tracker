@@ -22,7 +22,7 @@ function normalizeItems(items, date, serviceType) {
   }
 
   const normalizeLocation = (value) => {
-    const text = String(value ?? '').trim();
+    const text = String(value ?? '').replace(/&amp;/gi, '&').trim();
     if (!text) {
       return '';
     }
