@@ -174,7 +174,7 @@ describe('ReservationsWorkspace', () => {
     expect(details.getByText('Condutor')).toBeInTheDocument()
     expect(details.getByText('Carta de condução')).toBeInTheDocument()
     expect(details.getByText('Morada do alojamento')).toBeInTheDocument()
-    expect(details.getByText('Nº de pessoas')).toBeInTheDocument()
+    expect(details.getByText('Pessoas')).toBeInTheDocument()
     expect(details.getByText('Aeroporto')).toBeInTheDocument()
     expect(details.getByText('Office')).toBeInTheDocument()
     expect(details.queryByText('Código do país')).not.toBeInTheDocument()
