@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getDeliveryDisplayTime, selectNextUnfinished } from '../tvBoard'
+import { getDeliveryDisplayTime, selectNextUnfinished, selectNextUnfinishedItems } from '../tvBoard'
 
 const item = (itemId, serviceType, time, extra = {}) => ({ itemId, serviceType, time, ...extra })
 
@@ -23,6 +23,17 @@ describe('selectNextUnfinished', () => {
     const services = [item('delivery', 'pickup', '12:00'), item('return', 'return', '08:00')]
     expect(selectNextUnfinished(services.filter((entry) => entry.serviceType === 'pickup'), {})).toMatchObject({ itemId: 'delivery' })
     expect(selectNextUnfinished(services.filter((entry) => entry.serviceType === 'return'), {})).toMatchObject({ itemId: 'return' })
+  })
+
+  it('selects the first two unfinished items in stable reservation-time order', () => {
+    const items = [
+      item('done', 'return', '08:00'),
+      item('second', 'return', '11:00'),
+      item('first', 'return', '09:30'),
+      item('later', 'return', '14:00'),
+    ]
+
+    expect(selectNextUnfinishedItems(items, { done: { done: true } }, 2).map(({ itemId }) => itemId)).toEqual(['first', 'second'])
   })
 })
 
