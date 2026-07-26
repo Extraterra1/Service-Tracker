@@ -38,6 +38,11 @@ describe('TV board styles', () => {
     expect(appCss).toMatch(/@media \(max-width:[\s\S]*?\.tv-board-empty,[\s\S]*?\.tv-board-loading p\s*{[^}]*font-size:\s*1\.35rem;/)
   })
 
+  it('uses a strong green landed banner and a restrained landed panel tint', () => {
+    expect(appCss).toMatch(/\.tv-board-delivery\.is-landed\s*{[^}]*background:/s)
+    expect(appCss).toMatch(/\.tv-board-landed-status\s*{[^}]*background:\s*#137a4a;[^}]*color:\s*#fff;/s)
+  })
+
   it('adds an undecorated third column only for a second recolha', () => {
     expect(appCss).toMatch(/\.tv-board-return \.tv-board-service\.has-secondary\s*{[^}]*grid-template-columns:\s*minmax\(11rem, 0\.65fr\) minmax\(0, 1fr\) minmax\(8\.5rem, 0\.55fr\);/s)
     expect(appCss).toMatch(/\.tv-board-next-return\s*{[^}]*justify-self:\s*end;[^}]*text-align:\s*right;/s)
