@@ -6,6 +6,10 @@ const delivery = {
   itemId: 'delivery-1', serviceType: 'pickup', time: '12:00', name: 'Maria Silva',
   location: 'Aeroporto', car: 'VW T-Roc', plate: 'AA-00-AA', id: 'R-101', flightNumber: 'TP1685',
 }
+const nextDelivery = {
+  itemId: 'delivery-2', serviceType: 'pickup', time: '14:00', name: 'Pedro Sousa',
+  location: 'Aeroporto', car: 'Renault Clio', plate: 'DD-33-DD', id: 'R-404', flightNumber: 'U27654',
+}
 const recolha = {
   itemId: 'return-1', serviceType: 'return', time: '13:30', name: 'João Costa',
   location: 'Hotel Savoy', car: 'Fiat 500', plate: 'BB-11-BB', id: 'R-202',
@@ -19,21 +23,32 @@ describe('TvOperationsBoard', () => {
   it('features the next delivery with live flight time and the next recolha with reservation time', () => {
     render(
       <TvOperationsBoard
-        serviceData={{ pickups: [delivery], returns: [nextRecolha, recolha] }}
+        serviceData={{ pickups: [nextDelivery, delivery], returns: [nextRecolha, recolha] }}
         statusMap={{}}
-        flightResults={[{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-07-21T10:42', status: 'estimated' }]}
+        flightResults={[
+          { flightNumber: 'TP1685', arrivalTimeLocal: '2026-07-21T10:42', status: 'estimated' },
+          { flightNumber: 'U27654', arrivalTimeLocal: '2026-07-21T13:15', status: 'scheduled' },
+        ]}
       />,
     )
 
     const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
     const recolhaPanel = screen.getByRole('region', { name: 'Próxima recolha' })
     const nextRecolhaPanel = screen.getByRole('complementary', { name: 'Recolha a seguir' })
+    const nextDeliveryPanel = screen.getByRole('complementary', { name: 'Entrega a seguir' })
     expect(screen.getByRole('img', { name: 'JustDrive Madeira Rent-A-Car' })).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('10:42')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('Hora do voo')).toHaveClass('is-flight')
     expect(within(deliveryPanel).getByText('MARIA SILVA')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('TP1685')).toBeInTheDocument()
     expect(within(deliveryPanel).getByText('AA-00-AA')).toBeInTheDocument()
+    expect(within(nextDeliveryPanel).getByText('A seguir')).toBeInTheDocument()
+    expect(within(nextDeliveryPanel).getByText('13:15')).toBeInTheDocument()
+    expect(within(nextDeliveryPanel).getByText('PEDRO SOUSA')).toBeInTheDocument()
+    expect(within(nextDeliveryPanel).getByText('Aeroporto')).toBeInTheDocument()
+    expect(within(nextDeliveryPanel).getByText('DD-33-DD')).toBeInTheDocument()
+    expect(within(nextDeliveryPanel).queryByText('Renault Clio')).not.toBeInTheDocument()
+    expect(within(nextDeliveryPanel).queryByText('#R-404')).not.toBeInTheDocument()
     expect(within(recolhaPanel).getByText('13:30')).toBeInTheDocument()
     expect(within(recolhaPanel).getByText('JOÃO COSTA')).toBeInTheDocument()
     expect(within(nextRecolhaPanel).getByText('A seguir')).toBeInTheDocument()
@@ -48,6 +63,11 @@ describe('TvOperationsBoard', () => {
   it('leaves the secondary recolha space blank when only one is pending', () => {
     render(<TvOperationsBoard serviceData={{ pickups: [], returns: [recolha] }} statusMap={{}} />)
     expect(screen.queryByRole('complementary', { name: 'Recolha a seguir' })).not.toBeInTheDocument()
+  })
+
+  it('leaves the secondary delivery space blank when only one is pending', () => {
+    render(<TvOperationsBoard serviceData={{ pickups: [delivery], returns: [] }} statusMap={{}} />)
+    expect(screen.queryByRole('complementary', { name: 'Entrega a seguir' })).not.toBeInTheDocument()
   })
 
   it('falls back to the delivery reservation time when there is no flight result', () => {
