@@ -1,4 +1,4 @@
-import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinished, selectNextUnfinishedItems } from './tvBoard'
+import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinishedItems } from './tvBoard'
 import justDriveLogo from '../../assets/Logo Base.svg'
 
 const STATUS_LABELS = {
@@ -54,8 +54,23 @@ function NextRecolha({ item }) {
   )
 }
 
+function NextDelivery({ item, flightResults }) {
+  const clientName = String(item.name || 'Cliente sem nome').toLocaleUpperCase('pt-PT')
+  const displayTime = getDeliveryDisplayTime(item, flightResults)
+
+  return (
+    <aside className="tv-board-next-delivery" aria-label="Entrega a seguir">
+      <span className="tv-board-next-delivery-label">A seguir</span>
+      <time dateTime={displayTime.time}>{displayTime.time}</time>
+      <h3>{clientName}</h3>
+      <p>{item.location || 'Local por confirmar'}</p>
+      <strong>{item.plate || 'Matrícula por confirmar'}</strong>
+    </aside>
+  )
+}
+
 export default function TvOperationsBoard({ serviceData = { pickups: [], returns: [] }, statusMap = {}, flightResults = [], loading = false }) {
-  const delivery = selectNextUnfinished(serviceData.pickups, statusMap)
+  const [delivery, nextDelivery] = selectNextUnfinishedItems(serviceData.pickups, statusMap, 2)
   const [recolha, nextRecolha] = selectNextUnfinishedItems(serviceData.returns, statusMap, 2)
   const deliveryTime = getDeliveryDisplayTime(delivery, flightResults)
   const deliveryFlight = delivery?.flightNumber
@@ -73,13 +88,14 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
       <section className={`tv-board-section tv-board-delivery${deliveryHasLanded ? ' is-landed' : ''}`} role="region" aria-label="Próxima entrega">
         <div className="tv-board-heading"><p>Próxima entrega</p></div>
         {delivery ? (
-          <div className="tv-board-service">
+          <div className={`tv-board-service${nextDelivery ? ' has-secondary' : ''}`}>
             <div className="tv-board-time-wrap">
               <time className="tv-board-time" dateTime={deliveryTime.time}>{deliveryTime.time}</time>
               {deliveryHasLanded ? <strong className="tv-board-landed-status" role="status">✓ ATERROU</strong> : null}
               <span className={`tv-board-time-source${deliveryTime.source === 'flight' ? ' is-flight' : ''}`}>{deliveryTime.source === 'flight' ? 'Hora do voo' : 'Hora da reserva'}</span>
             </div>
             <ServiceDetails item={delivery} flight={deliveryFlight} hideFlightStatus={deliveryHasLanded} />
+            {nextDelivery ? <NextDelivery item={nextDelivery} flightResults={flightResults} /> : null}
           </div>
         ) : <EmptyService type="delivery" />}
       </section>

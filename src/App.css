@@ -242,6 +242,65 @@
   letter-spacing: 0.04em;
 }
 
+.tv-board-delivery .tv-board-service.has-secondary {
+  grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1fr) minmax(9rem, 0.5fr);
+  gap: clamp(1.2rem, 2.5vw, 3rem);
+}
+
+.tv-board-next-delivery {
+  min-width: 0;
+  align-self: center;
+  justify-self: end;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.tv-board-next-delivery-label {
+  display: block;
+  color: var(--tv-brand);
+  font-size: clamp(0.58rem, 0.62vw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.tv-board-next-delivery time {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--tv-ink);
+  font-size: clamp(1.8rem, 2.6vw, 3.25rem);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+
+.tv-board-next-delivery h3 {
+  margin: 0.5rem 0 0;
+  color: var(--tv-ink);
+  font-size: clamp(1rem, 1.45vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.tv-board-next-delivery p {
+  margin: 0.35rem 0 0;
+  color: #4f4a42;
+  font-size: clamp(0.75rem, 0.9vw, 1.05rem);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.tv-board-next-delivery strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--tv-muted);
+  font-size: clamp(0.7rem, 0.8vw, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .tv-board-empty,
 .tv-board-loading p {
   align-self: center;
@@ -275,6 +334,10 @@
     grid-template-columns: minmax(12.5rem, 0.72fr) minmax(0, 1.28fr);
     gap: 1.5rem;
   }
+  .tv-board-delivery .tv-board-service.has-secondary {
+    grid-template-columns: minmax(12rem, 0.72fr) minmax(0, 1.28fr) minmax(7.5rem, 0.55fr);
+    gap: 1rem;
+  }
 
   .tv-board-time { font-size: 5.9rem; }
   .tv-board-time-source { margin-top: 0.8rem; font-size: 0.68rem; }
@@ -303,6 +366,11 @@
   .tv-board-next-return h3 { margin-top: 0.25rem; font-size: 0.9rem; }
   .tv-board-next-return p,
   .tv-board-next-return strong { margin-top: 0.16rem; font-size: 0.65rem; }
+  .tv-board-next-delivery-label { font-size: 0.46rem; }
+  .tv-board-next-delivery time { margin-top: 0.2rem; font-size: 1.6rem; }
+  .tv-board-next-delivery h3 { margin-top: 0.25rem; font-size: 0.9rem; }
+  .tv-board-next-delivery p,
+  .tv-board-next-delivery strong { margin-top: 0.16rem; font-size: 0.65rem; }
   .tv-board-empty,
   .tv-board-loading p { font-size: 1.35rem; }
 }
@@ -311,6 +379,7 @@
   .tv-board-section { grid-template-columns: 1fr; gap: 1rem; }
   .tv-board-service { grid-template-columns: 1fr; gap: 1.5rem; align-content: center; }
   .tv-board-return .tv-board-service.has-secondary { grid-template-columns: 1fr; }
+  .tv-board-delivery .tv-board-service.has-secondary { grid-template-columns: 1fr; }
   .tv-board-heading { align-items: center; }
 }
 
