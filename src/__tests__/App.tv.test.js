@@ -13,4 +13,8 @@ describe('App TV workspace integration', () => {
   it('preserves the tv hash while resolving the active workspace', () => {
     expect(appSource).toMatch(/requestedWorkspace === 'tv'[\s\S]*?'#tv'/)
   })
+
+  it('keeps an always-on tv workspace pinned to today across midnight', () => {
+    expect(appSource).toMatch(/if \(activeWorkspace !== 'tv'\) return undefined;[\s\S]*?setSelectedDate\(\(current\) => current === today \? current : today\)[\s\S]*?setInterval\(syncTvDate, 60_000\)/)
+  })
 })

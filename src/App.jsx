@@ -189,6 +189,17 @@ function App() {
           : '';
   const activeWorkspace = resolveWorkspace(requestedWorkspaceHash);
   useEffect(() => {
+    if (activeWorkspace !== 'tv') return undefined;
+    const syncTvDate = () => {
+      const today = getTodayDate();
+      setSelectedDate((current) => current === today ? current : today);
+    };
+    syncTvDate();
+    const timer = window.setInterval(syncTvDate, 60_000);
+    return () => window.clearInterval(timer);
+  }, [activeWorkspace]);
+
+  useEffect(() => {
     const handleHashChange = () => {
       const nextWorkspace = resolveWorkspace(window.location.hash);
       if (nextWorkspace === 'flights') {
