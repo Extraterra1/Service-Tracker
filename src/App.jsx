@@ -268,7 +268,8 @@ function App() {
     canReadServiceData,
     selectedDate,
     pin,
-    userUid: user?.uid ?? ''
+    userUid: user?.uid ?? '',
+    continuousAutoRefresh: activeWorkspace === 'tv'
   });
   const {
     statusMap,
