@@ -17,4 +17,8 @@ describe('App TV workspace integration', () => {
   it('keeps an always-on tv workspace pinned to today across midnight', () => {
     expect(appSource).toMatch(/if \(activeWorkspace !== 'tv'\) return undefined;[\s\S]*?setSelectedDate\(\(current\) => current === today \? current : today\)[\s\S]*?setInterval\(syncTvDate, 60_000\)/)
   })
+
+  it('enables continuous stale service checks only for the tv workspace', () => {
+    expect(appSource).toMatch(/useServiceDayData\(\{[\s\S]*?continuousAutoRefresh:\s*activeWorkspace === 'tv'/)
+  })
 })

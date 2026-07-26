@@ -5,6 +5,8 @@ let apiModulePromise;
 let scrapedDataModulePromise;
 let refreshLockModulePromise;
 
+const CONTINUOUS_STALE_CHECK_MS = 120_000;
+
 function loadApiModule() {
   apiModulePromise ??= import('../lib/api');
   return apiModulePromise;
@@ -25,7 +27,7 @@ function getCacheVersionKey(cachedAt) {
   return cacheDate ? String(cacheDate.getTime()) : 'missing-cachedAt';
 }
 
-export function useServiceDayData({ canReadServiceData, selectedDate, pin, userUid }) {
+export function useServiceDayData({ canReadServiceData, selectedDate, pin, userUid, continuousAutoRefresh = false }) {
   const [serviceData, setServiceData] = useState({ pickups: [], returns: [] });
   const [loadingServices, setLoadingServices] = useState(false);
   const [loadingDateData, setLoadingDateData] = useState(true);
@@ -229,6 +231,43 @@ export function useServiceDayData({ canReadServiceData, selectedDate, pin, userU
       unsubscribe();
     };
   }, [canReadServiceData, refreshServiceDataFromApi, selectedDate]);
+
+  useEffect(() => {
+    if (!continuousAutoRefresh || !canReadServiceData || !hasDayResponse) {
+      return undefined;
+    }
+
+    let isActive = true;
+    const checkForStaleServiceData = async () => {
+      const { isScrapedDocStale } = await loadScrapedDataModule();
+      if (!isActive || !isScrapedDocStale(lastLoadAt)) {
+        return;
+      }
+
+      await refreshServiceDataFromApi({
+        date: selectedDate,
+        forceRefresh: true,
+        source: 'auto',
+        hasRenderableData: serviceData.pickups.length + serviceData.returns.length > 0,
+        cacheVersion: getCacheVersionKey(lastLoadAt)
+      });
+    };
+
+    const timer = window.setInterval(() => void checkForStaleServiceData(), CONTINUOUS_STALE_CHECK_MS);
+    return () => {
+      isActive = false;
+      window.clearInterval(timer);
+    };
+  }, [
+    canReadServiceData,
+    continuousAutoRefresh,
+    hasDayResponse,
+    lastLoadAt,
+    refreshServiceDataFromApi,
+    selectedDate,
+    serviceData.pickups.length,
+    serviceData.returns.length
+  ]);
 
   const manualRefresh = useCallback(() => {
     void refreshServiceDataFromApi({

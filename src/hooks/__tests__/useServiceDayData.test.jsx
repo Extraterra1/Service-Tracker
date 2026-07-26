@@ -44,6 +44,7 @@ describe('useServiceDayData', () => {
 
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
   })
 
   it('auto-refreshes stale data only when lease lock is acquired', async () => {
@@ -153,5 +154,40 @@ describe('useServiceDayData', () => {
 
     expect(refreshServiceDayViaApiMock).not.toHaveBeenCalled()
     expect(tryAcquireAutoRefreshLeaseMock).not.toHaveBeenCalled()
+  })
+
+  it('periodically refreshes service data that becomes stale on an always-on tv', async () => {
+    vi.useFakeTimers()
+    isScrapedDocStaleMock.mockReturnValue(false)
+    mockExistingDaySnapshot()
+    tryAcquireAutoRefreshLeaseMock.mockResolvedValue({ acquired: true, reason: 'lease_acquired' })
+    refreshServiceDayViaApiMock.mockResolvedValue({ pickups: [], returns: [] })
+
+    renderHook(() =>
+      useServiceDayData({
+        canReadServiceData: true,
+        selectedDate: '2026-03-05',
+        pin: '1234',
+        userUid: 'uid-tv',
+        continuousAutoRefresh: true,
+      }),
+    )
+
+    await act(async () => {})
+    expect(refreshServiceDayViaApiMock).not.toHaveBeenCalled()
+    isScrapedDocStaleMock.mockReturnValue(true)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000)
+    })
+
+    expect(tryAcquireAutoRefreshLeaseMock).toHaveBeenCalledWith(expect.objectContaining({
+      date: '2026-03-05',
+      userUid: 'uid-tv',
+    }))
+    expect(refreshServiceDayViaApiMock).toHaveBeenCalledWith(expect.objectContaining({
+      date: '2026-03-05',
+      forceRefresh: true,
+    }))
   })
 })
