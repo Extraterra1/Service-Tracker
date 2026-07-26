@@ -39,8 +39,9 @@ describe('TV board styles', () => {
   })
 
   it('adds an undecorated third column only for a second recolha', () => {
-    expect(appCss).toMatch(/\.tv-board-return \.tv-board-service\.has-secondary\s*{[^}]*grid-template-columns:\s*minmax\(11rem, 0\.65fr\) minmax\(0, 1fr\) minmax\(10rem, 0\.75fr\);/s)
-    expect(appCss).toMatch(/\.tv-board-next-return\s*{[^}]*min-width:\s*0;/s)
+    expect(appCss).toMatch(/\.tv-board-return \.tv-board-service\.has-secondary\s*{[^}]*grid-template-columns:\s*minmax\(11rem, 0\.65fr\) minmax\(0, 1fr\) minmax\(8\.5rem, 0\.55fr\);/s)
+    expect(appCss).toMatch(/\.tv-board-next-return\s*{[^}]*justify-self:\s*end;[^}]*text-align:\s*right;/s)
+    expect(appCss).toMatch(/@media \(max-width:\s*1100px\)[\s\S]*?\.tv-board-return \.tv-board-service\.has-secondary\s*{[^}]*grid-template-columns:\s*minmax\(10rem, 0\.65fr\) minmax\(0, 1fr\) minmax\(7\.5rem, 0\.55fr\);/)
     expect(appCss).not.toMatch(/\.tv-board-next-return\s*{[^}]*(?:background|box-shadow|border):/s)
     expect(appCss).toMatch(/@media \(max-aspect-ratio:\s*4 \/ 3\)[\s\S]*?\.tv-board-return \.tv-board-service\.has-secondary\s*{[^}]*grid-template-columns:\s*1fr;/)
   })
