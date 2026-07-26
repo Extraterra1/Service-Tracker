@@ -15,6 +15,7 @@ vi.mock('../../../lib/flightStatusStore', () => storeMocks)
 vi.mock('../../flights/currentFlightsApi', () => ({ fetchCurrentFlights }))
 
 const delivery = { itemId: 'delivery', serviceType: 'pickup', flightNumber: 'TP1685' }
+const recolha = { itemId: 'recolha', serviceType: 'return', flightNumber: 'U27654' }
 
 describe('useTvFlightData', () => {
   beforeEach(() => {
@@ -40,10 +41,11 @@ describe('useTvFlightData', () => {
     storeMocks.isFlightStatusCacheFresh.mockReturnValue(false)
     fetchCurrentFlights.mockResolvedValue([{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-07-21T10:55' }])
 
-    const { result } = renderHook(() => useTvFlightData({ selectedDate: '2026-07-21', deliveries: [delivery], serviceDataReady: true, userUid: 'u1' }))
+    const { result } = renderHook(() => useTvFlightData({ selectedDate: '2026-07-21', deliveries: [delivery, recolha], serviceDataReady: true, userUid: 'u1' }))
 
     await act(async () => { await result.current.refresh() })
     expect(fetchCurrentFlights).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-21', flightNumbers: ['TP1685'] }))
+    expect(fetchCurrentFlights).not.toHaveBeenCalledWith(expect.objectContaining({ flightNumbers: expect.arrayContaining(['U27654']) }))
     expect(storeMocks.saveFlightStatusCache).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-21', userUid: 'u1' }))
     expect(result.current.results[0].arrivalTimeLocal).toContain('10:55')
   })
