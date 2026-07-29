@@ -768,6 +768,8 @@
 }
 
 .keyring-strip.is-shared-edge { border-top: 0; }
+.keyring-strip.is-half-row { width: 39.881%; }
+.keyring-strip.is-half-row .keyring-insert { width: 100%; }
 
 .keyring-insert { width: 50%; display: grid; grid-template-columns: 1fr 1fr; }
 .keyring-cell { min-width: 0; display: flex; flex-direction: column; align-items: center; border-right: 1px solid #1d1d1d; }

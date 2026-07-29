@@ -13,7 +13,8 @@ vi.mock('../keyringPdf', async (importOriginal) => ({
 
 const plates = [
   { value: 'BF07JZ', label: 'BF-07-JZ' },
-  { value: 'AA11BB', label: 'AA-11-BB' }
+  { value: 'AA11BB', label: 'AA-11-BB' },
+  { value: 'CC22DD', label: 'CC-22-DD' }
 ];
 
 describe('KeyringsWorkspace', () => {
@@ -49,7 +50,7 @@ describe('KeyringsWorkspace', () => {
     await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
     expect(combobox).toHaveValue('');
     expect(combobox).not.toHaveFocus();
-    expect(screen.getAllByText('BF-07-JZ')).toHaveLength(3);
+    expect(screen.getAllByText('BF-07-JZ')).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Gerar PDF' }));
     expect(openKeyringPdf).toHaveBeenCalledWith(['BF-07-JZ']);
   });
@@ -69,13 +70,13 @@ describe('KeyringsWorkspace', () => {
     await user.click(screen.getByRole('option', { name: 'BF-07-JZ' }));
 
     expect(screen.getAllByRole('button', { name: /Remover matrícula/ })).toHaveLength(2);
-    expect(container.querySelectorAll('.keyring-strip')).toHaveLength(2);
+    expect(container.querySelectorAll('.keyring-strip')).toHaveLength(1);
     await user.click(screen.getByRole('button', { name: 'Remover matrícula BF-07-JZ' }));
     expect(screen.queryByRole('button', { name: 'Remover matrícula BF-07-JZ' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remover matrícula AA-11-BB' })).toBeInTheDocument();
   });
 
-  it('previews nine gapless rows per page with one shared edge between adjacent rows', async () => {
+  it('previews two cars per row and a half-width odd final row', async () => {
     const user = userEvent.setup();
     const { container } = render(<KeyringsWorkspace plateOptions={plates} />);
     const combobox = screen.getByRole('combobox', { name: 'Pesquisar matrícula' });
@@ -85,12 +86,18 @@ describe('KeyringsWorkspace', () => {
     await user.clear(combobox);
     await user.type(combobox, 'AA');
     await user.click(screen.getByRole('option', { name: 'AA-11-BB' }));
+    await user.type(combobox, 'CC');
+    await user.click(screen.getByRole('option', { name: 'CC-22-DD' }));
 
     const strips = container.querySelectorAll('.keyring-strip');
-    expect(screen.getByText(/9 viaturas por página/)).toBeInTheDocument();
+    expect(screen.getByText(/18 viaturas por página · 1 porta-chaves por viatura/)).toBeInTheDocument();
+    expect(strips).toHaveLength(2);
+    expect(strips[0].querySelectorAll('.keyring-insert')).toHaveLength(2);
+    expect(strips[1].querySelectorAll('.keyring-insert')).toHaveLength(1);
     expect(strips[0]).toHaveStyle({ top: `${(24.8 / 297) * 100}%` });
     expect(strips[1]).toHaveStyle({ top: `${((24.8 + 28.4) / 297) * 100}%` });
     expect(strips[1]).toHaveClass('is-shared-edge');
+    expect(strips[1]).toHaveClass('is-half-row');
     expect(readFileSync('src/App.css', 'utf8')).toMatch(/\.keyring-strip\.is-shared-edge\s*\{[^}]*border-top:\s*0;/);
   });
 

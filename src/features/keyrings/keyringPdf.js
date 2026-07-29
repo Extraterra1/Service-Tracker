@@ -46,22 +46,28 @@ export function buildKeyringPdfModel(plate) {
   }
   const { strip } = KEYRING_PDF_LAYOUT;
   const cellWidth = strip.width / 4;
-  const rows = displayPlates.map((displayPlate, rowIndex) => {
+  const rowPlates = Array.from({ length: Math.ceil(displayPlates.length / 2) }, (_, rowIndex) => displayPlates.slice(rowIndex * 2, rowIndex * 2 + 2));
+  const rows = rowPlates.map((plates, rowIndex) => {
     const rowTop = strip.top + rowIndex * strip.height;
-    const cells = Array.from({ length: 4 }, (_, index) => ({
+    const cells = Array.from({ length: plates.length * 2 }, (_, index) => ({
       x: strip.x + cellWidth * index,
       top: rowTop,
       width: cellWidth,
       height: strip.height
     }));
+    const keyrings = plates.map((displayPlate, index) => ({
+      plate: { text: displayPlate, cell: cells[index * 2] },
+      phone: { text: WHATSAPP_NUMBER, cell: cells[index * 2 + 1] }
+    }));
 
     return {
-      plate: displayPlate,
-      strip: { ...strip, top: rowTop },
+      plate: plates[0],
+      strip: { ...strip, top: rowTop, width: cells.length * cellWidth },
       cells,
       dividers: cells.slice(1).map((cell) => cell.x),
-      plates: [cells[0], cells[2]].map((cell) => ({ text: displayPlate, cell })),
-      phones: [cells[1], cells[3]].map((cell) => ({ text: WHATSAPP_NUMBER, cell }))
+      keyrings,
+      plates: keyrings.map((keyring) => keyring.plate),
+      phones: keyrings.map((keyring) => keyring.phone)
     };
   });
 
@@ -118,23 +124,28 @@ export async function createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBy
     const page = pageIndex === 0 ? document.getPages()[0] : document.addPage([mmToPoints(A4_SIZE_MM.width), mmToPoints(A4_SIZE_MM.height)]);
     const rows = model.rows.slice(pageIndex * KEYRING_ROWS_PER_PAGE, (pageIndex + 1) * KEYRING_ROWS_PER_PAGE);
     const { strip } = KEYRING_PDF_LAYOUT;
-
-    page.drawRectangle({
-      x: mmToPoints(strip.x),
-      y: topToPdfY(strip.top, rows.length * strip.height),
-      width: mmToPoints(strip.width),
-      height: mmToPoints(rows.length * strip.height),
-      borderColor: black,
-      borderWidth: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
+    const drawGridLine = (start, end) => page.drawLine({
+      start: { x: mmToPoints(start.x), y: topToPdfY(start.top) },
+      end: { x: mmToPoints(end.x), y: topToPdfY(end.top) },
+      color: black,
+      thickness: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
     });
-    rows.slice(1).forEach((_, rowIndex) => {
+    const groupBottom = strip.top + rows.length * strip.height;
+
+    drawGridLine({ x: strip.x, top: strip.top }, { x: strip.x + rows[0].strip.width, top: strip.top });
+    drawGridLine({ x: strip.x, top: groupBottom }, { x: strip.x + rows.at(-1).strip.width, top: groupBottom });
+    drawGridLine({ x: strip.x, top: strip.top }, { x: strip.x, top: groupBottom });
+    rows.forEach((row, rowIndex) => {
+      const rowTop = strip.top + rowIndex * strip.height;
+      drawGridLine(
+        { x: strip.x + row.strip.width, top: rowTop },
+        { x: strip.x + row.strip.width, top: rowTop + strip.height }
+      );
+    });
+    rows.slice(1).forEach((row, rowIndex) => {
       const boundaryTop = strip.top + (rowIndex + 1) * strip.height;
-      page.drawLine({
-        start: { x: mmToPoints(strip.x), y: topToPdfY(boundaryTop) },
-        end: { x: mmToPoints(strip.x + strip.width), y: topToPdfY(boundaryTop) },
-        color: black,
-        thickness: mmToPoints(KEYRING_PDF_LAYOUT.borderWidth)
-      });
+      const boundaryWidth = Math.max(rows[rowIndex].strip.width, row.strip.width);
+      drawGridLine({ x: strip.x, top: boundaryTop }, { x: strip.x + boundaryWidth, top: boundaryTop });
     });
 
     rows.forEach((row, rowIndex) => {
@@ -152,7 +163,8 @@ export async function createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBy
         });
       });
 
-      [cells[0], cells[2]].forEach((cell) => {
+      row.keyrings.forEach((keyring, keyringIndex) => {
+        const cell = cells[keyringIndex * 2];
         const logoWidth = mmToPoints(KEYRING_PDF_LAYOUT.logo.width);
         const logoScale = logoWidth / logo.width;
         const logoHeight = logo.height * logoScale;
@@ -164,10 +176,11 @@ export async function createKeyringPdfBytes(plate, { logoPngBytes, whatsappPngBy
           width: logoWidth,
           height: logoHeight
         });
-        drawCenteredText(page, printFont, row.plate, cell, 20.1, 15.8);
+        drawCenteredText(page, printFont, keyring.plate.text, cell, 20.1, 15.8);
       });
 
-      [cells[1], cells[3]].forEach((cell) => {
+      row.keyrings.forEach((_, keyringIndex) => {
+        const cell = cells[keyringIndex * 2 + 1];
         const iconSize = mmToPoints(10.7);
         page.drawImage(whatsapp, {
           x: mmToPoints(cell.x + cell.width / 2) - iconSize / 2,

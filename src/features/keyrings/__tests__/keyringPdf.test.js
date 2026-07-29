@@ -29,27 +29,33 @@ describe('keyring PDF specification', () => {
     expect(SORA_FONT_NAME).toBe('Sora SemiBold');
   });
 
-  it('models nine gapless rows per page with duplicate-safe plates', () => {
+  it('pairs cars into nine gapless rows with duplicate-safe plates', () => {
     expect(KEYRING_ROWS_PER_PAGE).toBe(9);
     expect(normalizePlateList(['BF-07-JZ', 'AA-11-BB', 'BF07JZ'])).toEqual(['BF-07-JZ', 'AA-11-BB']);
-    const model = buildKeyringPdfModel(['BF-07-JZ', 'AA-11-BB']);
+    const model = buildKeyringPdfModel(['BF-07-JZ', 'AA-11-BB', 'CC-22-DD']);
     expect(model.rows).toHaveLength(2);
     expect(model.rows[1].strip.top).toBe(model.rows[0].strip.top + model.rows[0].strip.height);
+    expect(model.rows[0].strip.width).toBe(KEYRING_PDF_LAYOUT.strip.width);
+    expect(model.rows[1].strip.width).toBe(KEYRING_PDF_LAYOUT.strip.width / 2);
   });
 
-  it('builds four equal cells with three internal dividers', () => {
-    const model = buildKeyringPdfModel('BF-07-JZ');
+  it('builds two cells per car and four cells when two cars share a row', () => {
+    const singleModel = buildKeyringPdfModel('BF-07-JZ');
+    const pairedModel = buildKeyringPdfModel(['BF-07-JZ', 'AA-11-BB']);
 
-    expect(model.cells).toHaveLength(4);
-    expect(model.dividers).toHaveLength(3);
-    expect(model.cells.every((cell) => cell.width === KEYRING_PDF_LAYOUT.strip.width / 4)).toBe(true);
+    expect(singleModel.cells).toHaveLength(2);
+    expect(singleModel.dividers).toHaveLength(1);
+    expect(pairedModel.rows).toHaveLength(1);
+    expect(pairedModel.cells).toHaveLength(4);
+    expect(pairedModel.dividers).toHaveLength(3);
+    expect(pairedModel.cells.every((cell) => cell.width === KEYRING_PDF_LAYOUT.strip.width / 4)).toBe(true);
   });
 
-  it('duplicates the selected plate and fixed WhatsApp number', () => {
+  it('creates one keyring with one plate and phone pair per selected car', () => {
     const model = buildKeyringPdfModel(' bf 07 jz ');
 
-    expect(model.plates.map((item) => item.text)).toEqual(['BF-07-JZ', 'BF-07-JZ']);
-    expect(model.phones.map((item) => item.text)).toEqual([WHATSAPP_NUMBER, WHATSAPP_NUMBER]);
+    expect(model.plates.map((item) => item.text)).toEqual(['BF-07-JZ']);
+    expect(model.phones.map((item) => item.text)).toEqual([WHATSAPP_NUMBER]);
     expect(WHATSAPP_NUMBER).toBe('+351927491323');
   });
 
@@ -76,7 +82,7 @@ describe('keyring PDF specification', () => {
     expect(bytes.byteLength).toBeGreaterThan(500);
   });
 
-  it('draws two rows as one outer rectangle with one shared horizontal separator', async () => {
+  it('draws two cars in one row with three internal dividers', async () => {
     const pixel = Uint8Array.from(
       atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
       (character) => character.charCodeAt(0)
@@ -93,24 +99,45 @@ describe('keyring PDF specification', () => {
       .map((stream) => new TextDecoder().decode(decodePDFRawStream(stream).decode()))
       .join('\n');
 
-    expect(contentStream.match(/\n0 0 m\n/g) ?? []).toHaveLength(1);
+    expect(contentStream.match(/\n0 0 m\n/g) ?? []).toHaveLength(0);
     expect(contentStream.match(/^.* m\n.* m\n.* l\nS$/gm) ?? []).toHaveLength(7);
   });
 
-  it('creates a second A4 page after nine selected plates', async () => {
+  it('draws an odd final car as a half-width row without empty right-side cells', async () => {
     const pixel = Uint8Array.from(
       atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
       (character) => character.charCodeAt(0)
     );
-    const plates = Array.from({ length: 10 }, (_, index) => `AA-${String(index + 1).padStart(2, '0')}-BB`);
-    const ninePlateBytes = await createKeyringPdfBytes(plates.slice(0, 9), { logoPngBytes: pixel, whatsappPngBytes: pixel });
-    const tenPlateBytes = await createKeyringPdfBytes(plates, { logoPngBytes: pixel, whatsappPngBytes: pixel });
-    const ninePlateDocument = await PDFDocument.load(ninePlateBytes);
-    const tenPlateDocument = await PDFDocument.load(tenPlateBytes);
+    const bytes = await createKeyringPdfBytes(['BF-07-JZ', 'AA-11-BB', 'CC-22-DD'], {
+      logoPngBytes: pixel,
+      whatsappPngBytes: pixel
+    });
+    const document = await PDFDocument.load(bytes);
+    const contents = document.getPages()[0].node.Contents();
+    const streamRefs = contents instanceof PDFArray ? contents.asArray() : [contents];
+    const contentStream = streamRefs
+      .map((streamRef) => document.context.lookup(streamRef, PDFRawStream))
+      .map((stream) => new TextDecoder().decode(decodePDFRawStream(stream).decode()))
+      .join('\n');
 
-    expect(ninePlateDocument.getPageCount()).toBe(1);
-    expect(tenPlateDocument.getPageCount()).toBe(2);
-    expect(tenPlateDocument.getPages().every((page) => page.getWidth() === mmToPoints(210))).toBe(true);
+    expect(contentStream.match(/\n0 0 m\n/g) ?? []).toHaveLength(0);
+    expect(contentStream.match(/^.* m\n.* m\n.* l\nS$/gm) ?? []).toHaveLength(10);
+  });
+
+  it('creates a second A4 page after eighteen selected plates', async () => {
+    const pixel = Uint8Array.from(
+      atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+      (character) => character.charCodeAt(0)
+    );
+    const plates = Array.from({ length: 19 }, (_, index) => `AA-${String(index + 1).padStart(2, '0')}-BB`);
+    const eighteenPlateBytes = await createKeyringPdfBytes(plates.slice(0, 18), { logoPngBytes: pixel, whatsappPngBytes: pixel });
+    const nineteenPlateBytes = await createKeyringPdfBytes(plates, { logoPngBytes: pixel, whatsappPngBytes: pixel });
+    const eighteenPlateDocument = await PDFDocument.load(eighteenPlateBytes);
+    const nineteenPlateDocument = await PDFDocument.load(nineteenPlateBytes);
+
+    expect(eighteenPlateDocument.getPageCount()).toBe(1);
+    expect(nineteenPlateDocument.getPageCount()).toBe(2);
+    expect(nineteenPlateDocument.getPages().every((page) => page.getWidth() === mmToPoints(210))).toBe(true);
   });
 
   it('opens generated PDF bytes in a new tab instead of creating a download link', () => {

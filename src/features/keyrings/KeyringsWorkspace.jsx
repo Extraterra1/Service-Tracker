@@ -5,17 +5,18 @@ import whatsappUrl from '../../assets/whatsapp.svg';
 import { A4_SIZE_MM, KEYRING_PDF_LAYOUT, KEYRING_ROWS_PER_PAGE, openKeyringPdf } from './keyringPdf';
 import { rankPlateOptions } from './keyringSearch';
 
-function KeyringStripPreview({ plate, rowIndex = 0 }) {
+function KeyringStripPreview({ plates, rowIndex = 0 }) {
   const top = ((KEYRING_PDF_LAYOUT.strip.top + rowIndex * KEYRING_PDF_LAYOUT.strip.height) / A4_SIZE_MM.height) * 100;
   const height = (KEYRING_PDF_LAYOUT.strip.height / A4_SIZE_MM.height) * 100;
+  const isHalfRow = plates.length === 1;
   return (
     <div
-      className={`keyring-strip${rowIndex > 0 ? ' is-shared-edge' : ''}`}
+      className={`keyring-strip${rowIndex > 0 ? ' is-shared-edge' : ''}${isHalfRow ? ' is-half-row' : ''}`}
       style={{ top: `${top}%`, height: `${height}%` }}
-      aria-label={`Pré-visualização do porta-chaves ${plate}`}
+      aria-label={`Pré-visualização dos porta-chaves ${plates.join(', ')}`}
     >
-      {[0, 1].map((copy) => (
-        <div className="keyring-insert" key={copy}>
+      {plates.map((plate) => (
+        <div className="keyring-insert" key={plate}>
           <div className="keyring-cell keyring-plate-cell">
             <img src={logoUrl} alt="" />
             <strong>{plate}</strong>
@@ -196,7 +197,7 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
         <button type="button" className="primary-btn keyrings-generate" onClick={handleGenerate} disabled={selectedPlates.length === 0 || generating}>
           <Download aria-hidden="true" /> {generating ? 'A gerar…' : 'Gerar PDF'}
         </button>
-        <p className="keyrings-note">A4 · 9 viaturas por página · 2 cópias por viatura</p>
+        <p className="keyrings-note">A4 · 18 viaturas por página · 1 porta-chaves por viatura</p>
       </section>
 
       <section className="keyrings-preview-panel" aria-labelledby="keyrings-preview-heading">
@@ -209,13 +210,16 @@ export default function KeyringsWorkspace({ plateOptions = [], loading = false, 
         </div>
         <div className="keyrings-preview-pages">
           {selectedPlates.length > 0 ? selectedPlates.reduce((pages, plate, index) => {
-            const pageIndex = Math.floor(index / KEYRING_ROWS_PER_PAGE);
+            const absoluteRowIndex = Math.floor(index / 2);
+            const pageIndex = Math.floor(absoluteRowIndex / KEYRING_ROWS_PER_PAGE);
+            const rowIndex = absoluteRowIndex % KEYRING_ROWS_PER_PAGE;
             if (!pages[pageIndex]) pages[pageIndex] = [];
-            pages[pageIndex].push({ plate, rowIndex: index % KEYRING_ROWS_PER_PAGE });
+            if (!pages[pageIndex][rowIndex]) pages[pageIndex][rowIndex] = { plates: [], rowIndex };
+            pages[pageIndex][rowIndex].plates.push(plate);
             return pages;
           }, []).map((rows, pageIndex) => (
             <div className="keyring-page" aria-label={`Pré-visualização da folha A4 ${pageIndex + 1}`} key={pageIndex}>
-              {rows.map((row) => <KeyringStripPreview key={row.plate} plate={row.plate} rowIndex={row.rowIndex} />)}
+              {rows.map((row) => <KeyringStripPreview key={row.plates.join('-')} plates={row.plates} rowIndex={row.rowIndex} />)}
             </div>
           )) : (
             <div className="keyring-page" aria-label="Pré-visualização da folha A4">
