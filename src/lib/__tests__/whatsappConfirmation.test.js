@@ -29,7 +29,7 @@ const cases = [
     country: 'GB',
     message: `Hello, this is the JustDriveMadeira team 😃
 
-We would like to confirm your vehicle pickup tomorrow at 13:00
+We would like to confirm your vehicle pickup tomorrow
 
 We'll send you a video with the location of our meeting point 📹
 We'll also be tracking your flight online 🖥️
@@ -46,7 +46,7 @@ Have a great trip! 🌴✨`
     country: 'PT',
     message: `Olá! Somos a equipa da JustDriveMadeira 😃
 
-Gostaríamos de confirmar a entrega da sua viatura para amanhã às 13:00.
+Gostaríamos de confirmar a entrega da sua viatura para amanhã.
 
 Vamos enviar-lhe um vídeo com a localização do nosso ponto de encontro 📹 e também iremos acompanhar o seu voo online 🖥️.
 
@@ -171,7 +171,11 @@ describe('service WhatsApp confirmation links', () => {
   });
 
   it('uses an override time before the original service time', () => {
-    expect(readMessage(buildHref({ time: '09:00', overrideTime: '18:45' }))).toContain('18:45');
+    expect(readMessage(buildHref({ serviceType: 'pickup', location: 'Escritório', time: '09:00', overrideTime: '18:45' }))).toContain('18:45');
+  });
+
+  it('keeps airport delivery confirmations free of arrival times', () => {
+    expect(readMessage(buildHref({ time: '13:00' }))).not.toContain('13:00');
   });
 
   it('uses the native WhatsApp app link for emoji messages', () => {
@@ -243,7 +247,7 @@ describe('service WhatsApp confirmation links', () => {
   });
 
   it('falls back past empty override fields to the original service time', () => {
-    expect(readMessage(buildHref({ time: '09:00', displayTime: '', overrideTime: '' }))).toContain('09:00');
+    expect(readMessage(buildHref({ serviceType: 'pickup', location: 'Escritório', time: '09:00', displayTime: '', overrideTime: '' }))).toContain('09:00');
   });
 
   it('uses English for an unknown phone country', () => {

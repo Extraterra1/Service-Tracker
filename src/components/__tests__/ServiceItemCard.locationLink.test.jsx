@@ -57,7 +57,8 @@ describe('ServiceItemCard location links', () => {
 
     const link = screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' });
     const message = new URL(link.href).searchParams.get('text');
-    expect(message).toContain('Gostaríamos de confirmar a entrega da sua viatura para amanhã às 13:00.');
+    expect(message).toContain('Gostaríamos de confirmar a entrega da sua viatura para amanhã.');
+    expect(message).not.toContain('13:00');
     expect(link).not.toHaveAttribute('target');
   });
 

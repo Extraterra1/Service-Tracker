@@ -419,6 +419,8 @@ describe('ServiceWorkspace', () => {
     );
 
     const link = screen.getByRole('link', { name: 'Abrir conversa no WhatsApp para +351 912 345 678' });
-    expect(new URL(link.href).searchParams.get('text')).toContain('amanhã às 13:00');
+    const message = new URL(link.href).searchParams.get('text');
+    expect(message).toContain('para amanhã.');
+    expect(message).not.toContain('13:00');
   });
 });

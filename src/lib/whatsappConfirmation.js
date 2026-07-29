@@ -6,9 +6,9 @@ const OFFICE_RETURN_MAP_URL = 'https://maps.app.goo.gl/tU7LU4q7kA53RCiG7';
 const templates = {
   pickup: {
     airport: {
-      en: (time) => `Hello, this is the JustDriveMadeira team 😃
+      en: () => `Hello, this is the JustDriveMadeira team 😃
 
-We would like to confirm your vehicle pickup tomorrow at ${time}
+We would like to confirm your vehicle pickup tomorrow
 
 We'll send you a video with the location of our meeting point 📹
 We'll also be tracking your flight online 🖥️
@@ -18,9 +18,9 @@ Once you're done picking your luggage please send us a message and head to the s
 If you have any doubts please just let us know 😊
 
 Have a great trip! 🌴✨`,
-      pt: (time) => `Olá! Somos a equipa da JustDriveMadeira 😃
+      pt: () => `Olá! Somos a equipa da JustDriveMadeira 😃
 
-Gostaríamos de confirmar a entrega da sua viatura para amanhã às ${time}.
+Gostaríamos de confirmar a entrega da sua viatura para amanhã.
 
 Vamos enviar-lhe um vídeo com a localização do nosso ponto de encontro 📹 e também iremos acompanhar o seu voo online 🖥️.
 
