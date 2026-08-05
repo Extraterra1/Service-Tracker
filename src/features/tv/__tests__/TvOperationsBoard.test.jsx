@@ -70,6 +70,24 @@ describe('TvOperationsBoard', () => {
     expect(screen.queryByRole('complementary', { name: 'Entrega a seguir' })).not.toBeInTheDocument()
   })
 
+  it('makes the earliest live flight the primary delivery even when its reservation is later', () => {
+    render(
+      <TvOperationsBoard
+        serviceData={{ pickups: [delivery, nextDelivery], returns: [] }}
+        statusMap={{}}
+        flightResults={[
+          { flightNumber: 'TP1685', arrivalTimeLocal: '2026-08-05T13:22', status: 'estimated' },
+          { flightNumber: 'U27654', arrivalTimeLocal: '2026-08-05T13:12', status: 'estimated' },
+        ]}
+      />,
+    )
+
+    const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })
+    expect(within(deliveryPanel).getByRole('heading', { level: 2 })).toHaveTextContent('PEDRO SOUSA')
+    expect(within(deliveryPanel).getByText('13:12')).toHaveClass('tv-board-time')
+    expect(within(screen.getByRole('complementary', { name: 'Entrega a seguir' })).getByText('13:22')).toBeInTheDocument()
+  })
+
   it('falls back to the delivery reservation time when there is no flight result', () => {
     render(<TvOperationsBoard serviceData={{ pickups: [{ ...delivery, overrideTime: '12:20' }], returns: [] }} statusMap={{}} />)
     const deliveryPanel = screen.getByRole('region', { name: 'Próxima entrega' })

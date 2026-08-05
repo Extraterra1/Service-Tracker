@@ -1,4 +1,4 @@
-import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinishedItems } from './tvBoard'
+import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinishedDeliveries, selectNextUnfinishedItems } from './tvBoard'
 import justDriveLogo from '../../assets/Logo Base.svg'
 
 const STATUS_LABELS = {
@@ -70,7 +70,7 @@ function NextDelivery({ item, flightResults }) {
 }
 
 export default function TvOperationsBoard({ serviceData = { pickups: [], returns: [] }, statusMap = {}, flightResults = [], loading = false }) {
-  const [delivery, nextDelivery] = selectNextUnfinishedItems(serviceData.pickups, statusMap, 2)
+  const [delivery, nextDelivery] = selectNextUnfinishedDeliveries(serviceData.pickups, statusMap, flightResults, 2)
   const [recolha, nextRecolha] = selectNextUnfinishedItems(serviceData.returns, statusMap, 2)
   const deliveryTime = getDeliveryDisplayTime(delivery, flightResults)
   const deliveryFlight = delivery?.flightNumber
