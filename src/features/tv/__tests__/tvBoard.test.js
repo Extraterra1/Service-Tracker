@@ -48,6 +48,13 @@ describe('getDeliveryDisplayTime', () => {
     const delivery = item('delivery', 'pickup', '12:00', { overrideTime: '12:30', flightNumber: 'TP1685' })
     expect(getDeliveryDisplayTime(delivery, [])).toEqual({ time: '12:30', source: 'reservation' })
   })
+
+  it('keeps the 23:59 overnight sentinel even when live flight data exists', () => {
+    const delivery = item('overnight', 'pickup', '23:59', { flightNumber: 'TP1685' })
+    const flights = [{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-08-06T01:22' }]
+
+    expect(getDeliveryDisplayTime(delivery, flights)).toEqual({ time: '23:59', source: 'reservation' })
+  })
 })
 
 describe('selectNextUnfinishedDeliveries', () => {
@@ -77,6 +84,22 @@ describe('selectNextUnfinishedDeliveries', () => {
     expect(selectNextUnfinishedDeliveries(deliveries, {}, flights, 2).map(({ itemId }) => itemId)).toEqual([
       'reservation-first',
       'flight-later',
+    ])
+  })
+
+  it('orders a 23:59 overnight sentinel by reservation time instead of its next-day flight time', () => {
+    const deliveries = [
+      item('overnight', 'pickup', '23:59', { flightNumber: 'TP1685' }),
+      item('today', 'pickup', '14:00', { flightNumber: 'U27654' }),
+    ]
+    const flights = [
+      { flightNumber: 'TP1685', arrivalTimeLocal: '2026-08-06T01:22' },
+      { flightNumber: 'U27654', arrivalTimeLocal: '2026-08-05T13:12' },
+    ]
+
+    expect(selectNextUnfinishedDeliveries(deliveries, {}, flights, 2).map(({ itemId }) => itemId)).toEqual([
+      'today',
+      'overnight',
     ])
   })
 })

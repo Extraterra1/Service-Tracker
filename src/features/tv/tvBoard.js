@@ -49,6 +49,11 @@ function formatFlightTime(value) {
 }
 
 export function getDeliveryDisplayTime(delivery, flightResults = []) {
+  const reservationTime = getReservationTime(delivery)
+  if (reservationTime === '23:59') {
+    return { time: reservationTime, source: 'reservation' }
+  }
+
   const flightNumber = normalizeFlightNumber(delivery?.flightNumber)
   const flight = flightNumber
     ? flightResults.find((result) => normalizeFlightNumber(result?.flightNumber) === flightNumber)
@@ -56,5 +61,5 @@ export function getDeliveryDisplayTime(delivery, flightResults = []) {
   const flightTime = formatFlightTime(flight?.arrivalTimeLocal)
   return flightTime
     ? { time: flightTime, source: 'flight' }
-    : { time: getReservationTime(delivery), source: 'reservation' }
+    : { time: reservationTime, source: 'reservation' }
 }
