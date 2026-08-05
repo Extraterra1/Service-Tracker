@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getDeliveryDisplayTime, selectNextUnfinished, selectNextUnfinishedItems } from '../tvBoard'
+import { getDeliveryDisplayTime, selectNextUnfinished, selectNextUnfinishedDeliveries, selectNextUnfinishedItems } from '../tvBoard'
 
 const item = (itemId, serviceType, time, extra = {}) => ({ itemId, serviceType, time, ...extra })
 
@@ -47,5 +47,36 @@ describe('getDeliveryDisplayTime', () => {
   it('falls back to the reservation override when flight data is unavailable', () => {
     const delivery = item('delivery', 'pickup', '12:00', { overrideTime: '12:30', flightNumber: 'TP1685' })
     expect(getDeliveryDisplayTime(delivery, [])).toEqual({ time: '12:30', source: 'reservation' })
+  })
+})
+
+describe('selectNextUnfinishedDeliveries', () => {
+  it('orders deliveries by live flight time before reservation time', () => {
+    const deliveries = [
+      item('lands-later', 'pickup', '10:00', { flightNumber: 'TP1685' }),
+      item('lands-first', 'pickup', '14:00', { flightNumber: 'U27654' }),
+    ]
+    const flights = [
+      { flightNumber: 'TP1685', arrivalTimeLocal: '2026-08-05T13:22' },
+      { flightNumber: 'U27654', arrivalTimeLocal: '2026-08-05T13:12' },
+    ]
+
+    expect(selectNextUnfinishedDeliveries(deliveries, {}, flights, 2).map(({ itemId }) => itemId)).toEqual([
+      'lands-first',
+      'lands-later',
+    ])
+  })
+
+  it('falls back to reservation time when a delivery has no live flight time', () => {
+    const deliveries = [
+      item('reservation-first', 'pickup', '09:30'),
+      item('flight-later', 'pickup', '14:00', { flightNumber: 'TP1685' }),
+    ]
+    const flights = [{ flightNumber: 'TP1685', arrivalTimeLocal: '2026-08-05T13:22' }]
+
+    expect(selectNextUnfinishedDeliveries(deliveries, {}, flights, 2).map(({ itemId }) => itemId)).toEqual([
+      'reservation-first',
+      'flight-later',
+    ])
   })
 })
