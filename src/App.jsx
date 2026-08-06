@@ -1186,7 +1186,10 @@ function App() {
 
       <KeepAliveWorkspace active={activeWorkspace === 'reservations'}>
         <Suspense fallback={<main className="reservations-loading" aria-busy="true">A carregar reservas...</main>}>
-          <ReservationsWorkspace canManageAccess={canManageAccess} />
+          <ReservationsWorkspace
+            canManageAccess={canManageAccess}
+            canLoadReservations={accessState === 'allowed' && Boolean(user)}
+          />
         </Suspense>
       </KeepAliveWorkspace>
 

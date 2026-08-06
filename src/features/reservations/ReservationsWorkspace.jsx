@@ -33,7 +33,7 @@ function displayVehicle(reservation) {
   return vehicle ? `${vehicle} - ${plate}` : plate
 }
 
-export default function ReservationsWorkspace({ canManageAccess = false }) {
+export default function ReservationsWorkspace({ canManageAccess = false, canLoadReservations = true }) {
   const [query, setQuery] = useState('')
   const [pickupFrom, setPickupFrom] = useState('')
   const [pickupTo, setPickupTo] = useState('')
@@ -48,6 +48,8 @@ export default function ReservationsWorkspace({ canManageAccess = false }) {
   const requestKey = JSON.stringify([page, pageSize, debouncedQuery, pickupFrom, pickupTo, selectedStatuses, requestVersion])
 
   useEffect(() => {
+    if (!canLoadReservations) return undefined
+
     let active = true
 
     fetchReservations({ page, pageSize, pickupFrom, pickupTo, q: debouncedQuery, status: selectedStatuses })
@@ -61,7 +63,7 @@ export default function ReservationsWorkspace({ canManageAccess = false }) {
     return () => {
       active = false
     }
-  }, [debouncedQuery, page, pageSize, pickupFrom, pickupTo, requestKey, selectedStatuses])
+  }, [canLoadReservations, debouncedQuery, page, pageSize, pickupFrom, pickupTo, requestKey, selectedStatuses])
 
   const loading = requestState.key !== requestKey
   const payload = loading ? null : requestState.payload

@@ -57,6 +57,17 @@ const payload = {
 }
 
 describe('ReservationsWorkspace', () => {
+  it('waits for authentication readiness before loading reservations', async () => {
+    const { rerender } = render(<ReservationsWorkspace canLoadReservations={false} />)
+
+    expect(fetchReservations).not.toHaveBeenCalled()
+
+    rerender(<ReservationsWorkspace canLoadReservations />)
+
+    expect(await screen.findByText('Maria Silva')).toBeInTheDocument()
+    expect(fetchReservations).toHaveBeenCalledTimes(1)
+  })
+
   beforeEach(() => {
     fetchReservations.mockReset()
     fetchReservations.mockResolvedValue(payload)
