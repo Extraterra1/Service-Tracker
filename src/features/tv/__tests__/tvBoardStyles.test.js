@@ -58,8 +58,9 @@ describe('TV board styles', () => {
   })
 
   it('runs a restrained bottom ticker with a reduced-motion fallback', () => {
-    expect(appCss).toMatch(/\.tv-board-transfer-ticker\s*{[^}]*position:\s*absolute;[^}]*overflow:\s*hidden;/s)
-    expect(appCss).toMatch(/\.tv-board-transfer-track\s*{[^}]*animation:\s*tv-board-ticker-scroll/s)
+    expect(appCss).toMatch(/\.tv-board-transfer-ticker\s*{[^}]*position:\s*absolute;[^}]*right:\s*0;[^}]*left:\s*0;[^}]*overflow:\s*hidden;/s)
+    expect(appCss).toMatch(/\.tv-board-transfer-track\s*{[^}]*animation:\s*tv-board-ticker-scroll 14s linear infinite;/s)
+    expect(appCss).toMatch(/@keyframes tv-board-ticker-scroll\s*{[^}]*from\s*{[^}]*translateX\(100vw\)[^}]*}[^}]*to\s*{[^}]*translateX\(-100%\)/s)
     expect(appCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.tv-board-transfer-track\s*{[^}]*animation:\s*none;/)
   })
 })

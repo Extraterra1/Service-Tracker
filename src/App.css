@@ -134,9 +134,9 @@
 
 .tv-board-transfer-ticker {
   position: absolute;
-  right: clamp(2rem, 4.5vw, 5.5rem);
+  right: 0;
   bottom: clamp(1rem, 2.2vh, 1.8rem);
-  left: clamp(2rem, 4.5vw, 5.5rem);
+  left: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -145,6 +145,7 @@
 }
 
 .tv-board-transfer-label {
+  margin-left: clamp(2rem, 4.5vw, 5.5rem);
   color: var(--tv-brand);
   font-size: clamp(0.7rem, 0.8vw, 1rem);
   font-weight: 700;
@@ -162,7 +163,7 @@
 .tv-board-transfer-track {
   display: flex;
   width: max-content;
-  animation: tv-board-ticker-scroll 24s linear infinite;
+  animation: tv-board-ticker-scroll 14s linear infinite;
   will-change: transform;
 }
 
@@ -194,7 +195,8 @@
 }
 
 @keyframes tv-board-ticker-scroll {
-  to { transform: translateX(-50%); }
+  from { transform: translateX(100vw); }
+  to { transform: translateX(-100%); }
 }
 
 .tv-board-details { min-width: 0; }
@@ -416,11 +418,12 @@
   }
   .tv-board-landed-status + .tv-board-time-source { margin-top: 0.45rem; }
   .tv-board-transfer-ticker {
-    right: 1.7rem;
+    right: 0;
     bottom: 0.75rem;
-    left: 1.7rem;
+    left: 0;
     gap: 0.85rem;
   }
+  .tv-board-transfer-label { margin-left: 1.7rem; }
   .tv-board-transfer-label { font-size: 0.5rem; }
   .tv-board-transfer-car { font-size: 0.72rem; }
   .tv-board-details h2 { font-size: 2.5rem; }
@@ -466,7 +469,6 @@
     will-change: auto;
   }
 
-  .tv-board-transfer-group[aria-hidden='true'] { display: none; }
 }
 
 .flights-coming-soon {
