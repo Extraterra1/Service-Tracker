@@ -5,7 +5,7 @@ import '@fontsource/barlow/700.css'
 import TvOperationsBoard from './TvOperationsBoard'
 import { useTvFlightData } from './useTvFlightData'
 
-export default function TvWorkspace({ selectedDate, serviceData, statusMap, loading, serviceDataReady, userUid }) {
+export default function TvWorkspace({ selectedDate, serviceData, statusMap, transferMap, loading, serviceDataReady, userUid }) {
   const { results } = useTvFlightData({
     selectedDate,
     deliveries: serviceData?.pickups ?? [],
@@ -17,6 +17,7 @@ export default function TvWorkspace({ selectedDate, serviceData, statusMap, load
     <TvOperationsBoard
       serviceData={serviceData}
       statusMap={statusMap}
+      transferMap={transferMap}
       flightResults={results}
       loading={loading}
     />

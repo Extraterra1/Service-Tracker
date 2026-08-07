@@ -21,4 +21,8 @@ describe('App TV workspace integration', () => {
   it('enables continuous stale service checks only for the tv workspace', () => {
     expect(appSource).toMatch(/useServiceDayData\(\{[\s\S]*?continuousAutoRefresh:\s*activeWorkspace === 'tv'/)
   })
+
+  it('passes the live transfer map into the tv workspace', () => {
+    expect(appSource).toMatch(/<TvWorkspace[\s\S]*?transferMap=\{transferMap\}/)
+  })
 })

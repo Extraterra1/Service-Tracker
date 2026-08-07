@@ -18,6 +18,10 @@ const nextRecolha = {
   itemId: 'return-2', serviceType: 'return', time: '15:10', name: 'Ana Martins',
   location: 'Câmara de Lobos', car: 'Peugeot 208', plate: 'CC-22-CC', id: 'R-303',
 }
+const dirtyReturn = {
+  itemId: 'return-dirty', serviceType: 'return', time: '09:00', name: 'Cliente',
+  location: 'Aeroporto da Madeira', car: 'Seat Ibiza (A)', plate: 'BR-17-EA', id: 'R-505',
+}
 
 describe('TvOperationsBoard', () => {
   it('features the next delivery with live flight time and the next recolha with reservation time', () => {
@@ -68,6 +72,48 @@ describe('TvOperationsBoard', () => {
   it('leaves the secondary delivery space blank when only one is pending', () => {
     render(<TvOperationsBoard serviceData={{ pickups: [delivery], returns: [] }} statusMap={{}} />)
     expect(screen.queryByRole('complementary', { name: 'Entrega a seguir' })).not.toBeInTheDocument()
+  })
+
+  it('scrolls completed airport or office cars that are awaiting transfer', () => {
+    render(
+      <TvOperationsBoard
+        serviceData={{ pickups: [delivery], returns: [dirtyReturn] }}
+        statusMap={{ 'return-dirty': { done: true } }}
+        transferMap={{ 'return-dirty': { transferred: false } }}
+      />,
+    )
+
+    const ticker = screen.getByRole('region', { name: 'Sujos em baixo' })
+    expect(within(ticker).getByText('Sujos em baixo')).toBeInTheDocument()
+    expect(within(ticker).getAllByText('Seat Ibiza (A) BR-17-EA')).toHaveLength(2)
+  })
+
+  it('removes a car from the ticker as soon as it is marked transferred', () => {
+    const props = {
+      serviceData: { pickups: [delivery], returns: [dirtyReturn] },
+      statusMap: { 'return-dirty': { done: true } },
+    }
+    const { rerender } = render(
+      <TvOperationsBoard {...props} transferMap={{ 'return-dirty': { transferred: false } }} />,
+    )
+    expect(screen.getByRole('region', { name: 'Sujos em baixo' })).toBeInTheDocument()
+
+    rerender(<TvOperationsBoard {...props} transferMap={{ 'return-dirty': { transferred: true } }} />)
+    expect(screen.queryByRole('region', { name: 'Sujos em baixo' })).not.toBeInTheDocument()
+  })
+
+  it('does not include unfinished or non-transfer-location recolhas', () => {
+    render(
+      <TvOperationsBoard
+        serviceData={{ pickups: [delivery], returns: [
+          { ...dirtyReturn, itemId: 'unfinished' },
+          { ...dirtyReturn, itemId: 'hotel', location: 'Hotel Savoy' },
+        ] }}
+        statusMap={{ unfinished: { done: false }, hotel: { done: true } }}
+        transferMap={{ unfinished: { transferred: false }, hotel: { transferred: false } }}
+      />,
+    )
+    expect(screen.queryByRole('region', { name: 'Sujos em baixo' })).not.toBeInTheDocument()
   })
 
   it('makes the earliest live flight the primary delivery even when its reservation is later', () => {

@@ -1083,6 +1083,7 @@ function App() {
             selectedDate={selectedDate}
             serviceData={serviceDataWithOverrides}
             statusMap={statusMap}
+            transferMap={transferMap}
             loading={paneLoading}
             serviceDataReady={canReadServiceData && !loadingDateData && hasDayResponse}
             userUid={user?.uid ?? ''}
