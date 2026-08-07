@@ -53,7 +53,7 @@
 
 .tv-board-delivery {
   background: #fff0f2;
-  padding-bottom: clamp(4.5rem, 10vh, 7rem);
+  padding-bottom: clamp(3.5rem, 7vh, 5.5rem);
 }
 
 .tv-board-delivery.is-landed {
@@ -135,7 +135,7 @@
 .tv-board-transfer-ticker {
   position: absolute;
   right: 0;
-  bottom: clamp(1rem, 2.2vh, 1.8rem);
+  bottom: clamp(1.5rem, 3.4vh, 2.8rem);
   left: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -391,7 +391,7 @@
     gap: 1rem;
     padding: 1.05rem 1.7rem;
   }
-  .tv-board-delivery { padding-bottom: 3.2rem; }
+  .tv-board-delivery { padding-bottom: 1.8rem; }
 
   .tv-board-heading { gap: 0.45rem; }
 
@@ -419,13 +419,13 @@
   .tv-board-landed-status + .tv-board-time-source { margin-top: 0.45rem; }
   .tv-board-transfer-ticker {
     right: 0;
-    bottom: 0.75rem;
+    bottom: 2rem;
     left: 0;
     gap: 0.85rem;
   }
   .tv-board-transfer-label { margin-left: 1.7rem; }
-  .tv-board-transfer-label { font-size: 0.5rem; }
-  .tv-board-transfer-car { font-size: 0.72rem; }
+  .tv-board-transfer-label { font-size: 0.65rem; }
+  .tv-board-transfer-car { font-size: 1rem; }
   .tv-board-details h2 { font-size: 2.5rem; }
   .tv-board-location { margin-top: 0.55rem; font-size: 1.05rem; }
   .tv-board-meta { gap: 0.55rem 1.15rem; margin-top: 0.8rem; }
