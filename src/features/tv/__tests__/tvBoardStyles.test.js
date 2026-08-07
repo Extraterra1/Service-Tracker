@@ -56,4 +56,10 @@ describe('TV board styles', () => {
     expect(appCss).toMatch(/\.tv-board-next-delivery\s*{[^}]*justify-self:\s*end;[^}]*text-align:\s*right;/s)
     expect(appCss).not.toMatch(/\.tv-board-next-delivery\s*{[^}]*(?:background|box-shadow|border):/s)
   })
+
+  it('runs a restrained bottom ticker with a reduced-motion fallback', () => {
+    expect(appCss).toMatch(/\.tv-board-transfer-ticker\s*{[^}]*position:\s*absolute;[^}]*overflow:\s*hidden;/s)
+    expect(appCss).toMatch(/\.tv-board-transfer-track\s*{[^}]*animation:\s*tv-board-ticker-scroll/s)
+    expect(appCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.tv-board-transfer-track\s*{[^}]*animation:\s*none;/)
+  })
 })

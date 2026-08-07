@@ -1,4 +1,5 @@
 import { getDeliveryDisplayTime, getReservationTime, selectNextUnfinishedDeliveries, selectNextUnfinishedItems } from './tvBoard'
+import { isTransferServiceLocation } from '../../lib/serviceLocations'
 import justDriveLogo from '../../assets/Logo Base.svg'
 
 const STATUS_LABELS = {
@@ -69,7 +70,50 @@ function NextDelivery({ item, flightResults }) {
   )
 }
 
-export default function TvOperationsBoard({ serviceData = { pickups: [], returns: [] }, statusMap = {}, flightResults = [], loading = false }) {
+function getAwaitingTransferCars(returns, statusMap, transferMap) {
+  const seenPlates = new Set()
+  return returns.filter((item) => {
+    const plate = String(item?.plate ?? '').trim()
+    const plateKey = plate.toUpperCase()
+    if (
+      item?.serviceType !== 'return'
+      || statusMap[item.itemId]?.done !== true
+      || transferMap[item.itemId]?.transferred === true
+      || !isTransferServiceLocation(item.location)
+      || !plate
+      || seenPlates.has(plateKey)
+    ) return false
+    seenPlates.add(plateKey)
+    return true
+  })
+}
+
+function TransferTicker({ cars }) {
+  if (cars.length === 0) return null
+  const renderGroup = (duplicate = false) => (
+    <span className="tv-board-transfer-group" aria-hidden={duplicate ? 'true' : undefined}>
+      {cars.map((item) => (
+        <span className="tv-board-transfer-car" key={`${duplicate ? 'duplicate' : 'primary'}-${item.itemId}`}>
+          {`${String(item.car || 'Viatura').trim()} ${String(item.plate).trim()}`}
+        </span>
+      ))}
+    </span>
+  )
+
+  return (
+    <aside className="tv-board-transfer-ticker" role="region" aria-label="Sujos em baixo">
+      <strong className="tv-board-transfer-label">Sujos em baixo</strong>
+      <span className="tv-board-transfer-viewport">
+        <span className="tv-board-transfer-track">
+          {renderGroup()}
+          {renderGroup(true)}
+        </span>
+      </span>
+    </aside>
+  )
+}
+
+export default function TvOperationsBoard({ serviceData = { pickups: [], returns: [] }, statusMap = {}, transferMap = {}, flightResults = [], loading = false }) {
   const [delivery, nextDelivery] = selectNextUnfinishedDeliveries(serviceData.pickups, statusMap, flightResults, 2)
   const [recolha, nextRecolha] = selectNextUnfinishedItems(serviceData.returns, statusMap, 2)
   const deliveryTime = getDeliveryDisplayTime(delivery, flightResults)
@@ -77,6 +121,7 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
     ? flightResults.find((result) => String(result?.flightNumber ?? '').replace(/\s/g, '').toUpperCase() === String(delivery.flightNumber).replace(/\s/g, '').toUpperCase())
     : null
   const deliveryHasLanded = String(deliveryFlight?.status ?? '').toLowerCase() === 'arrived'
+  const awaitingTransferCars = getAwaitingTransferCars(serviceData.returns, statusMap, transferMap)
 
   if (loading) {
     return <main className="tv-board tv-board-loading" aria-busy="true"><BrandLogo /><p>A preparar o próximo serviço</p></main>
@@ -98,6 +143,7 @@ export default function TvOperationsBoard({ serviceData = { pickups: [], returns
             {nextDelivery ? <NextDelivery item={nextDelivery} flightResults={flightResults} /> : null}
           </div>
         ) : <EmptyService type="delivery" />}
+        <TransferTicker cars={awaitingTransferCars} />
       </section>
 
       <section className="tv-board-section tv-board-return" role="region" aria-label="Próxima recolha">
