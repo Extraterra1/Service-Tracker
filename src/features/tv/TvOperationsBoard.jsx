@@ -90,10 +90,10 @@ function getAwaitingTransferCars(returns, statusMap, transferMap) {
 
 function TransferTicker({ cars }) {
   if (cars.length === 0) return null
-  const renderGroup = (duplicate = false) => (
-    <span className="tv-board-transfer-group" aria-hidden={duplicate ? 'true' : undefined}>
+  const renderGroup = () => (
+    <span className="tv-board-transfer-group">
       {cars.map((item) => (
-        <span className="tv-board-transfer-car" key={`${duplicate ? 'duplicate' : 'primary'}-${item.itemId}`}>
+        <span className="tv-board-transfer-car" key={item.itemId}>
           {`${String(item.car || 'Viatura').trim()} ${String(item.plate).trim()}`}
         </span>
       ))}
@@ -106,7 +106,6 @@ function TransferTicker({ cars }) {
       <span className="tv-board-transfer-viewport">
         <span className="tv-board-transfer-track">
           {renderGroup()}
-          {renderGroup(true)}
         </span>
       </span>
     </aside>

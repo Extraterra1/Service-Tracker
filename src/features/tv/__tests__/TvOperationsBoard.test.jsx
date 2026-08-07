@@ -85,7 +85,7 @@ describe('TvOperationsBoard', () => {
 
     const ticker = screen.getByRole('region', { name: 'Sujos em baixo' })
     expect(within(ticker).getByText('Sujos em baixo')).toBeInTheDocument()
-    expect(within(ticker).getAllByText('Seat Ibiza (A) BR-17-EA')).toHaveLength(2)
+    expect(within(ticker).getAllByText('Seat Ibiza (A) BR-17-EA')).toHaveLength(1)
   })
 
   it('removes a car from the ticker as soon as it is marked transferred', () => {
